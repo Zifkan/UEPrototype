@@ -6,6 +6,6 @@ void CopyTransformFromActorSystem::OnCreate()
 {
     SystemRun->each([](flecs::entity e, CopyTransformFromActor& v, LocalToWorld& localToWorld, FActorComponent& actorComponent)
     {
-      //  localToWorld.Value = actorComponent.ptr->GetActorTransform();
+        localToWorld.Value = actorComponent.ptr->GetActorTransform().ToMatrixWithScale();
     });
 }
