@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include "ECSPlugin.h"
 #include "flecs.h"
 
 class FEntityManager

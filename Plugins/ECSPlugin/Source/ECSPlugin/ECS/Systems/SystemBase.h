@@ -20,7 +20,7 @@ protected:
     FEcsWorld* m_pWorld = nullptr;
 };
 
-
+template<class ... ComponentType>
 class SystemBase : public IBaseSystem
 {
 public:
@@ -40,7 +40,7 @@ public:
         EntityManager = m_pWorld->EntityManager;
         Filter = flecs::filter(*m_pWorld->DefaultWorld);
 
-        SystemRun = new flecs::system<>(*m_pWorld->DefaultWorld, name,signature);
+        SystemRun = new flecs::system<ComponentType...>(*m_pWorld->DefaultWorld, name,signature);
     }
 
     virtual ~SystemBase(){};     
@@ -59,7 +59,7 @@ public:
 
     void OnCreate() override = 0;
 
-    flecs::system<>* SystemRun;
+    flecs::system<ComponentType...>* SystemRun;
 
 
 private:

@@ -4,7 +4,7 @@
 #include "ECSPlugin/ECS/Systems/SystemBase.h"
 
 
-class WorldToLocalSystem final :public SystemBase
+class WorldToLocalSystem final :public SystemBase<LocalToWorld, WorldToLocal>
 {
 public:
     void OnCreate() override;
