@@ -29,7 +29,7 @@ public:
 
     static FEcsWorld* instance()
     {
-               static FEcsWorld* _instance = nullptr;
+        static FEcsWorld* _instance = nullptr;
 
         if (_instance == nullptr)
         {
