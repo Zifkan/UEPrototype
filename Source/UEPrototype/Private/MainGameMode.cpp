@@ -14,7 +14,7 @@ void AMainGameMode::BeginPlay()
     world = FEcsWorld::instance();
     auto em = world->EntityManager;
 
-    em->RegisterComponent<CamComponent>("CameraComponent");
+    em->RegisterComponent<CamComponent>("CamComponent");
 
     em->RegisterComponent<PlayerInputComponent>("InputComponent");
     em->RegisterComponent<MovementVelocity>("MovementVelocity");
@@ -27,7 +27,7 @@ void AMainGameMode::BeginPlay()
     em->RegisterComponent<CopyTransformToActor>("CopyTransformToActor");
     em->RegisterComponent<Scale>("Scale");
     em->RegisterComponent<Rotation>("Rotation");
-//    em->RegisterComponent<CryEntityComponent>("CryEntityComponent");
+    em->RegisterComponent<FActorComponent>("ActorComponent");
    
 
     RegisterTransformSystems();
@@ -53,11 +53,11 @@ void AMainGameMode::RegisterSystem()
 
 void AMainGameMode::RegisterTransformSystems()
 {
-  //  transformLauncher = new TransformSystemLaunch(world);
+    transformLauncher = new TransformSystemLaunch(world);
 }
 
 void AMainGameMode::Tick(float DeltaSeconds)
 {
-  //  transformLauncher->Update(DeltaSeconds);
+    transformLauncher->Update(DeltaSeconds);
     systemsLauncher->Update(DeltaSeconds);
 }

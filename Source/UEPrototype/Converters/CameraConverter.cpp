@@ -2,6 +2,8 @@
 
 
 #include "CameraConverter.h"
+
+#include "Components/GeneralComponents.h"
 #include "Core/EntityManager.h"
 #include "Systems/Transforms/WorldToLocalSystem.h"
 #include "UEPrototype/ECS/Components/CamComponent.h"
@@ -13,9 +15,10 @@ void UCameraConverter::Convert(flecs::entity entity, FEntityManager dstManager)
             HeightOffset, FocusHeightOffset,0,0,Radius, CurrentRadius,SpeedX,SpeedY, yMinLimit,yMaxLimit,PitchLimit
     });
        
-    dstManager.SetComponentData<LocalToWorld>(entity, {  });
+    dstManager.SetComponentData<LocalToWorld>(entity, { FMatrix::Identity });
     dstManager.SetComponentData<CopyTransformFromActor>(entity, {});
-    dstManager.SetComponentData<Rotation>(entity, {  });
-    dstManager.SetComponentData<Translation>(entity, {  });
-    dstManager.SetComponentData<WorldToLocal>(entity, {  });
+    dstManager.SetComponentData<Rotation>(entity, { FQuat::Identity });
+    dstManager.SetComponentData<Translation>(entity, { FVector::ZeroVector });
+    dstManager.SetComponentData<WorldToLocal>(entity, { FMatrix::Identity });
+    dstManager.SetComponentData<FActorComponent>(entity, { GetOwner() });
 }
