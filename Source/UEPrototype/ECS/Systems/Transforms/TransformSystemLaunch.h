@@ -4,15 +4,14 @@
 #include "CopyTransformToActorSystem.h"
 #include "TRSToLocalToWorldSystem.h"
 #include "WorldToLocalSystem.h"
-#include "ECSPlugin/ECS/Systems/SystemLauncher.h"
+#include "Systems/SystemLauncher.h"
 
 
 
 class TransformSystemLaunch : public SystemLauncher
 {
 public:
-    explicit TransformSystemLaunch(FEcsWorld* world)
-        : SystemLauncher(world)
+    TransformSystemLaunch(FEcsWorld* world) : SystemLauncher(world)
     {
         RegisterSystem(new CopyTransformFromActorSystem());
         RegisterSystem(new TRSToLocalToWorldSystem());

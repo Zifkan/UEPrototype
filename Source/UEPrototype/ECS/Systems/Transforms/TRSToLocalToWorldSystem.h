@@ -1,6 +1,6 @@
 #pragma once
-#include "ECSPlugin/ECS/Components/TransformComponents.h"
-#include "ECSPlugin/ECS/Systems/SystemBase.h"
+#include "Components/TransformComponents.h"
+#include "Systems/SystemBase.h"
 
 class TRSToLocalToWorldSystem  final : public SystemBase< LocalToWorld, Rotation, Translation>
 {

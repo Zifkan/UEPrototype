@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECSPlugin/ECS/Systems/SystemBase.h"
+#include "Systems/SystemBase.h"
 
 class LocalToParentSystem final : public SystemBase<>
 {

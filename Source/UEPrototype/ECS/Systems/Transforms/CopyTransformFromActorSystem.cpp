@@ -1,6 +1,5 @@
 #include "CopyTransformFromActorSystem.h"
-
-#include "ECSPlugin/ECS/Components/GeneralComponents.h"
+#include "Components/GeneralComponents.h"
 
 void CopyTransformFromActorSystem::OnCreate()
 {

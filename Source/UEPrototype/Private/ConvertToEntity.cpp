@@ -3,9 +3,7 @@
 
 #include "ConvertToEntity.h"
 
-#include "ECSPlugin/ECS/Core/EcsWorld.h"
-
-
+#include "Core/EcsWorld.h"
 
 // Called when the game starts
 void UConvertToEntity::BeginPlay()

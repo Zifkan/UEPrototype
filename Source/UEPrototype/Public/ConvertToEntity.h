@@ -3,14 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "ECSPlugin/ECS/Core/IConvertActorToEntity.h"
-
+#include "Core/IConvertActorToEntity.h"
 #include "ConvertToEntity.generated.h"
 
 
 UCLASS( ClassGroup=(ECS), meta=(BlueprintSpawnableComponent) )
-class ECSPLUGIN_API UConvertToEntity : public UActorComponent, public IConvertActorToEntity
+class UEPROTOTYPE_API UConvertToEntity : public USceneComponent, public IConvertActorToEntity
 {
 	GENERATED_BODY()
 

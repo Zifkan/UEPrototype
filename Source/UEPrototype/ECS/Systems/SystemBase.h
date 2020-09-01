@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECSPlugin/ECS/Core/EcsWorld.h"
+#include "Core/EcsWorld.h"
 
 class IBaseSystem
 {
