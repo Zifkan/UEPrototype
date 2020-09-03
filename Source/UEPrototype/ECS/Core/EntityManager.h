@@ -4,6 +4,7 @@
 
 #include "flecs.h"
 
+using Entity = flecs::entity;
 
 class FEntityManager
 {
