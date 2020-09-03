@@ -6,11 +6,21 @@ void CameraSystem::OnCreate()
 {
     SystemRun->each([this](flecs::entity e, CamComponent& camera, Rotation& camRotation,Translation& camTranslation)
     {
-        auto s = flecs::entity(*m_pWorld->DefaultWorld, "Player");
-        const Translation* playerTranslation = s.get<Translation>();
-        const PlayerInputComponent* input = s.get<PlayerInputComponent>();
+        auto player = Entity(*m_pWorld->DefaultWorld, "Player");
+        auto inputEnt = Entity(*m_pWorld->DefaultWorld, "InputEntity");
+        const Translation* playerTranslation = player.get<Translation>();
+        const PlayerInputComponent* input = inputEnt.get<PlayerInputComponent>();
 
+        
         if(playerTranslation ==nullptr ||  input == nullptr) return;
+
+        if (GEngine != nullptr)
+        {
+            //Print debug message
+            GEngine->AddOnScreenDebugMessage(-10, 1.f, FColor::Red, FString::Printf(TEXT("MoveForward: %f"), input->MovementAxis.X));
+        }
+
+       
 
         const auto frameTime = GetDeltaTime();
 

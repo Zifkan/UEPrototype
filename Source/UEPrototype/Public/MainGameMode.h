@@ -7,9 +7,6 @@
 #include "GameFramework/GameModeBase.h"
 #include "Systems/SystemLauncher.h"
 #include "Systems/Transforms/TransformSystemLaunch.h"
-#include "UEPrototype/ECS/Components/InputComponent.h"
-
-
 
 #include "MainGameMode.generated.h"
 
@@ -25,33 +22,21 @@ public:
         PrimaryActorTick.bStartWithTickEnabled = true;
         PrimaryActorTick.bCanEverTick = true;
 
-    }
-
-    void Tick(float DeltaSeconds) override;
-    void SetupPlayerInputComponent();
-    void SetInput() const;
+    }       
 
 protected:
     void BeginPlay() override;
-
+    void TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction) override;
 private:
 	GENERATED_BODY()
 
     void RegisterSystem();
     void RegisterTransformSystems();
 
-    void MoveForward(float Value);  
-    void MoveRight(float Value); 
-    void TurnAtRate(float Rate);
-    void LookUpAtRate(float Rate);
-    void AddControllerPitchInput(float Val);
-    void AddControllerYawInput(float Val);
 private:
 
     FEcsWorld* world;
     TUniquePtr<SystemLauncher> systemsLauncher;
     TUniquePtr < TransformSystemLaunch> transformLauncher;
     FEntityManager* entityManager;
-    Entity inputEntity;
-    PlayerInputComponent inputData;
 };
