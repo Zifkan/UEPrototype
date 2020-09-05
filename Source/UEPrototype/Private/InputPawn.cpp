@@ -18,7 +18,7 @@ void AInputPawn::BeginPlay()
 {
 	Super::BeginPlay();
 
-
+   
     world = FEcsWorld::instance();
     entityManager = world->EntityManager;
     inputEntity = entityManager->CreateEntity("InputEntity");
@@ -37,10 +37,12 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
     // We have 2 versions of the rotation bindings to handle different kinds of devices differently
     // "turn" handles devices that provide an absolute delta, such as a mouse.
     // "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
-    InputComponent->BindAxis("Turn", this, &AInputPawn::AddControllerYawInput);
-    InputComponent->BindAxis("TurnRate", this, &AInputPawn::TurnAtRate);
+ 
     InputComponent->BindAxis("LookUp", this, &AInputPawn::AddControllerPitchInput);
     InputComponent->BindAxis("LookUpRate", this, &AInputPawn::LookUpAtRate);
+
+    InputComponent->BindAxis("Turn", this, &AInputPawn::AddControllerYawInput);
+    InputComponent->BindAxis("TurnRate", this, &AInputPawn::TurnAtRate);
 }
 
 void AInputPawn::SetInput() const
@@ -63,27 +65,31 @@ void AInputPawn::MoveRight(float Value)
 
 void AInputPawn::LookUpAtRate(float Rate)
 {
+   
     inputData.AimAxis = FVector2D(inputData.AimAxis.X, Rate);
-    SetInput();
+//    SetInput();
 }
 
 void AInputPawn::TurnAtRate(float Rate)
 {
     inputData.AimAxis = FVector2D(Rate, inputData.AimAxis.Y);
-    SetInput();
+  //  SetInput();
 }
 
 // Y= Pitch
 void AInputPawn::AddControllerPitchInput(float Val)
 {
-    inputData.AimAxis = FVector2D(inputData.AimAxis.X, Val);
+    //UE_LOG(LogTemp, Warning, TEXT("Text, x = %f"), Val);
+  
+    inputData.AimAxis = FVector2D( Val,inputData.AimAxis.Y);
     SetInput();
 }
 
 // Z= Yaw
 void AInputPawn::AddControllerYawInput(float Val)
 {
-    inputData.AimAxis = FVector2D(Val, inputData.AimAxis.Y);
-    SetInput();
+   // UE_LOG(LogTemp, Warning, TEXT("Text, x = %f"), Val);
+    inputData.AimAxis = FVector2D( inputData.AimAxis.X, Val);
+   SetInput();
 }
 

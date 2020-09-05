@@ -14,18 +14,14 @@ void CameraSystem::OnCreate()
         
         if(playerTranslation ==nullptr ||  input == nullptr) return;
 
-        if (GEngine != nullptr)
-        {
-            //Print debug message
-            GEngine->AddOnScreenDebugMessage(-10, 1.f, FColor::Red, FString::Printf(TEXT("MoveForward: %f"), input->MovementAxis.X));
-        }
-
-       
-
+      
+     
         const auto frameTime = GetDeltaTime();
 
         FVector2D vec2 = FVector2D(FMath::Clamp<float>(input->AimAxis.X, -1, 1), FMath::Clamp<float>(input->AimAxis.Y, -1, 1)) ;
 
+       
+       
 
         if (FMath::Abs(vec2.X) < 0.4f  &&  FMath::Abs(vec2.Y) > FMath::Abs(vec2.X))
             vec2 = FVector2D(0, vec2.Y);
@@ -48,7 +44,7 @@ void CameraSystem::OnCreate()
         float x = camera.x;
         float y = camera.y;
 
-        if (m_pTarget)
+        if (m_pTarget!=nullptr)
         {
             const auto target = m_pTarget->GetActorTransform().GetTranslation();
             const auto location = playerTranslation->Value + FVector(0, 0, heightOffset);
@@ -77,6 +73,8 @@ void CameraSystem::OnCreate()
 
         const auto negDistance = FVector(0.0f, -currentRadius, 0);
         const auto position = camRotation.Value * negDistance + (playerTranslation->Value + FVector(0, 0, heightOffset));
+
+         UE_LOG(LogTemp, Warning, TEXT("Text, x = %f, y = %f, z = %f"), position.X, position.Y, position.Z);
 
        camTranslation.Value = position;
     });
