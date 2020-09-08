@@ -44,4 +44,14 @@ public:
 
     UPROPERTY(EditAnywhere, Category = "ECS")
     float PitchLimit = -35.f;
+
+    UPROPERTY(EditAnywhere, Category = "ECS")
+    float ProbeSize;
+
+    /** Collision channel of the query probe (defaults to ECC_Camera) */
+    UPROPERTY(EditAnywhere, Category = "ECS")
+    TEnumAsByte<ECollisionChannel> ProbeChannel;
+
+
+
 };

@@ -46,8 +46,9 @@ void AMainGameMode::RegisterSystem()
 {
     systemsLauncher = MakeUnique<SystemLauncher>(world);
 
-    systemsLauncher->RegisterSystem(new  CameraCollisionSystem());
+
     systemsLauncher->RegisterSystem(new  CameraSystem());
+    systemsLauncher->RegisterSystem(new  CameraCollisionSystem(), GetWorld());
     systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());
 
 /*

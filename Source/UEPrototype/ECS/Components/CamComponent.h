@@ -17,7 +17,10 @@ struct  CamComponent
     float yMaxLimit = 90.0f;
     float m_pitchLimit = -35.f;
 
+    TEnumAsByte<ECollisionChannel> ProbeChannel;
+
+    float ProbeSize;
+
     float x;
     float y;
-    
 };

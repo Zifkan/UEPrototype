@@ -12,7 +12,7 @@ void UCameraConverter::Convert(flecs::entity entity, FEntityManager dstManager)
 {
          dstManager.SetComponentData<CamComponent>(entity,
     {
-            HeightOffset, FocusHeightOffset,0,0,Radius, CurrentRadius,SpeedX,SpeedY, yMinLimit,yMaxLimit,PitchLimit
+            HeightOffset, FocusHeightOffset,0,0,Radius, CurrentRadius,SpeedX,SpeedY, yMinLimit,yMaxLimit,PitchLimit,ProbeChannel,ProbeSize
     });
        
     dstManager.SetComponentData<LocalToWorld>(entity, { FMatrix::Identity });

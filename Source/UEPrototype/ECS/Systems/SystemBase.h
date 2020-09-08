@@ -7,14 +7,14 @@ class IBaseSystem
 public:   
   
     virtual void Init(FEcsWorld* world) = 0;
-    
+    virtual void Init(FEcsWorld* world, UWorld* uWorld) = 0;
 
     virtual ~IBaseSystem() = default;
 
     virtual void OnCreate() = 0;
     virtual void OnUpdate(float delta_time = 0.0f, void *param = nullptr) = 0;
 
-    FEcsWorld* GetWorld() const { return m_pWorld; }
+    FEcsWorld* GetECSWorld() const { return m_pWorld; }
 
 protected:
     FEcsWorld* m_pWorld = nullptr;
@@ -43,6 +43,17 @@ public:
         SystemRun = new flecs::system<ComponentType...>(*m_pWorld->DefaultWorld, name,signature);
     }
 
+
+    void Init(FEcsWorld* world,UWorld* uWorld) override
+    {
+        m_pWorld = world;
+        EntityManager = m_pWorld->EntityManager;
+        Filter = flecs::filter(*m_pWorld->DefaultWorld);
+        UWorld = uWorld;
+        SystemRun = new flecs::system<ComponentType...>(*m_pWorld->DefaultWorld, name, signature);
+    }
+
+
     virtual ~SystemBase(){};     
    
 
@@ -60,7 +71,7 @@ public:
     void OnCreate() override = 0;
 
     flecs::system<ComponentType...>* SystemRun;
-
+    UWorld* GetUWorld() const { return UWorld; }
 
 private:
     flecs::filter Filter;
@@ -70,4 +81,6 @@ private:
 
     const char *name = nullptr;
     const char *signature = nullptr;
+
+    UWorld* UWorld = nullptr;
 };

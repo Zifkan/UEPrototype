@@ -1,4 +1,5 @@
 #include "CameraSystem.h"
+
 #include "Components/GeneralComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
 
@@ -85,34 +86,33 @@ float CameraSystem::ClampAngle(float angle, float min, float max)
 
 void CameraCollisionSystem::OnCreate()
 {
-    SystemRun->each([this](flecs::entity e, CamComponent& camera)
+    SystemRun->each([this](flecs::entity e, CamComponent& camera,FActorComponent& owner, Translation& camTranslation)
     {
-      /*  auto s = flecs::entity(*m_pWorld->DefaultWorld, flecs::Singleton);
-        const PlayerTag* playerComponent = s.get<PlayerTag>();
+        auto player = Entity(*m_pWorld->DefaultWorld, "Player");
+        const LocalToWorld* playerLocalToWorld = player.get<LocalToWorld>();
      
-        if (playerComponent == nullptr || camera.CameraEntity == nullptr) return;
-
-        const auto frameTime = GetDeltaTime();
+        if (playerLocalToWorld == nullptr) return;
+            
         const auto heightOffset = camera.HeightOffset;
+              
+        FVector ArmOrigin = playerLocalToWorld->Position() + FVector(0, 0, heightOffset);
+        
+        FVector DesiredLoc = camTranslation.Value;
 
-        static IPhysicalEntity* pSkipEnts[10];
-        pSkipEnts[0] = playerComponent->pCryEntity->GetPhysics();
-        auto org = playerComponent->pCryEntity->GetWorldPos() + Vec3(0, 0, heightOffset);
-        ray_hit rayhit;
-        // Perform the ray cast.
-        int hits = gEnv->pPhysicalWorld->RayWorldIntersection(org, camera.CameraEntity->GetWorldPos() - org,
-            ent_static | ent_sleeping_rigid | ent_rigid | ent_independent | ent_terrain, rwi_stop_at_pierceable | rwi_colltype_any,
-            &rayhit, 1, pSkipEnts, 2);
+        FCollisionQueryParams QueryParams(SCENE_QUERY_STAT(SpringArm), false, owner.ptr.Get());
 
-        if (hits)
-        {
-            camera.currentRadius -= frameTime;
-        }
-        else
-        {
-            if (camera.currentRadius < camera.radius)
-                camera.currentRadius += frameTime;
-        }*/
+        FHitResult Result;
+        GetUWorld()->SweepSingleByChannel(Result, ArmOrigin, DesiredLoc, FQuat::Identity, camera.ProbeChannel, FCollisionShape::MakeSphere(camera.ProbeSize), QueryParams);
+
+       
+        camTranslation.Value = BlendLocations(DesiredLoc, Result.Location, Result.bBlockingHit);
     });
 }
+
+
+FVector CameraCollisionSystem::BlendLocations(const FVector& DesiredArmLocation, const FVector& TraceHitLocation, bool bHitSomething)
+{
+    return bHitSomething ? TraceHitLocation : DesiredArmLocation;
+}
+
 

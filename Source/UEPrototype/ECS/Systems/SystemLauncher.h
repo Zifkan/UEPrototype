@@ -26,6 +26,15 @@ public:
         return true;
     }
 
+    bool RegisterSystem(IBaseSystem* s,UWorld* uWorld)
+    {
+        s->Init(m_pWorld, uWorld);
+        s->OnCreate();
+        instances.push_back(s);
+        return true;
+    }
+
+
     void release()
     {
         for (auto el : instances)
