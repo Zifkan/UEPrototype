@@ -27,7 +27,7 @@ struct LocalToWorld
    FVector Right()    const { return FVector(Value.GetColumn(0).X, Value.GetColumn(0).Y, Value.GetColumn(0).Z); }
    FVector Up()       const { return FVector(Value.GetColumn(1).X, Value.GetColumn(1).Y, Value.GetColumn(1).Z); }
    FVector Forward()  const { return FVector(Value.GetColumn(2).X, Value.GetColumn(2).Y, Value.GetColumn(2).Z); }  
-   FVector Position() const { return FVector(Value.GetColumn(3).X, Value.GetColumn(3).Y, Value.GetColumn(3).Z); }
+   FVector Position() const { return FVector(Value.M[3][0], Value.M[3][1], Value.M[3][2]); }
 
    FQuat Rotation() const { return FQuat(Value); }
 };
@@ -40,7 +40,7 @@ struct WorldToLocal
     FVector Right()    const { return FVector(Value.GetColumn(0).X, Value.GetColumn(0).Y, Value.GetColumn(0).Z); }
     FVector Up()       const { return FVector(Value.GetColumn(1).X, Value.GetColumn(1).Y, Value.GetColumn(1).Z); }
     FVector Forward()  const { return FVector(Value.GetColumn(2).X, Value.GetColumn(2).Y, Value.GetColumn(2).Z); }
-    FVector Position() const { return FVector(Value.GetColumn(3).X, Value.GetColumn(3).Y, Value.GetColumn(3).Z); }
+    FVector Position() const { return FVector(Value.M[3][0], Value.M[3][1], Value.M[3][2]); }
 
     FQuat Rotation() const { return FQuat(Value); }
 };
@@ -52,7 +52,7 @@ struct LocalToParent
     FVector Right()    const { return FVector(Value.GetColumn(0).X, Value.GetColumn(0).Y, Value.GetColumn(0).Z); }
     FVector Up()       const { return FVector(Value.GetColumn(1).X, Value.GetColumn(1).Y, Value.GetColumn(1).Z); }
     FVector Forward()  const { return FVector(Value.GetColumn(2).X, Value.GetColumn(2).Y, Value.GetColumn(2).Z); }
-    FVector Position() const { return FVector(Value.GetColumn(3).X, Value.GetColumn(3).Y, Value.GetColumn(3).Z); }
+    FVector Position() const { return FVector(Value.M[3][0], Value.M[3][1], Value.M[3][2]); }
 
     FQuat Rotation() const { return FQuat(Value); }
 };

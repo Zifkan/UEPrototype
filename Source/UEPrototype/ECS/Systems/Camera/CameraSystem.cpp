@@ -1,5 +1,5 @@
 #include "CameraSystem.h"
-#include "UEPrototype/ECS/Components/PlayerComponents.h"
+#include "Components/GeneralComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
 
 void CameraSystem::OnCreate()
@@ -8,19 +8,15 @@ void CameraSystem::OnCreate()
     {
         auto player = Entity(*m_pWorld->DefaultWorld, "Player");
         auto inputEnt = Entity(*m_pWorld->DefaultWorld, "InputEntity");
-        const LocalToWorld* playerTranslation = player.get<LocalToWorld>();
+        const LocalToWorld* playerLocalToWorld = player.get<LocalToWorld>();
         const PlayerInputComponent* input = inputEnt.get<PlayerInputComponent>();
 
         
-        if(playerTranslation ==nullptr ||  input == nullptr) return;
+        if(playerLocalToWorld ==nullptr ||  input == nullptr) return;
 
-      
-     
         const auto frameTime = GetDeltaTime();
 
-        FVector2D vec2 = FVector2D(FMath::Clamp<float>(input->AimAxis.Y, -1, 1), FMath::Clamp<float>(input->AimAxis.X, -1, 1)) ;
-
-       
+        FVector2D vec2 = FVector2D(FMath::Clamp<float>(input->AimAxis.Y, -1, 1), FMath::Clamp<float>(input->AimAxis.X, -1, 1));
        
 
         if (FMath::Abs(vec2.X) < 0.4f  &&  FMath::Abs(vec2.Y) > FMath::Abs(vec2.X))
@@ -47,7 +43,7 @@ void CameraSystem::OnCreate()
         if (m_pTarget!=nullptr)
         {
             const auto target = m_pTarget->GetActorTransform().GetTranslation();
-            const auto location = playerTranslation->Position() + FVector(0, 0, heightOffset);
+            const auto location = playerLocalToWorld->Position() + FVector(0, 0, heightOffset);
 
             x = target.X - location.X;
             y = target.Y - location.Y;
@@ -59,7 +55,7 @@ void CameraSystem::OnCreate()
         }
         else
         {
-            x -= deltaRotation.X * xSpeed * currentRadius * frameTime;
+            x += deltaRotation.X * xSpeed * currentRadius * frameTime;
             y -= deltaRotation.Y * ySpeed * frameTime;
 
             y = ClampAngle(y, yMinLimit, yMaxLimit);
@@ -72,11 +68,9 @@ void CameraSystem::OnCreate()
         camera.y = y;
 
         const auto negDistance = FVector(-currentRadius, 0.0f,  0);
-        const auto position = camRotation.Value * negDistance + (playerTranslation->Position() + FVector(0, 0,heightOffset));
-
-     
-       camTranslation.Value = position;
-
+        const auto position = camRotation.Value * negDistance + (playerLocalToWorld->Position() + FVector(0, 0,heightOffset));
+      
+        camTranslation.Value = position;
     });
 }
 

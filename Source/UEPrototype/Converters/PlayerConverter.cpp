@@ -20,7 +20,7 @@ void UPlayerConverter::Convert(flecs::entity e, FEntityManager dstManager)
     dstManager.SetComponentData<ViewDirectionData>(e, {  });
     dstManager.SetComponentData<Rotation>(e, {  });
     dstManager.SetComponentData<LocalToWorld>(e, {  });
-    dstManager.SetComponentData<Translation>(e, { FVector::ZeroVector });
+ //   dstManager.SetComponentData<Translation>(e, { FVector::ZeroVector });
     dstManager.SetComponentData<CopyTransformFromActor>(e, {  });
     dstManager.SetComponentData<FActorComponent>(e, { GetOwner() });
 
