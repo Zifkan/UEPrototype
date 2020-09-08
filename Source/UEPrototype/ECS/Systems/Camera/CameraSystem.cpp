@@ -8,7 +8,7 @@ void CameraSystem::OnCreate()
     {
         auto player = Entity(*m_pWorld->DefaultWorld, "Player");
         auto inputEnt = Entity(*m_pWorld->DefaultWorld, "InputEntity");
-        const Translation* playerTranslation = player.get<Translation>();
+        const LocalToWorld* playerTranslation = player.get<LocalToWorld>();
         const PlayerInputComponent* input = inputEnt.get<PlayerInputComponent>();
 
         
@@ -18,14 +18,14 @@ void CameraSystem::OnCreate()
      
         const auto frameTime = GetDeltaTime();
 
-        FVector2D vec2 = FVector2D(FMath::Clamp<float>(input->AimAxis.X, -1, 1), FMath::Clamp<float>(input->AimAxis.Y, -1, 1)) ;
+        FVector2D vec2 = FVector2D(FMath::Clamp<float>(input->AimAxis.Y, -1, 1), FMath::Clamp<float>(input->AimAxis.X, -1, 1)) ;
 
        
        
 
         if (FMath::Abs(vec2.X) < 0.4f  &&  FMath::Abs(vec2.Y) > FMath::Abs(vec2.X))
             vec2 = FVector2D(0, vec2.Y);
-        if (FMath::Abs(vec2.Y) < 0.4f  &&   FMath::Abs(vec2.Y) > FMath::Abs(vec2.Y))
+        if (FMath::Abs(vec2.Y) < 0.4f  &&   FMath::Abs(vec2.X) > FMath::Abs(vec2.Y))
             vec2 = FVector2D(vec2.X, 0);
 
         auto  deltaRotation = vec2;
@@ -47,7 +47,7 @@ void CameraSystem::OnCreate()
         if (m_pTarget!=nullptr)
         {
             const auto target = m_pTarget->GetActorTransform().GetTranslation();
-            const auto location = playerTranslation->Value + FVector(0, 0, heightOffset);
+            const auto location = playerTranslation->Position() + FVector(0, 0, heightOffset);
 
             x = target.X - location.X;
             y = target.Y - location.Y;
@@ -64,19 +64,19 @@ void CameraSystem::OnCreate()
 
             y = ClampAngle(y, yMinLimit, yMaxLimit);
         
-            camRotation.Value = FQuat::MakeFromEuler(FVector((y), 0, (x)));
+            camRotation.Value = FQuat::MakeFromEuler(FVector(0, (y), (x)));
         }       
 
 
         camera.x = x;
         camera.y = y;
 
-        const auto negDistance = FVector(0.0f, -currentRadius, 0);
-        const auto position = camRotation.Value * negDistance + (playerTranslation->Value + FVector(0, 0, heightOffset));
+        const auto negDistance = FVector(-currentRadius, 0.0f,  0);
+        const auto position = camRotation.Value * negDistance + (playerTranslation->Position() + FVector(0, 0,heightOffset));
 
-         UE_LOG(LogTemp, Warning, TEXT("Text, x = %f, y = %f, z = %f"), position.X, position.Y, position.Z);
-
+     
        camTranslation.Value = position;
+
     });
 }
 

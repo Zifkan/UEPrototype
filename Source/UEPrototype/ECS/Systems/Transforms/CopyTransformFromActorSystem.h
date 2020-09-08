@@ -5,7 +5,7 @@
 #include "Components/TransformComponents.h"
 
 
-class  CopyTransformFromActorSystem final :public SystemBase<CopyTransformFromActor, LocalToWorld, FActorComponent>
+class  CopyTransformFromActorSystem final :public SystemBase<LocalToWorld, FActorComponent>
 {
 public:
     void OnCreate() override;

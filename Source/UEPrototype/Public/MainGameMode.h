@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputPawn.h"
+#include "MainPlayerController.h"
 #include "Core/EcsWorld.h"
 #include "GameFramework/GameModeBase.h"
 #include "Systems/SystemLauncher.h"
@@ -21,6 +23,10 @@ public:
     {
         PrimaryActorTick.bStartWithTickEnabled = true;
         PrimaryActorTick.bCanEverTick = true;
+
+        DefaultPawnClass = AInputPawn::StaticClass();
+        // use our own player controller class
+        PlayerControllerClass = AMainPlayerController::StaticClass();
 
     }       
 

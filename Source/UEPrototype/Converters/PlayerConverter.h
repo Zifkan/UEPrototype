@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(ClassGroup = (ECS), meta = (BlueprintSpawnableComponent))
 class UEPROTOTYPE_API UPlayerConverter : public UConvertToEntity
 {
 public:
