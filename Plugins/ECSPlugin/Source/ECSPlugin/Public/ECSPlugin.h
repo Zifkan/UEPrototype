@@ -1,17 +1,18 @@
-﻿#pragma once
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#pragma once
 
 #include "CoreMinimal.h"
-#include "Modules/ModuleInterface.h"
-#include "SkeletalMeshEditor/Public/ISkeletalMeshEditorModule.h"
+#include "ISkeletalMeshEditor.h"
+#include "Modules/ModuleManager.h"
 
-class FCharacterAnimEditorModule : public IModuleInterface
+class FECSPluginModule : public IModuleInterface
 {
 public:
 
-    void StartupModule() override;
-    void ShutdownModule() override;
-
-
+	/** IModuleInterface implementation */
+	virtual void StartupModule() override;
+	virtual void ShutdownModule() override;
 
     void AddCharacterAnimEditorExtender();
     void RemoveCharacterAnimEditorExtender();
@@ -27,5 +28,4 @@ private:
     void ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent);
 
     const char* moduleNameConst = "SkeletalMeshEditor";
-
 };

@@ -37,26 +37,6 @@ public class UEPrototype : ModuleRules
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-                "Projects",
-                "TargetPlatform",
-                "MeshDescription",
-                "MeshDescriptionOperations",
-
-                "CoreUObject",
-                "Engine",
-                "RawMesh",
-                "Slate",
-                "SlateCore",
-                "UnrealEd",
-                "EditorStyle",
-                "RHI",
-                "SlateCore",
-                "Slate",
-                "RenderCore",
-                "AnimGraph",
-                "AnimationBlueprintEditor",
-                "AnimationEditor",
-                "SkeletalMeshEditor",
                 // ... add private dependencies that you statically link with here ...	
             }
         );
