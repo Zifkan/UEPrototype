@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "ISkeletalMeshEditor.h"
-#include "Modules/ModuleManager.h"
 
 class FECSPluginModule : public IModuleInterface
 {

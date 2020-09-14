@@ -22,6 +22,10 @@ public:
     UPROPERTY(EditAnywhere)
     UStaticMeshComponent* Mesh;
 
+
+	TArray<BoneInfo>  BoneInfoArray;
+	TArray<UStaticMeshComponent> MeshRenderers;
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -3,10 +3,19 @@
 #include "ECSPlugin.h"
 
 
+
+#include "AssetRegistryModule.h"
+#include "AssetToolsModule.h"
+#include "CharacterActor.h"
 #include "IPersonaToolkit.h"
 #include "ISkeletalMeshEditorModule.h"
+#include "CharacterRendererData.h"
+#include "GameFramework/GameModeBase.h"
+#include "Kismet2/KismetEditorUtilities.h"
 
 #define LOCTEXT_NAMESPACE "FECSPluginModule"
+
+
 
 void FECSPluginModule::StartupModule()
 {
@@ -24,6 +33,8 @@ void FECSPluginModule::StartupModule()
 
 void FECSPluginModule::ShutdownModule()
 {
+    RemoveCharacterAnimEditorExtender();
+    FModuleManager::Get().OnModulesChanged().Remove(ModuleLoadedDelegateHandle);
 }
 
 void FECSPluginModule::AddCharacterAnimEditorExtender()
@@ -37,7 +48,12 @@ void FECSPluginModule::AddCharacterAnimEditorExtender()
 
 void FECSPluginModule::RemoveCharacterAnimEditorExtender()
 {
-
+    ISkeletalMeshEditorModule* SkeletalMeshEditorModule = FModuleManager::Get().GetModulePtr<ISkeletalMeshEditorModule>(moduleNameConst);
+    if (SkeletalMeshEditorModule)
+    {
+        typedef ISkeletalMeshEditorModule::FSkeletalMeshEditorToolbarExtender DelegateType;
+        SkeletalMeshEditorModule->GetAllSkeletalMeshEditorToolbarExtenders().RemoveAll([=](const DelegateType& In) { return In.GetHandle() == SkeletalMeshEditorExtenderHandle; });
+    }
 }
 
 TSharedRef<FExtender> FECSPluginModule::GetCharacterAnimEditorExtender(const TSharedRef<FUICommandList> CommandList, TSharedRef<ISkeletalMeshEditor> InSkeletalMeshEditor)
@@ -74,7 +90,7 @@ void FECSPluginModule::HandleAddCharacterAnimEditorExtenderToToolbar(FToolBarBui
 
 void FECSPluginModule::ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent)
 {
-
+    UBlueprint* Blueprint = FKismetEditorUtilities::CreateBlueprintFromClass(FText::FromString(TEXT("CreateNewBlueprint")), ACharacterActor::StaticClass(),TEXT("CharacterBP"));
 }
 
 
