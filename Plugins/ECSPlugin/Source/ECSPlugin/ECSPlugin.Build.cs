@@ -10,6 +10,7 @@ public class ECSPlugin : ModuleRules
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
+                "UEPrototype"
 				// ... add public include paths required here ...
 			}
 			);
@@ -17,6 +18,7 @@ public class ECSPlugin : ModuleRules
 		
 		PrivateIncludePaths.AddRange(
 			new string[] {
+                "UEPrototype"
 				// ... add other private include paths required here ...
 			}
 			);
@@ -26,6 +28,7 @@ public class ECSPlugin : ModuleRules
 			new string[]
 			{
 				"Core",
+                "UEPrototype"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -43,6 +46,7 @@ public class ECSPlugin : ModuleRules
                 "MeshDescription",
                 "MeshDescriptionOperations",
 
+                "UEPrototype",
                 "CoreUObject",
                 "Engine",
                 "RawMesh",

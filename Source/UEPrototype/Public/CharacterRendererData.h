@@ -9,7 +9,8 @@
 #include "CharacterRendererData.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+
+UCLASS(ClassGroup = (ECS), meta = (BlueprintSpawnableComponent))
 class UEPROTOTYPE_API UCharacterRendererData : public UActorComponent
 {
 	GENERATED_BODY()
