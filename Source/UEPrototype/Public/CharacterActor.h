@@ -4,6 +4,8 @@
 
 #include "CharacterRendererData.h"
 #include "CoreMinimal.h"
+
+#include "Components/PoseableMeshComponent.h"
 #include "GameFramework/Actor.h"
 #include "CharacterActor.generated.h"
 
@@ -26,6 +28,9 @@ public:
 	UPROPERTY(EditAnywhere, Category=ECS)
 	int TestINT;
 
+	UPROPERTY(EditAnywhere, Category=ECS)
+	UPoseableMeshComponent*  PoseableMesh;
+	
 
 	TArray<BoneInfo>  BoneInfoArray;
 	TArray<UStaticMeshComponent> MeshRenderers;
