@@ -279,6 +279,8 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 
     if (EAppReturnType::Ok == PickAssetPathWidget->ShowModal())
     {
+    	UStaticMesh* StaticMesh = nullptr;
+    	
     	PreviewComponent->GlobalAnimRateScale = 0.f;
         int32 OverallMaxLODs = 0;
         OverallMaxLODs = FMath::Max(PreviewComponent->MeshObject->GetSkeletalMeshRenderData().LODRenderData.Num(), OverallMaxLODs);
@@ -342,7 +344,7 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 			check(Package);
 
 			// Create StaticMesh object
-			UStaticMesh* StaticMesh = NewObject<UStaticMesh>(Package, *MeshName, RF_Public | RF_Standalone);
+			StaticMesh = NewObject<UStaticMesh>(Package, *MeshName, RF_Public | RF_Standalone);
 			StaticMesh->InitResources();
 
 			StaticMesh->LightingGuid = FGuid::NewGuid();
@@ -422,13 +424,21 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 					Notification->SetCompletionState( SNotificationItem::CS_Success );
 				}
 			}
-		}    	
-    }
-    
-    ACharacterActor* charActor = NewObject<ACharacterActor>(); 
-    charActor->TestINT = 159;
+		}
 
-    return charActor;
+		
+    	ACharacterActor* charActor = NewObject<ACharacterActor>();
+    	if (StaticMesh!=nullptr)
+    	{
+    		charActor->Mesh->SetStaticMesh(StaticMesh);
+    	}
+    	
+    	return charActor;
+
+    	
+    }
+	
+	return NULL;   
 }
 
 
