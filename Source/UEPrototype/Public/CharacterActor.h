@@ -7,7 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "CharacterActor.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable)
 class UEPROTOTYPE_API ACharacterActor : public AActor
 {
 	GENERATED_BODY()
@@ -21,6 +21,10 @@ public:
 
     UPROPERTY(EditAnywhere)
     UStaticMeshComponent* Mesh;
+
+
+	UPROPERTY(EditAnywhere, Category=ECS)
+	int TestINT;
 
 
 	TArray<BoneInfo>  BoneInfoArray;

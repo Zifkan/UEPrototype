@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "CharacterActor.h"
 #include "ISkeletalMeshEditor.h"
 
 class FECSPluginModule : public IModuleInterface
@@ -24,7 +26,9 @@ public:
 private:
 
 
-    void ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent);
+    ACharacterActor* ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent);
+	void CreateCharacterBluePrint(UDebugSkelMeshComponent* PreviewComponent);
 
+	
     const char* moduleNameConst = "SkeletalMeshEditor";
 };

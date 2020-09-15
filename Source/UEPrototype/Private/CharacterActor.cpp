@@ -20,5 +20,6 @@ ACharacterActor::ACharacterActor()
 void ACharacterActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	//SetActorTransform(BoneInfoArray[0].GetBoneTransform());
 }

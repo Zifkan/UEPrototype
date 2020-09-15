@@ -10,6 +10,10 @@
 #include "IPersonaToolkit.h"
 #include "ISkeletalMeshEditorModule.h"
 #include "CharacterRendererData.h"
+#include "TestBP.h"
+#include "Dialogs/DlgPickAssetPath.h"
+#include "Engine/Selection.h"
+#include "Engine/SimpleConstructionScript.h"
 #include "GameFramework/GameModeBase.h"
 #include "Kismet2/KismetEditorUtilities.h"
 
@@ -79,7 +83,7 @@ void FECSPluginModule::HandleAddCharacterAnimEditorExtenderToToolbar(FToolBarBui
 
     ParentToolbarBuilder.AddToolBarButton(FUIAction(FExecuteAction::CreateLambda([this, InMeshComponent]()
     {
-        ConvertToMesh(InMeshComponent);
+        CreateCharacterBluePrint(InMeshComponent);
     })),
         NAME_None,
         LOCTEXT("Convert Character", "Convert Character"),
@@ -88,9 +92,33 @@ void FECSPluginModule::HandleAddCharacterAnimEditorExtenderToToolbar(FToolBarBui
         );
 }
 
-void FECSPluginModule::ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent)
+ACharacterActor* FECSPluginModule::ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent)
 {
-    UBlueprint* Blueprint = FKismetEditorUtilities::CreateBlueprintFromClass(FText::FromString(TEXT("CreateNewBlueprint")), ACharacterActor::StaticClass(),TEXT("CharacterBP"));
+    ACharacterActor* charActor = NewObject<ACharacterActor>(); 
+    charActor->TestINT = 159;
+
+    return charActor;
+}
+
+void FECSPluginModule::CreateCharacterBluePrint(UDebugSkelMeshComponent* PreviewComponent)
+{
+    auto* NewNameSuggestion = TEXT("CharacterBlueprint");
+    FString PackageName = FString(TEXT("/Game/Blueprints/")) + NewNameSuggestion;
+  
+    TSharedPtr<SDlgPickAssetPath> PickAssetPathWidget =
+        SNew(SDlgPickAssetPath)
+        .Title(FText::FromString("Create Character Blueprint"))
+        .DefaultAssetPath(FText::FromString(PackageName));
+
+    if (EAppReturnType::Ok == PickAssetPathWidget->ShowModal())
+    {
+        auto charActor =  ConvertToMesh(PreviewComponent);
+       
+        if(charActor!=nullptr)
+        {
+            FKismetEditorUtilities::CreateBlueprintFromActor(FString(PickAssetPathWidget->GetFullAssetPath().ToString()),charActor,false);            
+        }
+    }   
 }
 
 
