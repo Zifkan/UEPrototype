@@ -12,9 +12,11 @@
 #include "SkeletalRenderPublic.h"
 #include "Animation/DebugSkelMeshComponent.h"
 #include "Dialogs/DlgPickAssetPath.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/SkeletalMeshRenderData.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 class FAssetToolsModule;
 
@@ -94,7 +96,6 @@ void CharacterConverterTool::HandleAddCharacterAnimEditorExtenderToToolbar(FTool
         FSlateIcon("EditorStyle", "Persona.TogglePreviewAsset", "Persona.TogglePreviewAsset.Small")
         );
 }
-
 void CharacterConverterTool::CreateCharacterBluePrint(UDebugSkelMeshComponent* PreviewComponent)
 {
     auto* NewNameSuggestion = TEXT("CharacterBlueprint");
@@ -269,15 +270,16 @@ static void SkinnedMeshToRawMeshes(USkinnedMeshComponent* InSkinnedMeshComponent
 ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent)
 {
     auto* NewNameSuggestion = TEXT("StaticMesh");
-    FString PackageName = FString(TEXT("/Game/Blueprints/")) + NewNameSuggestion;
+    FString PackageName = FString(TEXT("/Game/Meshes/")) + NewNameSuggestion;
   
     TSharedPtr<SDlgPickAssetPath> PickAssetPathWidget =
         SNew(SDlgPickAssetPath)
-        .Title(FText::FromString("Create Character Blueprint"))
+        .Title(FText::FromString("Convert Character Skinned Mesh to Static mesh"))
         .DefaultAssetPath(FText::FromString(PackageName));
 
     if (EAppReturnType::Ok == PickAssetPathWidget->ShowModal())
     {
+    	PreviewComponent->GlobalAnimRateScale = 0.f;
         int32 OverallMaxLODs = 0;
         OverallMaxLODs = FMath::Max(PreviewComponent->MeshObject->GetSkeletalMeshRenderData().LODRenderData.Num(), OverallMaxLODs);
 
@@ -294,6 +296,133 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
         // THIS SETS THE NUM ROWS Var
     	
         SkinnedMeshToRawMeshes(PreviewComponent, OverallMaxLODs, FTransform().ToMatrixWithScale(), PackageName,RawMeshTrackers, RawMeshes, Materials);
+
+
+    	uint32 MaxInUseTextureCoordinate = 0;
+
+    	// scrub invalid vert color & tex coord data
+    	check(RawMeshes.Num() == RawMeshTrackers.Num());
+    	for (int32 RawMeshIndex = 0; RawMeshIndex < RawMeshes.Num(); RawMeshIndex++)
+    	{
+    		if (!RawMeshTrackers[RawMeshIndex].bValidColors)
+    		{
+    			RawMeshes[RawMeshIndex].WedgeColors.Empty();
+    		}
+
+    		for (uint32 TexCoordIndex = 0; TexCoordIndex < MAX_MESH_TEXTURE_COORDS; TexCoordIndex++)
+    		{
+    			if (!RawMeshTrackers[RawMeshIndex].bValidTexCoords[TexCoordIndex])
+    			{
+    				RawMeshes[RawMeshIndex].WedgeTexCoords[TexCoordIndex].Empty();
+    			}
+    			else
+    			{
+    				// Store first texture coordinate index not in use
+    				MaxInUseTextureCoordinate = FMath::Max(MaxInUseTextureCoordinate, TexCoordIndex);
+    			}
+    		}
+    	}
+    	
+		// Check if we got some valid data.
+		bool bValidData = false;
+		for (FRawMesh& RawMesh : RawMeshes)
+		{
+			if (RawMesh.IsValidOrFixable())
+			{
+				bValidData = true;
+				break;
+			}
+		}
+
+		if (bValidData)
+		{
+			auto MeshName = FPackageName::GetLongPackageAssetName(PackageName);
+			// Then find/create it.
+			UPackage* Package = CreatePackage(NULL, *PackageName);
+			check(Package);
+
+			// Create StaticMesh object
+			UStaticMesh* StaticMesh = NewObject<UStaticMesh>(Package, *MeshName, RF_Public | RF_Standalone);
+			StaticMesh->InitResources();
+
+			StaticMesh->LightingGuid = FGuid::NewGuid();
+
+			// Determine which texture coordinate map should be used for storing/generating the lightmap UVs
+			const uint32 LightMapIndex = FMath::Min(MaxInUseTextureCoordinate + 1, (uint32)MAX_MESH_TEXTURE_COORDS - 1);
+
+			// Add source to new StaticMesh
+			for (FRawMesh& RawMesh : RawMeshes)
+			{
+				if (RawMesh.IsValidOrFixable())
+				{
+					FStaticMeshSourceModel& SrcModel = StaticMesh->AddSourceModel();
+					SrcModel.BuildSettings.bRecomputeNormals = false;
+					SrcModel.BuildSettings.bRecomputeTangents = false;
+					SrcModel.BuildSettings.bRemoveDegenerates = true;
+					SrcModel.BuildSettings.bUseHighPrecisionTangentBasis = false;
+					SrcModel.BuildSettings.bUseFullPrecisionUVs = false;
+					SrcModel.BuildSettings.bGenerateLightmapUVs = true;
+					SrcModel.BuildSettings.SrcLightmapIndex = 0;
+					SrcModel.BuildSettings.DstLightmapIndex = LightMapIndex;
+					SrcModel.SaveRawMesh(RawMesh);
+				}
+			}
+
+			// Copy materials to new mesh 
+			for(UMaterialInterface* Material : Materials)
+			{
+				StaticMesh->StaticMaterials.Add(FStaticMaterial(Material));
+			}
+			
+			//Set the Imported version before calling the build
+			StaticMesh->ImportVersion = EImportStaticMeshVersion::LastVersion;
+
+			// Set light map coordinate index to match DstLightmapIndex
+			StaticMesh->LightMapCoordinateIndex = LightMapIndex;
+
+			// setup section info map
+			for (int32 RawMeshLODIndex = 0; RawMeshLODIndex < RawMeshes.Num(); RawMeshLODIndex++)
+			{
+				const FRawMesh& RawMesh = RawMeshes[RawMeshLODIndex];
+				TArray<int32> UniqueMaterialIndices;
+				for (int32 MaterialIndex : RawMesh.FaceMaterialIndices)
+				{
+					UniqueMaterialIndices.AddUnique(MaterialIndex);
+				}
+
+				int32 SectionIndex = 0;
+				for (int32 UniqueMaterialIndex : UniqueMaterialIndices)
+				{
+					StaticMesh->GetSectionInfoMap().Set(RawMeshLODIndex, SectionIndex, FMeshSectionInfo(UniqueMaterialIndex));
+					SectionIndex++;
+				}
+			}
+			StaticMesh->GetOriginalSectionInfoMap().CopyFrom(StaticMesh->GetSectionInfoMap());
+
+			// Build mesh from source
+			StaticMesh->Build(false);
+			StaticMesh->PostEditChange();
+
+			StaticMesh->MarkPackageDirty();
+
+			// Notify asset registry of new asset
+			FAssetRegistryModule::AssetCreated(StaticMesh);
+
+			// Display notification so users can quickly access the mesh
+			if (GIsEditor)
+			{
+				FNotificationInfo Info(FText::Format(LOCTEXT("SkeletalMeshConverted", "Successfully Converted Mesh"), FText::FromString(StaticMesh->GetName())));
+				Info.ExpireDuration = 8.0f;
+				Info.bUseLargeFont = false;
+				Info.Hyperlink = FSimpleDelegate::CreateLambda([=]() { GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAssets(TArray<UObject*>({ StaticMesh })); });
+				Info.HyperlinkText = FText::Format(LOCTEXT("OpenNewAnimationHyperlink", "Open {0}"), FText::FromString(StaticMesh->GetName()));
+				TSharedPtr<SNotificationItem> Notification = FSlateNotificationManager::Get().AddNotification(Info);
+				if ( Notification.IsValid() )
+				{
+					Notification->SetCompletionState( SNotificationItem::CS_Success );
+				}
+			}
+		}    	
     }
     
     ACharacterActor* charActor = NewObject<ACharacterActor>(); 

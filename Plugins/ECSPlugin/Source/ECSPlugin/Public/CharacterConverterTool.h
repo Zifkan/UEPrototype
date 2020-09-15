@@ -40,7 +40,7 @@ private:
 	void HandleAddCharacterAnimEditorExtenderToToolbar(FToolBarBuilder& ParentToolbarBuilder, UDebugSkelMeshComponent* InMeshComponent);
 
 
-
+	
 
 	ACharacterActor* ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent);
 	void CreateCharacterBluePrint(UDebugSkelMeshComponent* PreviewComponent);
