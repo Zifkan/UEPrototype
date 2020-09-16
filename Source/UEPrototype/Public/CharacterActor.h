@@ -2,10 +2,7 @@
 
 #pragma once
 
-#include "CharacterRendererData.h"
 #include "CoreMinimal.h"
-
-#include "Components/PoseableMeshComponent.h"
 #include "GameFramework/Actor.h"
 #include "CharacterActor.generated.h"
 
@@ -25,20 +22,11 @@ public:
     UStaticMeshComponent* Mesh;
 
 
-	UPROPERTY(EditAnywhere, Category=ECS)
-	int TestINT;
-
-	UPROPERTY(EditAnywhere, Category=ECS)
-	UPoseableMeshComponent*  PoseableMesh;
-	
-
-	TArray<BoneInfo>  BoneInfoArray;
+	//TArray<FBoneInfo>  BoneInfoArray;
 	TArray<UStaticMeshComponent> MeshRenderers;
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-    UCharacterRendererData* characterRendererData;
 
 };

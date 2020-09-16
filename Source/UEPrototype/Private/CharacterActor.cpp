@@ -2,6 +2,10 @@
 
 
 #include "CharacterActor.h"
+#include "Components/CustomBone.h"
+#include "Components/RendererRoot.h"
+#include "Components/TransformComponents.h"
+#include "Core/EcsWorld.h"
 
 // Sets default values
 ACharacterActor::ACharacterActor()
@@ -20,6 +24,21 @@ ACharacterActor::ACharacterActor()
 void ACharacterActor::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	auto* world = FEcsWorld::instance();
+	auto em = world->EntityManager;
+	auto characterEntity = world->EntityManager->CreateEntity();
 
-	//SetActorTransform(BoneInfoArray[0].GetBoneTransform());
+	characterEntity.add<RendererRoot>();
+
+	/*for (int i = 0; i < BoneInfoArray.Num(); i++)
+	{       
+		auto entityBone = world->EntityManager->CreateEntity();
+
+       
+		em->SetComponentData<Translation>(entityBone,{});
+		em->SetComponentData<LocalToWorld>(entityBone, {});    
+		em->SetComponentData<CustomBone>(entityBone, { BoneInfoArray[i].GetBindMatrix() });
+		entityBone.add_childof(characterEntity);   
+	}*/
 }

@@ -430,7 +430,13 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
     	ACharacterActor* charActor = NewObject<ACharacterActor>();
     	if (StaticMesh!=nullptr)
     	{
+
+    	//	StaticMesh->GetNumLODs()
+
+    		
     		charActor->Mesh->SetStaticMesh(StaticMesh);
+
+    	//	charActor->MeshRenderers.Add()
     	}
     	
     	return charActor;
