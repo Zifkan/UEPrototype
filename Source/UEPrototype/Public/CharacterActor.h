@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "BoneData.h"
 #include "GameFramework/Actor.h"
 #include "CharacterActor.generated.h"
 
@@ -21,8 +23,10 @@ public:
     UPROPERTY(EditAnywhere)
     UStaticMeshComponent* Mesh;
 
+	UPROPERTY(Blue,Category=ECS)
+	TArray<FBoneDataInfo>  BoneInfoArray;
 
-	//TArray<FBoneInfo>  BoneInfoArray;
+	
 	TArray<UStaticMeshComponent> MeshRenderers;
 	
 protected:
