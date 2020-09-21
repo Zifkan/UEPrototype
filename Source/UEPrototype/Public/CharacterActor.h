@@ -23,7 +23,7 @@ public:
     UPROPERTY(EditAnywhere)
     UStaticMeshComponent* Mesh;
 
-	UPROPERTY(Blue,Category=ECS)
+	UPROPERTY(BlueprintReadOnly,Category=ECS)
 	TArray<FBoneDataInfo>  BoneInfoArray;
 
 	

@@ -31,14 +31,14 @@ void ACharacterActor::BeginPlay()
 
 	characterEntity.add<RendererRoot>();
 
-	/*for (int i = 0; i < BoneInfoArray.Num(); i++)
+	for (int i = 0; i < BoneInfoArray.Num(); i++)
 	{       
 		auto entityBone = world->EntityManager->CreateEntity();
 
        
 		em->SetComponentData<Translation>(entityBone,{});
 		em->SetComponentData<LocalToWorld>(entityBone, {});    
-		em->SetComponentData<CustomBone>(entityBone, { BoneInfoArray[i].GetBindMatrix() });
+		em->SetComponentData<CustomBone>(entityBone, { BoneInfoArray[i].BindMatrix });
 		entityBone.add_childof(characterEntity);   
-	}*/
+	}
 }

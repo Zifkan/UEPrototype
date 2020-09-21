@@ -10,6 +10,7 @@
 #include "IPersonaToolkit.h"
 #include "ISkeletalMeshEditorModule.h"
 #include "SkeletalRenderPublic.h"
+#include "Animation/AnimInstance.h"
 #include "Animation/DebugSkelMeshComponent.h"
 #include "Dialogs/DlgPickAssetPath.h"
 #include "Framework/Notifications/NotificationManager.h"
@@ -17,6 +18,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Rendering/SkeletalMeshRenderData.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "Rendering/SkinWeightVertexBuffer.h"
 
 class FAssetToolsModule;
 
@@ -269,6 +271,10 @@ static void SkinnedMeshToRawMeshes(USkinnedMeshComponent* InSkinnedMeshComponent
 
 ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent)
 {
+	TArray<FSkinWeightInfo> verts;
+	PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer();//->GetSkinWeights(verts);
+
+	
     auto* NewNameSuggestion = TEXT("StaticMesh");
     FString PackageName = FString(TEXT("/Game/Meshes/")) + NewNameSuggestion;
   
@@ -425,18 +431,34 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 				}
 			}
 		}
-
+    	//PreviewComponent->
 		
     	ACharacterActor* charActor = NewObject<ACharacterActor>();
     	if (StaticMesh!=nullptr)
     	{
-
+	      
+    	 /*	for (auto vert : verts)
+    		{
+    			int index0 = static_cast<int>(vert.InfluenceBones[0]);
+    			int index1 = static_cast<int>(vert.InfluenceBones[1]);
+    			int index2 = static_cast<int>(vert.InfluenceBones[2]);
+    			int index3 = static_cast<int>(vert.InfluenceBones[3]);
+    			
+    			double weight0 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
+    			double weight1 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
+    			double weight2 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
+    			double weight3 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
+    		}*/
+    	//	PreviewComponent->GetReferenceSkeleton().GetRefBoneInfo()[0].
+    		
+    		//PreviewComponent->SkeletalMesh->
     	//	StaticMesh->GetNumLODs()
 
+    	//	StaticMesh->SetUVChannel()
+   		charActor->Mesh->SetStaticMesh(StaticMesh);
     		
-    		charActor->Mesh->SetStaticMesh(StaticMesh);
-
     	//	charActor->MeshRenderers.Add()
+    		
     	}
     	
     	return charActor;
