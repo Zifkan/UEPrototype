@@ -48,6 +48,12 @@ void CharacterConverterTool::Shutdown()
 }
 
 
+static float EncodeFloat4toFloat(FVector4 enc )
+{
+	FVector4 kDecodeDot = FVector4(1.0, 1/255.0, 1/65025.0, 1/160581375.0);
+	return FVector::DotProduct ( enc, kDecodeDot );
+}
+
 void CharacterConverterTool::AddCharacterAnimEditorExtender()
 {
     ISkeletalMeshEditorModule& SkeletalMeshEditorModule = FModuleManager::Get().LoadModuleChecked<ISkeletalMeshEditorModule>(moduleNameConst);
@@ -271,9 +277,7 @@ static void SkinnedMeshToRawMeshes(USkinnedMeshComponent* InSkinnedMeshComponent
 
 ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* PreviewComponent)
 {
-	TArray<FSkinWeightInfo> verts;
-	PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer();//->GetSkinWeights(verts);
-
+	
 	
     auto* NewNameSuggestion = TEXT("StaticMesh");
     FString PackageName = FString(TEXT("/Game/Meshes/")) + NewNameSuggestion;
@@ -431,33 +435,58 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 				}
 			}
 		}
-    	//PreviewComponent->
+    	
+    
+    	
 		
     	ACharacterActor* charActor = NewObject<ACharacterActor>();
     	if (StaticMesh!=nullptr)
     	{
-	      
-    	 /*	for (auto vert : verts)
+    		auto UVnum = StaticMesh->GetNumUVChannels(0);
+    		for (int i = UVnum; i < 8; ++i)
     		{
-    			int index0 = static_cast<int>(vert.InfluenceBones[0]);
-    			int index1 = static_cast<int>(vert.InfluenceBones[1]);
-    			int index2 = static_cast<int>(vert.InfluenceBones[2]);
-    			int index3 = static_cast<int>(vert.InfluenceBones[3]);
-    			
-    			double weight0 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
-    			double weight1 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
-    			double weight2 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
-    			double weight3 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
-    		}*/
-    	//	PreviewComponent->GetReferenceSkeleton().GetRefBoneInfo()[0].
-    		
-    		//PreviewComponent->SkeletalMesh->
-    	//	StaticMesh->GetNumLODs()
+    			StaticMesh->AddUVChannel(0);
+    		}
 
-    	//	StaticMesh->SetUVChannel()
-   		charActor->Mesh->SetStaticMesh(StaticMesh);
+    		auto renderData = &PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0];
+    		auto currentBonesInfluence = renderData->GetVertexBufferMaxBoneInfluences();
+			auto vertexCount = renderData->GetSkinWeightVertexBuffer()->GetNumVertices();
+    		TMap<FVertexInstanceID, FVector2D> uv;
+            for (uint32 i = 0; i < vertexCount; ++i)
+            {            	
+				FVector4 weights;
+            	FVector4 indices;
+
+				for (uint32 j = 0; j < currentBonesInfluence; ++j)
+				{
+					weights[j] = renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j);
+					indices[j] = renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j);
+				}  
+            	
+            	uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
+            
+            }
+    		StaticMesh->SetUVChannel(0,6,uv);
+    
+		
+    		/*	TArray<FSkinWeightInfo> verts;
+    		PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer()->GetSkinWeights(verts);
     		
-    	//	charActor->MeshRenderers.Add()
+    		for (auto vert : verts)
+    		{
+    		int index0 = static_cast<int>(vert.InfluenceBones[0]);
+    		int index1 = static_cast<int>(vert.InfluenceBones[1]);
+    		int index2 = static_cast<int>(vert.InfluenceBones[2]);
+    		int index3 = static_cast<int>(vert.InfluenceBones[3]);
+    			
+    		double weight0 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
+    		double weight1 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
+    		double weight2 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
+    		double weight3 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
+			*/
+    	
+    		
+   		charActor->Mesh->SetStaticMesh(StaticMesh);
     		
     	}
     	
@@ -468,6 +497,8 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 	
 	return NULL;   
 }
+
+
 
 
 #undef LOCTEXT_NAMESPACE

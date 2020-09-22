@@ -66,8 +66,27 @@ float4 SplineParams[10];
 #endif
 
 #if ANIM_MESH
-StructuredBuffer<float4x4> DMTransforms : register(t0);
-uint DMTransformIndex;
+StructuredBuffer<float4x4> AMMatrixBuffer : register(t0);
+uint AMRendererIndex;
+
+
+ struct CustomRenderData
+ {
+     int boneIndex1;
+     int boneIndex2;
+     int boneIndex3;
+     int boneIndex4;
+
+     float boneWeight1;
+     float boneWeight2;
+     float boneWeight3;
+     float boneWeight4;
+
+     float4 vertexPos;
+     float3 vertexNormal;
+     int renderIndex;
+ };
+
 #endif
 
 #ifndef MANUAL_VERTEX_FETCH
@@ -101,7 +120,7 @@ struct FVertexFactoryInput
 {
 	float4	Position	: ATTRIBUTE0;
 
-#if !MANUAL_VERTEX_FETCH && !DEFORM_MESH
+#if !MANUAL_VERTEX_FETCH
 	#if METAL_PROFILE
 		float3	TangentX	: ATTRIBUTE1;
 		// TangentZ.w contains sign of tangent basis determinant
@@ -664,47 +683,45 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 	}
 #endif	// USE_SPLINEDEFORM
 
-#if DEFORM_MESH
-//Transform from deform to world space without translation
-float4 TransformDeformNotTranslated(float3 LocalPosition)
-{
-	float4x4 DeformTransform = DMTransforms[DMTransformIndex];
-	float3 RotatedPosition = DeformTransform[0].xyz * LocalPosition.xxx + DeformTransform[1].xyz * LocalPosition.yyy + DeformTransform[2].xyz * LocalPosition.zzz;
-	return float4(RotatedPosition + ResolvedView.PreViewTranslation.xyz,1);
-}
-
-//Transform from deform to world space
-float4 TransformDeformToTranslatedWorld(float3 LocalPosition)
-{
-	float4x4 DeformTransform = DMTransforms[DMTransformIndex];
-	float3 RotatedPosition = DeformTransform[0].xyz * LocalPosition.xxx + DeformTransform[1].xyz * LocalPosition.yyy + DeformTransform[2].xyz * LocalPosition.zzz;
-	return float4(RotatedPosition + (DeformTransform[3].xyz + ResolvedView.PreViewTranslation.xyz),1);
-}
-#endif
 #if USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
 #else
 float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
-#if USE_INSTANCING
+#if USE_INSTANCING && !ANIM_MESH
 	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
-#elif DEFORM_MESH
-	//The deform transform of this mesh
-	float4x4 DeformTr = DMTransforms[DMTransformIndex];
-	//The origin of the deform transform
-	float3 dfmPos = TransformDeformToTranslatedWorld(float3(0,0,0));
-	
-	//The original world position without deformation
-	float4 originalPos = TransformLocalToTranslatedWorld(Position, PrimitiveId);
+#elif ANIM_MESH && USE_INSTANCING
+	//ANIM_MESH SHould be custom code
+	CustomRenderData renderData;
 
-	// The fully deformed position
-	float4 deformedPos = TransformDeformNotTranslated(Position);
-	
-	//Distance between the vertex Position and deform transform origin
-	float d = min(distance(originalPos, dfmPos),100.0) / 100.0;
-	d = pow(d, 2);
-	return lerp(deformedPos, originalPos, float4(d,d,d,d));
+    renderData.boneIndex1 = v.texcoord6.x;
+    renderData.boneIndex2 = v.texcoord6.y;
+    renderData.boneIndex3 = v.texcoord6.z;
+    renderData.boneIndex4 = v.texcoord6.w;
+
+    renderData.boneWeight1 = v.texcoord7.x;
+    renderData.boneWeight2 = v.texcoord7.y;
+    renderData.boneWeight3 = v.texcoord7.z;
+    renderData.boneWeight4 = v.texcoord7.w;
+
+    renderData.vertexPos = v.vertex;
+    renderData.vertexNormal = v.normal;
+
+    renderData.renderIndex = AMRendererIndex;
+
+    
+    int index = rendererData.renderIndex;   
+    int startIdx = index * 256;
+
+    float4x4 mat = matrixBuffer[startIdx + rendererData.boneIndex1] * rendererData.boneWeight1 +
+        matrixBuffer[startIdx + rendererData.boneIndex2] * rendererData.boneWeight2 +
+        matrixBuffer[startIdx + rendererData.boneIndex3] * rendererData.boneWeight3 +
+        matrixBuffer[startIdx + rendererData.boneIndex4] * rendererData.boneWeight4;
+
+    mat = mul(unity_WorldToObject, mat);           
+
+           return mul(mat, rendererData.vertexPos);
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline
