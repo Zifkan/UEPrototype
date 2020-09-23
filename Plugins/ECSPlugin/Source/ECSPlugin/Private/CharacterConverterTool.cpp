@@ -346,6 +346,7 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 			}
 		}
 
+    	TArray<FBoneDataInfo>  BoneInfoArray;
 		if (bValidData)
 		{
 			auto MeshName = FPackageName::GetLongPackageAssetName(PackageName);
@@ -411,12 +412,75 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 			}
 			StaticMesh->GetOriginalSectionInfoMap().CopyFrom(StaticMesh->GetSectionInfoMap());
 
+
+		
+			
 			// Build mesh from source
 			StaticMesh->Build(false);
 			StaticMesh->PostEditChange();
 
-			StaticMesh->MarkPackageDirty();
+			if (StaticMesh!=nullptr)
+			{
+				auto UVnum = StaticMesh->GetNumUVChannels(0);
+				for (int i = UVnum; i < 8; ++i)
+				{
+					StaticMesh->AddUVChannel(0);
+				}
 
+				auto renderData = &PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0];
+				auto currentBonesInfluence = renderData->GetVertexBufferMaxBoneInfluences();
+				auto vertexCount = renderData->GetSkinWeightVertexBuffer()->GetNumVertices();
+				TMap<FVertexInstanceID, FVector2D> uv;
+				for (uint32 i = 0; i < vertexCount; ++i)
+				{            	
+					FVector4 weights;
+					FVector4 indices;
+
+					for (int j = 0; j < (int)currentBonesInfluence; ++j)
+					{
+						//weights[j] = renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j);
+						//indices[j] = renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j);
+
+						weights[j] =j/4;
+						indices[j] =j/4;
+					}  
+            	
+					uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
+            
+				}
+    		
+				StaticMesh->SetUVChannel(0,7,uv);
+
+				auto boneTree = PreviewComponent->SkeletalMesh->RefSkeleton.GetRefBoneInfo();			
+				for (auto BoneTree : boneTree)
+				{
+					int bone_index = PreviewComponent->GetBoneIndex( BoneTree.Name );				
+					auto boneMatrix = PreviewComponent->GetBoneMatrix( bone_index );
+					auto boneTransform = PreviewComponent->GetBoneTransform( bone_index );
+					BoneInfoArray.Add(FBoneDataInfo({boneTransform,boneMatrix}));
+					UE_LOG(LogTemp, Warning, TEXT("%s = %i"),*BoneTree.Name.ToString(), bone_index);
+				}
+			
+				/*	TArray<FSkinWeightInfo> verts;
+				PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer()->GetSkinWeights(verts);
+    		
+				for (auto vert : verts)
+				{
+				int index0 = static_cast<int>(vert.InfluenceBones[0]);
+				int index1 = static_cast<int>(vert.InfluenceBones[1]);
+				int index2 = static_cast<int>(vert.InfluenceBones[2]);
+				int index3 = static_cast<int>(vert.InfluenceBones[3]);
+    			
+				double weight0 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
+				double weight1 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
+				double weight2 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
+				double weight3 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
+				*/
+			}
+    	
+
+			
+			StaticMesh->MarkPackageDirty();
 			// Notify asset registry of new asset
 			FAssetRegistryModule::AssetCreated(StaticMesh);
 
@@ -435,64 +499,12 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 				}
 			}
 		}
-    	
-    
-    	
 		
     	ACharacterActor* charActor = NewObject<ACharacterActor>();
-    	if (StaticMesh!=nullptr)
-    	{
-    		auto UVnum = StaticMesh->GetNumUVChannels(0);
-    		for (int i = UVnum; i < 8; ++i)
-    		{
-    			StaticMesh->AddUVChannel(0);
-    		}
+    	charActor->Mesh->SetStaticMesh(StaticMesh);
+    	charActor->BoneInfoArray =BoneInfoArray;
 
-    		auto renderData = &PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0];
-    		auto currentBonesInfluence = renderData->GetVertexBufferMaxBoneInfluences();
-			auto vertexCount = renderData->GetSkinWeightVertexBuffer()->GetNumVertices();
-    		TMap<FVertexInstanceID, FVector2D> uv;
-            for (uint32 i = 0; i < vertexCount; ++i)
-            {            	
-				FVector4 weights;
-            	FVector4 indices;
-
-				for (uint32 j = 0; j < currentBonesInfluence; ++j)
-				{
-					weights[j] = renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j);
-					indices[j] = renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j);
-				}  
-            	
-            	uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
-            
-            }
-    		StaticMesh->SetUVChannel(0,6,uv);
-    
-		
-    		/*	TArray<FSkinWeightInfo> verts;
-    		PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer()->GetSkinWeights(verts);
-    		
-    		for (auto vert : verts)
-    		{
-    		int index0 = static_cast<int>(vert.InfluenceBones[0]);
-    		int index1 = static_cast<int>(vert.InfluenceBones[1]);
-    		int index2 = static_cast<int>(vert.InfluenceBones[2]);
-    		int index3 = static_cast<int>(vert.InfluenceBones[3]);
-    			
-    		double weight0 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
-    		double weight1 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
-    		double weight2 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
-    		double weight3 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
-			*/
-    	
-    		
-   		charActor->Mesh->SetStaticMesh(StaticMesh);
-    		
-    	}
-    	
-    	return charActor;
-
-    	
+    	return charActor;    	
     }
 	
 	return NULL;   
