@@ -21,7 +21,7 @@ struct FRawMeshTracker
 
 class ISkeletalMeshEditor;
 
-class ECSPLUGIN_API CharacterConverterTool
+class  CharacterConverterTool
 {
 public:
 	CharacterConverterTool(){};

@@ -7,7 +7,7 @@
 #include "CharacterConverterTool.h"
 
 
-class FECSPluginModule : public IModuleInterface
+class ECSPLUGIN_API FECSPluginModule : public IModuleInterface
 {
 public:
 

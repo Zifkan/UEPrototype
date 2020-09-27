@@ -12,7 +12,7 @@ struct RendererGroupData
     }
 };
 
-class AnimationInitializeSystemfinal :public SystemBase<RendererRoot>
+class AnimationInitializeSystem :public SystemBase<RendererRoot>
 {
 public:
     virtual void OnCreate() override;

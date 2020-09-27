@@ -430,19 +430,22 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 				auto renderData = &PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0];
 				auto currentBonesInfluence = renderData->GetVertexBufferMaxBoneInfluences();
 				auto vertexCount = renderData->GetSkinWeightVertexBuffer()->GetNumVertices();
+				auto weightOffset= renderData->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetConstantInfluencesBoneWeightsOffset();
 				TMap<FVertexInstanceID, FVector2D> uv;
 				for (uint32 i = 0; i < vertexCount; ++i)
 				{            	
 					FVector4 weights;
 					FVector4 indices;
-
-					for (int j = 0; j < (int)currentBonesInfluence; ++j)
+					
+					for (uint32 j = 0; j < currentBonesInfluence; ++j)
 					{
-						//weights[j] = renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j);
-						//indices[j] = renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j);
+					/*	auto w = renderData->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetBoneWeight(weightOffset,currentBonesInfluence,j);
+						auto idx = renderData->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetBoneIndex(weightOffset,currentBonesInfluence,j);
+						weights[j] = w;
+				     	indices[j] = idx;*/
 
-						weights[j] =j/4;
-						indices[j] =j/4;
+						weights[j] = renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j);
+						indices[j] = renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j);
 					}  
             	
 					uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));

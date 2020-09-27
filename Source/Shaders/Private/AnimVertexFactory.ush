@@ -66,7 +66,7 @@ float4 SplineParams[10];
 #endif
 
 #if ANIM_MESH
-StructuredBuffer<float4x4> AMMatrixBuffer : register(t0);
+Buffer<float4x4> AMMatrixBuffer : register(t0);
 uint AMRendererIndex;
 
 
@@ -81,11 +81,20 @@ uint AMRendererIndex;
      float boneWeight2;
      float boneWeight3;
      float boneWeight4;
-
-     float4 vertexPos;
-     float3 vertexNormal;
+ 	
      int renderIndex;
  };
+
+
+float4 DecodeFloatToFloat4( float v )
+{
+	float4 kEncodeMul = float4(1.0, 255.0, 65025.0, 160581375.0);
+	float kEncodeBit = 1.0/255.0;
+	float4 enc = kEncodeMul * v;
+	enc = frac (enc);
+	enc -= enc.yzww * kEncodeBit;
+	return enc;
+}
 
 #endif
 
@@ -683,8 +692,10 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 	}
 #endif	// USE_SPLINEDEFORM
 
-#if USE_INSTANCING
+#if USE_INSTANCING && !ANIM_MESH
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
+#elif USE_INSTANCING && ANIM_MESH
+float4 CalcWorldPosition(FVertexFactoryInput Input, uint PrimitiveId)
 #else
 float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
@@ -695,18 +706,18 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 	//ANIM_MESH SHould be custom code
 	CustomRenderData renderData;
 
-    renderData.boneIndex1 = v.texcoord6.x;
-    renderData.boneIndex2 = v.texcoord6.y;
-    renderData.boneIndex3 = v.texcoord6.z;
-    renderData.boneIndex4 = v.texcoord6.w;
+	float4 indexes = DecodeFloatToFloat4(Input.PackedTexCoords2.x);
+	float4 weights = DecodeFloatToFloat4(Input.PackedTexCoords2.y);
+	
+    renderData.boneIndex1 = indexes.x;
+    renderData.boneIndex2 = indexes.y;
+    renderData.boneIndex3 = indexes.z;
+    renderData.boneIndex4 = indexes.w;
 
-    renderData.boneWeight1 = v.texcoord7.x;
-    renderData.boneWeight2 = v.texcoord7.y;
-    renderData.boneWeight3 = v.texcoord7.z;
-    renderData.boneWeight4 = v.texcoord7.w;
-
-    renderData.vertexPos = v.vertex;
-    renderData.vertexNormal = v.normal;
+    renderData.boneWeight1 = weights.x;
+    renderData.boneWeight2 = weights.y;
+    renderData.boneWeight3 = weights.z;
+    renderData.boneWeight4 = weights.w;
 
     renderData.renderIndex = AMRendererIndex;
 
@@ -719,9 +730,9 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
         matrixBuffer[startIdx + rendererData.boneIndex3] * rendererData.boneWeight3 +
         matrixBuffer[startIdx + rendererData.boneIndex4] * rendererData.boneWeight4;
 
-    mat = mul(unity_WorldToObject, mat);           
+    //mat = mul(unity_WorldToObject, mat);           
 
-           return mul(mat, rendererData.vertexPos);
+    return mul(mat, rendererData.vertexPos);
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline
@@ -912,9 +923,11 @@ half3x3 VertexFactoryGetTangentToLocal( FVertexFactoryInput Input, FVertexFactor
 // @return translated world position
 float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIntermediates Intermediates)
 {
-#if USE_INSTANCING
+#if USE_INSTANCING && !ANIM_MESH
 	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
-#else
+#elif USE_INSTANCING && ANIM_MESH
+	return CalcWorldPosition(Input,Intermediates.PrimitiveId);
+else	
 	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
 #endif	// USE_INSTANCING
 }

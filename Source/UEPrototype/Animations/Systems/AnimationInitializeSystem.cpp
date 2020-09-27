@@ -3,7 +3,7 @@
 #include "RendererGroup.h"
 
 
-void AnimationInitializeSystemfinal::OnCreate()
+void AnimationInitializeSystem::OnCreate()
 {
     rendererGroup = RendererGroup::instance();
     
@@ -25,7 +25,7 @@ void AnimationInitializeSystemfinal::OnCreate()
     });
 }
 
-RendererGroupData AnimationInitializeSystemfinal::RegisterRendererInGroup(Entity customRendererEntity) const
+RendererGroupData AnimationInitializeSystem::RegisterRendererInGroup(Entity customRendererEntity) const
 {
             
     if (rendererGroup->FreeIndexes.IsEmpty())

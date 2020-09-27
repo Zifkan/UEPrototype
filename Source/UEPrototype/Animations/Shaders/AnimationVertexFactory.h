@@ -139,7 +139,7 @@ class FAnimMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParame
 		const FAnimMeshVertexFactory* AnimMeshVertexFactory = ((FAnimMeshVertexFactory*)VertexFactory);
 	
 		ShaderBindings.Add(RendererIndex, AnimMeshVertexFactory->RendererIndex);		
-		ShaderBindings.Add(MatrixBufferSRV, AnimMeshVertexFactory->SceneProxy->GetDeformTransformsSRV());
+	//	ShaderBindings.Add(MatrixBufferSRV, AnimMeshVertexFactory->SceneProxy->GetDeformTransformsSRV());
 	};
 	
 private:
