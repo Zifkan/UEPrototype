@@ -6,14 +6,7 @@
 class RendererGroup 
 {
 public:
-
-    RendererGroup()
-    {
-      /*  DeformTransformsSB = RHICreateStructuredBuffer(sizeof(FMatrix), NumSections * sizeof(FMatrix), BUF_ShaderResource, CreateInfo);
-        DeformTransformsSB.*/
-    }
-
-    
+  
 
     TArray<Entity> RenderEntityList;    
     TQueue<int> FreeIndexes;
@@ -21,12 +14,13 @@ public:
     TArray<FMatrix> Buffer;
 
 
-    //The structured buffer that will contain all the deform transoform and going to be used as a shader resource
- //   FStructuredBufferRHIRef DeformTransformsSB;
+    //The structured buffer that will contain all the calculated Matrices and going to be used as a shader resource
+    FStructuredBufferRHIRef BindMatricesSB;
 
     //The shader resource view of the structured buffer, this is what we bind to the vertex factory shader
-//    FShaderResourceViewRHIRef DeformTransformsSRV;
-    
+    FShaderResourceViewRHIRef BindMatricesSRV;
+   
+
     static RendererGroup* instance()
     {
         static RendererGroup* _instance = nullptr;

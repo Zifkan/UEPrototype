@@ -82,6 +82,13 @@ public:
         {          
             return flecs::type(*defaultWorld,tagName, expr);
         }
+
+        template <typename T>
+        const T* GetComponent(flecs::entity e)
+        {
+            return e.get<T>();
+        }
+
                      
 
 private:

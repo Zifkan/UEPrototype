@@ -8,7 +8,9 @@ public class UEPrototype : ModuleRules
 	public UEPrototype(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-
+        bAddDefaultIncludePaths = true;
+        
+        
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay"});
 
         PrivateIncludePathModuleNames.AddRange(
@@ -34,12 +36,17 @@ public class UEPrototype : ModuleRules
              Path.Combine(ThirdPartyPath, "ECSPlugin", "Source", "ECSPlugin","ECS","Systems","Transforms"),*/
         });
 
-        PrivateDependencyModuleNames.AddRange(
-            new string[]
-            {
-                // ... add private dependencies that you statically link with here ...	
-            }
-        );
+        PrivateDependencyModuleNames.AddRange(new string[]
+        {
+            "Core",
+            "CoreUObject",
+            "Engine",
+            "InteractiveToolsFramework",
+            "MeshDescription",
+            "RenderCore",
+            "RHI",
+            "StaticMeshDescription"
+        });
     }
 
     private string ThirdPartyPath

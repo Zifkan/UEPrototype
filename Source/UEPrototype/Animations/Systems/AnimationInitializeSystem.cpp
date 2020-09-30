@@ -12,10 +12,10 @@ void AnimationInitializeSystem::OnCreate()
         auto groupData = RegisterRendererInGroup(e);
         auto rootRenderId = groupData.RootRenderId;
 
-        //rootRendererData.SetIndex(rootRenderId); TODO Set render index to material
+   //     rootRendererData.SetIndex(rootRenderId); //TODO Set render index to material
 
 //TODO Set render index to material remove mechanism
-     /*   PostUpdateCommands.AddSharedComponent(customRendererEntity, new RemoveRenderer
+  /*      PostUpdateCommands.AddSharedComponent(customRendererEntity, new RemoveRenderer
         {
             CustomRendererIndex = rootRenderId,
 
