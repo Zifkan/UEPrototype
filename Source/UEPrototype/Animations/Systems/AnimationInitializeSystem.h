@@ -12,7 +12,7 @@ struct RendererGroupData
     }
 };
 
-class AnimationInitializeSystem :public SystemBase<RendererRoot>
+class AnimationInitializeSystem :public SystemBase<RendererRoot,CharacterActorComponent>
 {
 public:
     virtual void OnCreate() override;

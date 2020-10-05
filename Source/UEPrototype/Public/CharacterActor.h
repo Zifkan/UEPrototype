@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 
+
+#include "AnimationVertexMeshComponent.h"
 #include "BoneData.h"
 #include "GameFramework/Actor.h"
 #include "CharacterActor.generated.h"
@@ -29,8 +31,11 @@ public:
 	
 	TArray<UStaticMeshComponent> MeshRenderers;
 	
+	void SetIndex(int index);
+
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void BeginPlay() override;	
 
+	UAnimationVertexMeshComponent*  animationVertexMeshComponent;
 };

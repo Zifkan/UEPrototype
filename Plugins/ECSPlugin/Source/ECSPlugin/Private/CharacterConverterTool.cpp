@@ -444,8 +444,8 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 						weights[j] = w;
 				     	indices[j] = idx;*/
 
-						weights[j] = renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j);
-						indices[j] = renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j);
+					//	weights[j] = renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j);
+					//	indices[j] = renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j);
 					}  
             	
 					uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));

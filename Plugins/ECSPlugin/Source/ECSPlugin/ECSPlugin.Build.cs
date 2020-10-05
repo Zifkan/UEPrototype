@@ -8,6 +8,8 @@ public class ECSPlugin : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
+		bAddDefaultIncludePaths = true;
+		
 		PublicIncludePaths.AddRange(
 			new string[] {
                 "UEPrototype"
@@ -45,10 +47,9 @@ public class ECSPlugin : ModuleRules
                 "TargetPlatform",
                 "MeshDescription",
                 "MeshDescriptionOperations",
-
-                "UEPrototype",
+                "Renderer",
+				"UEPrototype",
                 "CoreUObject",
-                "Engine",
                 "RawMesh",
                 "Slate",
                 "SlateCore",
@@ -62,6 +63,9 @@ public class ECSPlugin : ModuleRules
                 "AnimationBlueprintEditor",
                 "AnimationEditor",
                 "SkeletalMeshEditor",
+                "InteractiveToolsFramework",
+                "StaticMeshDescription",
+                
 				// ... add private dependencies that you statically link with here ...	
 			}
             );

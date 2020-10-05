@@ -7,12 +7,12 @@ void AnimationInitializeSystem::OnCreate()
 {
     rendererGroup = RendererGroup::instance();
     
-    SystemRun->each([this](flecs::entity e, RendererRoot& rootRendererData)
+    SystemRun->each([this](flecs::entity e, RendererRoot& rootRendererData,CharacterActorComponent& actor)
     {
         auto groupData = RegisterRendererInGroup(e);
         auto rootRenderId = groupData.RootRenderId;
 
-   //     rootRendererData.SetIndex(rootRenderId); //TODO Set render index to material
+        actor.Character->SetIndex(rootRenderId); //TODO Set render index to material
 
 //TODO Set render index to material remove mechanism
   /*      PostUpdateCommands.AddSharedComponent(customRendererEntity, new RemoveRenderer
