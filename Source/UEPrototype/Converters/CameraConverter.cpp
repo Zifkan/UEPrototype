@@ -15,11 +15,11 @@ void UCameraConverter::Convert(flecs::entity entity, FEntityManager dstManager)
             HeightOffset, FocusHeightOffset,0,0,Radius, CurrentRadius,SpeedX,SpeedY, yMinLimit,yMaxLimit,PitchLimit,ProbeChannel,ProbeSize
     });
        
-    dstManager.SetComponentData<LocalToWorld>(entity, { FMatrix::Identity });
-    dstManager.SetComponentData<CopyTransformFromActor>(entity, {});
-    dstManager.SetComponentData<FActorComponent>(entity, { GetOwner() });
-    dstManager.SetComponentData<Rotation>(entity, { FQuat::Identity });
-    dstManager.SetComponentData<Translation>(entity, { FVector::ZeroVector });
-    dstManager.SetComponentData<WorldToLocal>(entity, { FMatrix::Identity });
-    dstManager.SetComponentData<CopyTransformToActor>(entity, {});
+    entity.set<LocalToWorld>({ FMatrix::Identity });
+    entity.add<CopyTransformFromActor>( );
+    entity.set<FActorComponent>( { GetOwner() });
+    entity.set<Rotation>( { FQuat::Identity });
+    entity.set<Translation>( { FVector::ZeroVector });
+    entity.set<WorldToLocal>( { FMatrix::Identity });
+    entity.add<CopyTransformToActor>( );
 }

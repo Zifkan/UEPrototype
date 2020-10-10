@@ -42,7 +42,7 @@ FPrimitiveSceneProxy* UAnimationVertexMeshComponent::CreateSceneProxy()
 
 void UAnimationVertexMeshComponent::SetRenderIndex(int index)
 {
-	auto* animMeshSceneProxy = (FAnimationVertexSceneProxy*)SceneProxy;
+//	auto* animMeshSceneProxy = (FAnimationVertexSceneProxy*)SceneProxy;
 	//animMeshSceneProxy->SetRenderIndex(index);
 }
 

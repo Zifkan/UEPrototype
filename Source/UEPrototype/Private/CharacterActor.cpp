@@ -12,13 +12,11 @@ ACharacterActor::ACharacterActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
-	AnimationVertexMeshComponent = CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
 	
     Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     RootComponent = Root;
 
-	AnimationVertexMeshComponent =  CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Mesh"));
+	AnimationVertexMeshComponent = CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
 	AnimationVertexMeshComponent->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
@@ -32,7 +30,7 @@ void ACharacterActor::BeginPlay()
 	auto characterEntity = world->EntityManager->CreateEntity();
 
 	characterEntity.add<RendererRoot>();
-//	characterEntity.set<FCharacterActorComponent>({this});
+	characterEntity.set<CharacterActorComponent>({this});
 	
 	for (int i = 0; i < BoneInfoArray.Num(); i++)
 	{       

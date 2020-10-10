@@ -2,6 +2,8 @@
 
 
 #include "MainGameMode.h"
+
+#include "Components/CustomBone.h"
 #include "Components/TransformComponents.h"
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
@@ -17,7 +19,7 @@ void AMainGameMode::BeginPlay()
     entityManager = world->EntityManager;
 
 
-    entityManager->RegisterComponent<CamComponent>("CamComponent");
+   entityManager->RegisterComponent<CamComponent>("CamComponent");
     entityManager->RegisterComponent<PlayerInputComponent>("InputComponent");
     entityManager->RegisterComponent<MovementVelocity>("MovementVelocity");
     entityManager->RegisterComponent<MoveDirectionData>("MoveDirectionData");
@@ -28,7 +30,12 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<Scale>("Scale");
     entityManager->RegisterComponent<Rotation>("Rotation");
     entityManager->RegisterComponent<FActorComponent>("ActorComponent");
-   
+    entityManager->RegisterComponent<CustomBone>("CustomBone");
+    entityManager->RegisterComponent<RendererRoot>("RendererRoot");
+    entityManager->RegisterComponent<CharacterActorComponent>("CharacterActorComponent");
+    entityManager->RegisterComponent<CopyTransformFromActor>("CopyTransformFromActor");
+    entityManager->RegisterComponent<RemoveRenderer>("RemoveRenderer");
+    
 
     RegisterTransformSystems();
     RegisterSystem();

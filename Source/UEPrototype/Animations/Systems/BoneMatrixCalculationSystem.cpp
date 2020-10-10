@@ -5,7 +5,9 @@
 
 void BoneMatrixCalculationSystem::OnCreate()
 {
-    SystemRun->signature("!NotCalculate").each([](flecs::entity e, RendererRoot& rendererRoot)
+    rendererGroup = RendererGroup::instance();
+    
+    SystemRun->each([this](flecs::entity e, RendererRoot& rendererRoot)
    {
         for (auto children : e.children())
         {
@@ -19,7 +21,7 @@ void BoneMatrixCalculationSystem::OnCreate()
                 const auto renderEntityListId = rendererRoot.RenderEntityListId;
                 const auto result = localToWorld *bindMatrix;
 
-                RendererGroup::instance()->Buffer[renderEntityListId * 256 + i] = result;
+                rendererGroup->Buffer[renderEntityListId * 256 + i] = result;
             }
         }
    });

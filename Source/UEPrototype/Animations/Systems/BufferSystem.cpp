@@ -7,15 +7,14 @@ void BufferSystem::OnCreate()
     pGroupData =RendererGroup::instance();
     
     SystemRun->action([this](flecs::iter it)
-    {
-        auto buffer = pGroupData->Buffer;
+    {        
         const auto rootCount = pGroupData->RenderEntityList.Num();
         const auto totalBufferSize = Constants::BoneSize * rootCount;
-
-        if (buffer.Num() != totalBufferSize)
+      
+        if (pGroupData->Buffer.Num() != totalBufferSize)
         {
-            buffer.Reset(totalBufferSize);             
-            pGroupData->Buffer = buffer;
+            pGroupData->Buffer.Init(FMatrix(),totalBufferSize);
+            UE_LOG(LogTemp, Warning, TEXT("buffer number: %i; render number: %i"),pGroupData->Buffer.Num(),rootCount);
         }
     });
 }

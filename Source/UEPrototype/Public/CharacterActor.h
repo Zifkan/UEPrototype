@@ -1,10 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
-
-
 #include "AnimationVertexMeshComponent.h"
 #include "BoneData.h"
 #include "GameFramework/Actor.h"
@@ -25,18 +22,12 @@ public:
 	UPROPERTY(EditAnywhere,Category=ECS)
 	TArray<FBoneDataInfo>  BoneInfoArray;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category=ECS)
 	UAnimationVertexMeshComponent* AnimationVertexMeshComponent;
-	
-	TArray<UStaticMeshComponent> MeshRenderers;
 	
 	void SetIndex(int index);
 
 	void SetSetBuffer(TArray<FMatrix> buffer);
-
-	
-	
-
 	
 protected:
 	// Called when the game starts or when spawned
