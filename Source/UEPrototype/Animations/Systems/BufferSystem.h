@@ -3,7 +3,7 @@
 
 class RendererGroup;
 
-class BufferSystem final : SystemBase<>
+class BufferSystem final :public SystemBase<>
 {
 public:
     virtual void OnCreate() override;

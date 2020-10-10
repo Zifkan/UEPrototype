@@ -26,7 +26,7 @@ public:
 	TArray<FBoneDataInfo>  BoneInfoArray;
 	
 	UPROPERTY(EditAnywhere)
-	UAnimationVertexMeshComponent*  animationVertexMeshComponent;
+	UAnimationVertexMeshComponent* AnimationVertexMeshComponent;
 	
 	TArray<UStaticMeshComponent> MeshRenderers;
 	

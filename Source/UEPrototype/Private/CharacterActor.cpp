@@ -13,13 +13,13 @@ ACharacterActor::ACharacterActor()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	animationVertexMeshComponent = CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
+	AnimationVertexMeshComponent = CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
 	
     Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     RootComponent = Root;
 
-	animationVertexMeshComponent =  CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Mesh"));
-	animationVertexMeshComponent->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
+	AnimationVertexMeshComponent =  CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Mesh"));
+	AnimationVertexMeshComponent->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 // Called when the game starts or when spawned
@@ -53,6 +53,6 @@ void ACharacterActor::SetIndex(int index)
 
 void ACharacterActor::SetSetBuffer(TArray<FMatrix> buffer)
 {
-	animationVertexMeshComponent->SetBuffer(buffer);
+	AnimationVertexMeshComponent->SetBuffer(buffer);
 }
 

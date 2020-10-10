@@ -2,7 +2,7 @@
 #include "RendererGroup.h"
 #include "Systems/SystemBase.h"
 
-class BufferFillSystem : SystemBase<>
+class BufferFillSystem :public SystemBase<>
 {
 public:
     virtual void OnCreate() override;
