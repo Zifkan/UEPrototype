@@ -12,7 +12,7 @@ void AnimationInitializeSystem::OnCreate()
         auto groupData = RegisterRendererInGroup(e);
         auto rootRenderId = groupData.RootRenderId;
 
-        actor.Character->SetIndex(rootRenderId); //TODO Set render index to material
+//        actor.Character->SetIndex(rootRenderId); //TODO Set render index to material
 
 //TODO Set render index to material remove mechanism
   /*      PostUpdateCommands.AddSharedComponent(customRendererEntity, new RemoveRenderer

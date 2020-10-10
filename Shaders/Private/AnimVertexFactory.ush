@@ -66,7 +66,7 @@ float4 SplineParams[10];
 #endif
 
 #if ANIM_MESH
-Buffer<float4x4> AMMatrixBuffer : register(t0);
+StructuredBuffer<float4x4> AMMatrixBuffer : register(t0);
 uint AMRendererIndex;
 
 

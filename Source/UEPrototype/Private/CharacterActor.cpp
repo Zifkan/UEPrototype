@@ -18,8 +18,8 @@ ACharacterActor::ACharacterActor()
     Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     RootComponent = Root;
 
-	Mesh =  CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	Mesh->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
+	animationVertexMeshComponent =  CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Mesh"));
+	animationVertexMeshComponent->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 // Called when the game starts or when spawned
@@ -32,7 +32,7 @@ void ACharacterActor::BeginPlay()
 	auto characterEntity = world->EntityManager->CreateEntity();
 
 	characterEntity.add<RendererRoot>();
-	characterEntity.set<CharacterActorComponent>({this});
+//	characterEntity.set<FCharacterActorComponent>({this});
 	
 	for (int i = 0; i < BoneInfoArray.Num(); i++)
 	{       
@@ -50,3 +50,9 @@ void ACharacterActor::SetIndex(int index)
 {
 	
 }
+
+void ACharacterActor::SetSetBuffer(TArray<FMatrix> buffer)
+{
+	animationVertexMeshComponent->SetBuffer(buffer);
+}
+

@@ -3,7 +3,8 @@
 
 #include "AnimationVertexMeshComponent.h"
 
-#include "Shaders/AnimationVertexSceneProxy.h"
+#include "Shaders/AnimationVertexFactory.h"
+
 
 // Sets default values for this component's properties
 UAnimationVertexMeshComponent::UAnimationVertexMeshComponent()
@@ -17,9 +18,37 @@ UAnimationVertexMeshComponent::UAnimationVertexMeshComponent()
 
 FPrimitiveSceneProxy* UAnimationVertexMeshComponent::CreateSceneProxy()
 {
-	if (!SceneProxy)
-		return new FAnimationVertexSceneProxy(this);
-	else
-		return SceneProxy;
+	if (GetStaticMesh() == nullptr || GetStaticMesh()->RenderData == nullptr)
+	{
+		return nullptr;
+	}
+
+	const FStaticMeshLODResourcesArray& LODResources = GetStaticMesh()->RenderData->LODResources;
+	if (LODResources.Num() == 0	|| LODResources[FMath::Clamp<int32>(GetStaticMesh()->MinLOD.Default, 0, LODResources.Num()-1)].VertexBuffers.StaticMeshVertexBuffer.GetNumVertices() == 0)
+	{
+		return nullptr;
+	}
+	LLM_SCOPE(ELLMTag::StaticMesh);
+
+	FPrimitiveSceneProxy* Proxy = ::new FAnimationVertexSceneProxy(this,false);
+#if STATICMESH_ENABLE_DEBUG_RENDERING
+	SendRenderDebugPhysics(Proxy);
+#endif
+
+	return Proxy;
+
+	
+}
+
+void UAnimationVertexMeshComponent::SetRenderIndex(int index)
+{
+	auto* animMeshSceneProxy = (FAnimationVertexSceneProxy*)SceneProxy;
+	//animMeshSceneProxy->SetRenderIndex(index);
+}
+
+void UAnimationVertexMeshComponent::SetBuffer(TArray<FMatrix> buffer)
+{
+	auto* animMeshSceneProxy = (FAnimationVertexSceneProxy*)SceneProxy;
+	animMeshSceneProxy->SetBuffer(buffer);
 }
 

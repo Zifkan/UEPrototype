@@ -1,27 +1,22 @@
 #include "BufferSystem.h"
-
-
-#include "CharacterActor.h"
 #include "RendererGroup.h"
 #include "UEPrototype/Animations/Constants.h"
 
 void BufferSystem::OnCreate()
-{
-    auto rendererGroup = RendererGroup::instance();
-    SystemRun->action([rendererGroup](flecs::iter it)
+{   
+    pGroupData =RendererGroup::instance();
+    
+    SystemRun->action([this](flecs::iter it)
     {
-           auto groupData = rendererGroup;
-           auto buffer = groupData->Buffer;
-         
-        
-           auto rootCount = groupData->RenderEntityList.Num();
+        auto buffer = pGroupData->Buffer;
+        const auto rootCount = pGroupData->RenderEntityList.Num();
+        const auto totalBufferSize = Constants::BoneSize * rootCount;
 
-           auto totalBufferSize = Constants::BoneSize * rootCount;
-
-           if (buffer.Num() != totalBufferSize)
-           {
-               buffer.Reset(totalBufferSize);             
-               groupData->Buffer = buffer;           
-           }
+        if (buffer.Num() != totalBufferSize)
+        {
+            buffer.Reset(totalBufferSize);             
+            pGroupData->Buffer = buffer;
+        }
     });
 }
+

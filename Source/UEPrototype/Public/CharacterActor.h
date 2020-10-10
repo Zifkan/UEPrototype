@@ -21,21 +21,25 @@ public:
 
     UPROPERTY()
     USceneComponent* Root;
-
-    UPROPERTY(EditAnywhere)
-    UStaticMeshComponent* Mesh;
-
+	
 	UPROPERTY(EditAnywhere,Category=ECS)
 	TArray<FBoneDataInfo>  BoneInfoArray;
-
+	
+	UPROPERTY(EditAnywhere)
+	UAnimationVertexMeshComponent*  animationVertexMeshComponent;
 	
 	TArray<UStaticMeshComponent> MeshRenderers;
 	
 	void SetIndex(int index);
 
+	void SetSetBuffer(TArray<FMatrix> buffer);
+
+	
+	
+
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;	
-
-	UAnimationVertexMeshComponent*  animationVertexMeshComponent;
+	
 };

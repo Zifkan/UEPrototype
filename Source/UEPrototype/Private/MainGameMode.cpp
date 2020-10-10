@@ -38,12 +38,15 @@ void AMainGameMode::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFu
 {
   //  PlayerInput->ProcessInputStack(InputComponent,DeltaTime,false);
 
-    transformLauncher->Update(DeltaTime);
+    transformLauncher->Update(DeltaTime);    
+    animationSystemLaunch->Update(DeltaTime);
     systemsLauncher->Update(DeltaTime);
 }
 
 void AMainGameMode::RegisterSystem()
 {
+    animationSystemLaunch = MakeUnique<AnimationSystemLaunch>(world);
+    
     systemsLauncher = MakeUnique<SystemLauncher>(world);
 
 

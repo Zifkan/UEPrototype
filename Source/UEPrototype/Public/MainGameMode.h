@@ -7,6 +7,7 @@
 #include "MainPlayerController.h"
 #include "Core/EcsWorld.h"
 #include "GameFramework/GameModeBase.h"
+#include "Systems/AnimationSystemLaunch.h"
 #include "Systems/SystemLauncher.h"
 #include "Systems/Transforms/TransformSystemLaunch.h"
 
@@ -42,6 +43,7 @@ private:
 private:
 
     FEcsWorld* world;
+    TUniquePtr<AnimationSystemLaunch> animationSystemLaunch;
     TUniquePtr<SystemLauncher> systemsLauncher;
     TUniquePtr < TransformSystemLaunch> transformLauncher;
     FEntityManager* entityManager;

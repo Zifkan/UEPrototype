@@ -1,14 +1,17 @@
 #pragma once
-#include "PrimitiveViewRelevance.h"
+
+#include "AnimationVertexMeshComponent.h"
 #include "RenderResource.h"
-#include "RenderingThread.h"
 #include "VertexFactory.h"
 #include "MaterialShared.h"
 #include "LocalVertexFactory.h"
-#include "Engine/Engine.h"
 #include "StaticMeshResources.h"
 #include "MeshMaterialShader.h"
 #include "ShaderParameters.h"
+
+
+class FAnimationVertexSceneProxy;
+struct FAnimMeshVertexFactory;
 
 struct FAnimMeshVertexFactory : FLocalVertexFactory
 {
@@ -93,13 +96,68 @@ public:
 	}
 
 	void SetTransformIndex(uint16 Index) { RendererIndex = Index; }
-	//inline void SetSceneProxy(FDeformMeshSceneProxy* Proxy) { SceneProxy = Proxy; }
+    void SetSceneProxy(FAnimationVertexSceneProxy* Proxy) { SceneProxy = Proxy; }
 private:
 	//We need to pass this as a shader parameter, so we store it in the vertex factory and we use in the vertex factory shader parameters
-	uint16 RendererIndex;
-	
+	uint16 RendererIndex;	
+	FAnimationVertexSceneProxy* SceneProxy;
 
 	friend class FAnimMeshVertexFactoryShaderParameters;
+};
+
+
+
+class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy 
+{
+	public:
+   
+	FAnimationVertexSceneProxy(UStaticMeshComponent* Component, bool bForceLODsShareStaticLighting)
+        : FStaticMeshSceneProxy(Component, bForceLODsShareStaticLighting)
+		,animMeshVertexFactory(GetScene().GetFeatureLevel())
+	{
+		animMeshVertexFactory.SetSceneProxy(this);
+	}
+
+	SIZE_T GetTypeHash() const override
+	{
+		static size_t UniquePointer;
+		return reinterpret_cast<size_t>(&UniquePointer);
+	}
+    
+	virtual uint32 GetMemoryFootprint(void) const
+	{
+		return(sizeof(*this) + GetAllocatedSize());
+	}
+
+
+	FShaderResourceViewRHIRef& GetDeformTransformsSRV() { return BindMatricesSRV; }
+
+
+	void SetBuffer(TArray<FMatrix> buffer) const
+	{
+		check(IsInRenderingThread());       
+	//	RHIUnlockStructuredBuffer(bindMatricesSB);
+	}
+
+	void UpdateBoneMatrixBufferSB_RenderThread() const
+	{
+	/*	check(IsInRenderingThread());
+		//Update the structured buffer only if it needs update   
+		void* StructuredBufferData = RHILockStructuredBuffer(pGroupData->BindMatricesSB, 0, pGroupData->Buffer.Num() * sizeof(FMatrix), RLM_WriteOnly);
+		FMemory::Memcpy(StructuredBufferData, pGroupData->Buffer.GetData(), pGroupData->Buffer.Num() * sizeof(FMatrix));
+		RHIUnlockStructuredBuffer(BindMatricesSB);*/
+	}
+    
+    
+private:   
+    
+	//The shader resource view of the structured buffer, this is what we bind to the vertex factory shader
+	FShaderResourceViewRHIRef BindMatricesSRV;
+   
+	//The structured buffer that will contain all the deform transoform and going to be used as a shader resource
+	FStructuredBufferRHIRef BindMatricesSB;
+
+	FAnimMeshVertexFactory animMeshVertexFactory;
 };
 
 
@@ -139,7 +197,7 @@ class FAnimMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParame
 		const FAnimMeshVertexFactory* AnimMeshVertexFactory = ((FAnimMeshVertexFactory*)VertexFactory);
 	
 		ShaderBindings.Add(RendererIndex, AnimMeshVertexFactory->RendererIndex);		
-	//	ShaderBindings.Add(MatrixBufferSRV, AnimMeshVertexFactory->SceneProxy->GetDeformTransformsSRV());
+		ShaderBindings.Add(MatrixBufferSRV, AnimMeshVertexFactory->SceneProxy->GetDeformTransformsSRV());
 	};
 	
 private:
@@ -153,4 +211,4 @@ IMPLEMENT_TYPE_LAYOUT(FAnimMeshVertexFactoryShaderParameters);
 
 IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshVertexFactory, SF_Vertex, FAnimMeshVertexFactoryShaderParameters);
 
-IMPLEMENT_VERTEX_FACTORY_TYPE(FAnimMeshVertexFactory, "/Animations/Shaders/AnimLocalVertexFactory.ush", true, true, true, true, true);
+IMPLEMENT_VERTEX_FACTORY_TYPE(FAnimMeshVertexFactory, "/CustomShaders/AnimVertexFactory.ush", true, true, true, true, true);

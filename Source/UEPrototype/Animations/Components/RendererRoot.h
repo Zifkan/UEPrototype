@@ -7,5 +7,5 @@ struct RendererRoot
 
 struct CharacterActorComponent
 {
-    ACharacterActor* Character;
+     ACharacterActor* Character;
 };

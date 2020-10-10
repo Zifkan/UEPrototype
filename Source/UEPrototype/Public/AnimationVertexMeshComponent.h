@@ -8,7 +8,7 @@
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class UEPROTOTYPE_API UAnimationVertexMeshComponent : public UMeshComponent
+class UEPROTOTYPE_API UAnimationVertexMeshComponent : public UStaticMeshComponent
 {
 	GENERATED_BODY()
 
@@ -17,4 +17,7 @@ public:
 	UAnimationVertexMeshComponent();
 
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
+
+	void SetRenderIndex(int index);
+	void SetBuffer(TArray<FMatrix> buffer);
 };

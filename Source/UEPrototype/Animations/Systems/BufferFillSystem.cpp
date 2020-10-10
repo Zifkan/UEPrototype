@@ -1,29 +1,33 @@
 #include "BufferFillSystem.h"
-
+#include "Constants.h"
 #include "RendererGroup.h"
+#include "Components/RendererRoot.h"
 
 void BufferFillSystem::OnCreate()
 {
-    rendererGroup = RendererGroup::instance();
+    pGroupData = RendererGroup::instance();
     SystemRun->action([this](flecs::iter it)
     {
+        auto buffer = pGroupData->Buffer;
+        auto rootCount = pGroupData->RenderEntityList.Num();
+        auto totalBufferSize = Constants::BoneSize * rootCount;
 
-        ENQUEUE_RENDER_COMMAND(UpdateBoneMatrixBufferSB)([this](FRHICommandListImmediate& RHICmdList)
+        if (buffer.Num() != totalBufferSize)
         {
-           UpdateBoneMatrixBufferSB_RenderThread();
-        });
-        
-        
+            SetComputeBuffer();
+        }
     });
 }
 
 
-void BufferFillSystem::UpdateBoneMatrixBufferSB_RenderThread() const
+void BufferFillSystem::SetComputeBuffer() const
 {
-    check(IsInRenderingThread());
-    //Update the structured buffer only if it needs update
-   
-    void* StructuredBufferData = RHILockStructuredBuffer(rendererGroup->BindMatricesSB, 0, rendererGroup->Buffer.Num() * sizeof(FMatrix), RLM_WriteOnly);
-    FMemory::Memcpy(StructuredBufferData, rendererGroup->Buffer.GetData(), rendererGroup->Buffer.Num() * sizeof(FMatrix));
-    RHIUnlockStructuredBuffer(rendererGroup->BindMatricesSB);
+    for (int i = 0; i < pGroupData->RenderEntityList.Num(); i++)
+    {
+        auto entity = pGroupData->RenderEntityList[i];
+        auto rootRendererData = entity.get<CharacterActorComponent>();
+        rootRendererData->Character->SetSetBuffer(pGroupData->Buffer);
+    }
 }
+
+
