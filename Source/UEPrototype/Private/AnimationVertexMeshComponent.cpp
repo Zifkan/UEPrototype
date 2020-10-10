@@ -3,7 +3,7 @@
 
 #include "AnimationVertexMeshComponent.h"
 
-#include "Shaders/AnimationVertexFactory.h"
+#include "AnimMesh/Shaders/AnimationVertexFactory.h"
 
 
 // Sets default values for this component's properties

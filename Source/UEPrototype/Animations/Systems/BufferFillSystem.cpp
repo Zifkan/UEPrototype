@@ -7,15 +7,8 @@ void BufferFillSystem::OnCreate()
 {
     pGroupData = RendererGroup::instance();
     SystemRun->action([this](flecs::iter it)
-    {
-        auto buffer = pGroupData->Buffer;
-        auto rootCount = pGroupData->RenderEntityList.Num();
-        auto totalBufferSize = Constants::BoneSize * rootCount;
-
-        if (buffer.Num() != totalBufferSize)
-        {
-            SetComputeBuffer();
-        }
+    {   
+        SetComputeBuffer();
     });
 }
 

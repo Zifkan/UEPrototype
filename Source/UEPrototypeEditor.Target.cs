@@ -9,6 +9,6 @@ public class UEPrototypeEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.Add("UEPrototype");
+		ExtraModuleNames.AddRange( new string[] { "UEPrototype", "AnimMesh"} );
 	}
 }

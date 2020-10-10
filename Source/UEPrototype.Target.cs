@@ -9,6 +9,6 @@ public class UEPrototypeTarget : TargetRules
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.Add("UEPrototype");
+		ExtraModuleNames.AddRange( new string[] { "UEPrototype", "AnimMesh"} );
 	}
 }

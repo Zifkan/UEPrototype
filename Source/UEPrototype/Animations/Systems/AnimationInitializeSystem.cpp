@@ -14,12 +14,6 @@ void AnimationInitializeSystem::OnCreate()
 
         actor.Character->SetIndex(rootRenderId); //TODO Set render index to material
 
-//TODO Set render index to material remove mechanism
-  /*      PostUpdateCommands.AddSharedComponent(customRendererEntity, new RemoveRenderer
-        {
-            CustomRendererIndex = rootRenderId,
-
-        });*/
 
         rootRendererData.RenderEntityListId = rootRenderId;
 

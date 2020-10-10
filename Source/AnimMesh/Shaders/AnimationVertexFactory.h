@@ -1,6 +1,6 @@
 #pragma once
 
-#include "AnimationVertexMeshComponent.h"
+
 #include "RenderResource.h"
 #include "VertexFactory.h"
 #include "MaterialShared.h"

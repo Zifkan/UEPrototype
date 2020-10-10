@@ -12,6 +12,11 @@
 				"Engine",
 				"CoreUObject"
 			]
+		},
+		{
+			"Name": "AnimMesh",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
 		}
 	],
 	"Plugins": [
