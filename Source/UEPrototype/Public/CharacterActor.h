@@ -2,9 +2,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "AnimationVertexMeshComponent.h"
 #include "BoneData.h"
 #include "GameFramework/Actor.h"
+#include "AnimMesh/Public/AnimVertexMeshComponent.h"
 #include "CharacterActor.generated.h"
 
 UCLASS(Blueprintable)
@@ -23,7 +23,7 @@ public:
 	TArray<FBoneDataInfo>  BoneInfoArray;
 	
 	UPROPERTY(EditAnywhere,Category=ECS)
-	UAnimationVertexMeshComponent* AnimationVertexMeshComponent;
+	UAnimVertexMeshComponent* AnimationVertexMeshComponent;
 	
 	void SetIndex(int index);
 

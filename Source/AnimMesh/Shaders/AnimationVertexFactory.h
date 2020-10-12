@@ -1,21 +1,29 @@
 #pragma once
 
-
+#include "PrimitiveViewRelevance.h"
 #include "RenderResource.h"
+#include "RenderingThread.h"
+#include "PrimitiveSceneProxy.h"
+#include "Containers/ResourceArray.h"
+#include "EngineGlobals.h"
 #include "VertexFactory.h"
 #include "MaterialShared.h"
+#include "Materials/Material.h"
 #include "LocalVertexFactory.h"
+#include "Engine/Engine.h"
+#include "SceneManagement.h"
+#include "DynamicMeshBuilder.h"
 #include "StaticMeshResources.h"
 #include "MeshMaterialShader.h"
 #include "ShaderParameters.h"
-
+#include "RHIUtilities.h"
 
 class FAnimationVertexSceneProxy;
 struct FAnimMeshVertexFactory;
 
 struct FAnimMeshVertexFactory : FLocalVertexFactory
 {
-	DECLARE_VERTEX_FACTORY_TYPE(FAnimMeshVertexFactory);
+ 	DECLARE_VERTEX_FACTORY_TYPE(FAnimMeshVertexFactory);
 public:
 
 
@@ -24,6 +32,7 @@ public:
 		//We're not interested in Manual vertex fetch so we disable it 
 		bSupportsManualVertexFetch = false;
 	}
+
 	
 	static bool ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters)
 	{
@@ -36,15 +45,17 @@ public:
 		return false;
 	}
 	
+	
 	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
 	{
+		
 		const bool ContainsManualVertexFetch = OutEnvironment.GetDefinitions().Contains("MANUAL_VERTEX_FETCH");
 		if (!ContainsManualVertexFetch)
 		{
 			OutEnvironment.SetDefine(TEXT("MANUAL_VERTEX_FETCH"), TEXT("0"));
 		}
 
-		OutEnvironment.SetDefine(TEXT("ANIM_MESH"), TEXT("1"));
+		OutEnvironment.SetDefine(TEXT("DEFORM_MESH"), TEXT("1"));
 	}
 
 	virtual void InitRHI() override 
@@ -95,6 +106,9 @@ public:
 		check(IsValidRef(GetDeclaration()));
 	}
 
+
+
+
 	void SetTransformIndex(uint16 Index) { RendererIndex = Index; }
     void SetSceneProxy(FAnimationVertexSceneProxy* Proxy) { SceneProxy = Proxy; }
 private:
@@ -116,6 +130,19 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 		,animMeshVertexFactory(GetScene().GetFeatureLevel())
 	{
 		animMeshVertexFactory.SetSceneProxy(this);
+
+		Buffer.AddZeroed(256);
+
+		TResourceArray<FMatrix>* ResourceArray = new TResourceArray<FMatrix>(true);
+		FRHIResourceCreateInfo CreateInfo;
+		ResourceArray->Append(Buffer);
+		CreateInfo.ResourceArray = ResourceArray;
+		//Set the debug name so we can find the resource when debugging in RenderDoc
+		CreateInfo.DebugName = TEXT("DeformMesh_TransformsSB");
+		
+		BindMatricesSB = RHICreateStructuredBuffer(sizeof(FMatrix), 256 * sizeof(FMatrix), BUF_ShaderResource, CreateInfo);
+		
+		BindMatricesSRV = RHICreateShaderResourceView(BindMatricesSB);
 	}
 
 	SIZE_T GetTypeHash() const override
@@ -133,23 +160,31 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 	FShaderResourceViewRHIRef& GetDeformTransformsSRV() { return BindMatricesSRV; }
 
 
-	void SetBuffer(TArray<FMatrix> buffer) const
-	{
-		check(IsInRenderingThread());       
-	//	RHIUnlockStructuredBuffer(bindMatricesSB);
+	void SetBuffer(TArray<FMatrix> buffer)
+	{				
+		Buffer = buffer;
+		UE_LOG(LogTemp, Warning, TEXT("animMeshSceneProxy: %i"),Buffer.Num());
 	}
 
-	void UpdateBoneMatrixBufferSB_RenderThread() const
+	void UpdateBoneMatrixBufferSB_RenderThread()
 	{
-	/*	check(IsInRenderingThread());
-		//Update the structured buffer only if it needs update   
-		void* StructuredBufferData = RHILockStructuredBuffer(pGroupData->BindMatricesSB, 0, pGroupData->Buffer.Num() * sizeof(FMatrix), RLM_WriteOnly);
-		FMemory::Memcpy(StructuredBufferData, pGroupData->Buffer.GetData(), pGroupData->Buffer.Num() * sizeof(FMatrix));
-		RHIUnlockStructuredBuffer(BindMatricesSB);*/
+		check(IsInRenderingThread());
+
+		
+		if(bBonesTransformsDirty)
+		{
+			void* StructuredBufferData = RHILockStructuredBuffer(BindMatricesSB, 0, Buffer.Num() * sizeof(FMatrix), RLM_WriteOnly);
+			FMemory::Memcpy(StructuredBufferData, Buffer.GetData(), Buffer.Num() * sizeof(FMatrix));
+			RHIUnlockStructuredBuffer(BindMatricesSB);
+
+			bBonesTransformsDirty = false;
+		}
 	}
     
     
-private:   
+private:
+
+	TArray<FMatrix> Buffer;
     
 	//The shader resource view of the structured buffer, this is what we bind to the vertex factory shader
 	FShaderResourceViewRHIRef BindMatricesSRV;
@@ -158,6 +193,9 @@ private:
 	FStructuredBufferRHIRef BindMatricesSB;
 
 	FAnimMeshVertexFactory animMeshVertexFactory;
+
+	//Whether the structured buffer needs to be updated or not
+	bool bBonesTransformsDirty;
 };
 
 

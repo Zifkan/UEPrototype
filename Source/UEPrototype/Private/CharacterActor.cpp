@@ -16,7 +16,7 @@ ACharacterActor::ACharacterActor()
     Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     RootComponent = Root;
 
-	AnimationVertexMeshComponent = CreateDefaultSubobject<UAnimationVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
+	AnimationVertexMeshComponent = CreateDefaultSubobject<UAnimVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
 	AnimationVertexMeshComponent->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
 }
 

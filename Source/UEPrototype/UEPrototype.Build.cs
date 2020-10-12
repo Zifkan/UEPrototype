@@ -11,7 +11,7 @@ public class UEPrototype : ModuleRules
         bAddDefaultIncludePaths = true;
         
         
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "AnimMesh"});
 
         PrivateIncludePathModuleNames.AddRange(
             new string[] {
@@ -28,12 +28,7 @@ public class UEPrototype : ModuleRules
             "UEPrototype/Private",
             "UEPrototype/ECS",
             "UEPrototype/Converters",
-            "UEPrototype/Animations",
-            /* Path.Combine(ThirdPartyPath, "ECSPlugin", "Source", "ECSPlugin","Public"),
-             Path.Combine(ThirdPartyPath, "ECSPlugin", "Source", "ECSPlugin","Private"),
-             Path.Combine(ThirdPartyPath, "ECSPlugin", "Source", "ECSPlugin","ECS"),
-             Path.Combine(ThirdPartyPath, "ECSPlugin", "Source", "ECSPlugin","ECS","Systems"),
-             Path.Combine(ThirdPartyPath, "ECSPlugin", "Source", "ECSPlugin","ECS","Systems","Transforms"),*/
+            "UEPrototype/Animations"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[]

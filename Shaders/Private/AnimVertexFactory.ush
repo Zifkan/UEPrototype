@@ -61,13 +61,13 @@ float4 SplineParams[10];
 #endif	// USE_SPLINEDEFORM
 
 
-#ifndef ANIM_MESH
-#define ANIM_MESH 0
+#ifndef DEFORM_MESH
+#define DEFORM_MESH 0
 #endif
 
-#if ANIM_MESH
-StructuredBuffer<float4x4> AMMatrixBuffer : register(t0);
-uint AMRendererIndex;
+#if DEFORM_MESH
+StructuredBuffer<float4x4> DMTransforms : register(t0);
+uint DMTransformIndex;
 
 
  struct CustomRenderData
@@ -129,7 +129,7 @@ struct FVertexFactoryInput
 {
 	float4	Position	: ATTRIBUTE0;
 
-#if !MANUAL_VERTEX_FETCH
+#if !MANUAL_VERTEX_FETCH && !DEFORM_MESH
 	#if METAL_PROFILE
 		float3	TangentX	: ATTRIBUTE1;
 		// TangentZ.w contains sign of tangent basis determinant
@@ -692,22 +692,20 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 	}
 #endif	// USE_SPLINEDEFORM
 
-#if USE_INSTANCING && !ANIM_MESH
+#if USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
-#elif USE_INSTANCING && ANIM_MESH
-float4 CalcWorldPosition(FVertexFactoryInput Input, uint PrimitiveId)
 #else
 float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
-#if USE_INSTANCING && !ANIM_MESH
+#if USE_INSTANCING
 	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
-#elif ANIM_MESH && USE_INSTANCING
-	//ANIM_MESH SHould be custom code
+#elif DEFORM_MESH
 	CustomRenderData renderData;
 
-	float4 indexes = DecodeFloatToFloat4(Input.PackedTexCoords2.x);
+	/*float4 indexes = DecodeFloatToFloat4(Input.PackedTexCoords2.x);
 	float4 weights = DecodeFloatToFloat4(Input.PackedTexCoords2.y);
+
 	
     renderData.boneIndex1 = indexes.x;
     renderData.boneIndex2 = indexes.y;
@@ -732,7 +730,9 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 
     //mat = mul(unity_WorldToObject, mat);           
 
-    return mul(mat, rendererData.vertexPos);
+   // return mul(mat, rendererData.vertexPos);*/
+
+	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline
@@ -923,11 +923,9 @@ half3x3 VertexFactoryGetTangentToLocal( FVertexFactoryInput Input, FVertexFactor
 // @return translated world position
 float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIntermediates Intermediates)
 {
-#if USE_INSTANCING && !ANIM_MESH
+#if USE_INSTANCING
 	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
-#elif USE_INSTANCING && ANIM_MESH
-	return CalcWorldPosition(Input,Intermediates.PrimitiveId);
-else	
+#else
 	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
 #endif	// USE_INSTANCING
 }

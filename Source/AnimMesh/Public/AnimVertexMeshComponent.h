@@ -3,21 +3,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "AnimationVertexMeshComponent.generated.h"
-
-
+#include "Components/StaticMeshComponent.h"
+#include "AnimVertexMeshComponent.generated.h"
+/**
+ * 
+ */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class UEPROTOTYPE_API UAnimationVertexMeshComponent : public UStaticMeshComponent
+class ANIMMESH_API UAnimVertexMeshComponent : public UStaticMeshComponent
 {
 	GENERATED_BODY()
 
-public:	
+public:    
 	// Sets default values for this component's properties
-	UAnimationVertexMeshComponent();
+	UAnimVertexMeshComponent();
 
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	void SetRenderIndex(int index);
 	void SetBuffer(TArray<FMatrix> buffer);
+	
 };
