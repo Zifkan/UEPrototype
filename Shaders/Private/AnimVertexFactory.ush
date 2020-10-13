@@ -61,13 +61,13 @@ float4 SplineParams[10];
 #endif	// USE_SPLINEDEFORM
 
 
-#ifndef DEFORM_MESH
-#define DEFORM_MESH 0
+#ifndef ANIM_MESH
+#define ANIM_MESH 0
 #endif
 
-#if DEFORM_MESH
-StructuredBuffer<float4x4> DMTransforms : register(t0);
-uint DMTransformIndex;
+#if ANIM_MESH
+StructuredBuffer<float4x4> BoneMatrixBuffer : register(t0);
+int AMRendererIndex;
 
 
  struct CustomRenderData
@@ -129,7 +129,7 @@ struct FVertexFactoryInput
 {
 	float4	Position	: ATTRIBUTE0;
 
-#if !MANUAL_VERTEX_FETCH && !DEFORM_MESH
+#if !MANUAL_VERTEX_FETCH && !ANIM_MESH
 	#if METAL_PROFILE
 		float3	TangentX	: ATTRIBUTE1;
 		// TangentZ.w contains sign of tangent basis determinant
@@ -692,15 +692,55 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 	}
 #endif	// USE_SPLINEDEFORM
 
+
+#if ANIM_MESH
+
+float4 AnimDeformMesh(FVertexFactoryInput Input,float4 Position)
+{
+	CustomRenderData renderData;
+
+	float4 indexes = DecodeFloatToFloat4(/*Input.PackedTexCoords2.*/0);
+	float4 weights = DecodeFloatToFloat4(/*Input.PackedTexCoords2.y*/0);
+
+	
+	int  boneIndex1 = indexes.x;
+	int  boneIndex2 = indexes.y;
+	int  boneIndex3 = indexes.z;
+	int  boneIndex4 = indexes.w;
+
+	float  boneWeight1 = weights.x;
+	float  boneWeight2 = weights.y;
+	float  boneWeight3 = weights.z;
+	float  boneWeight4 = weights.w;
+
+	int renderIndex = AMRendererIndex;   
+	int startIdx = renderIndex * 256;
+
+	float4x4 mat =  BoneMatrixBuffer[startIdx + boneIndex1] * boneWeight1 +
+					BoneMatrixBuffer[startIdx + boneIndex2] * boneWeight2 +
+					BoneMatrixBuffer[startIdx + boneIndex3] * boneWeight3 +
+					BoneMatrixBuffer[startIdx + boneIndex4] * boneWeight4;
+
+	
+	//mat = mul(unity_WorldToObject, mat);           
+
+	 return mul(mat, Position);
+}
+#endif
+
+
+
 #if USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
+/*#elif ANIM_MESH
+float4 CalcWorldPosition(float4 Position, uint PrimitiveId,FVertexFactoryInput Input)*/
 #else
 float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
 #if USE_INSTANCING
 	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
-#elif DEFORM_MESH
+#elif ANIM_MESH
 	CustomRenderData renderData;
 
 	/*float4 indexes = DecodeFloatToFloat4(Input.PackedTexCoords2.x);
@@ -732,7 +772,7 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 
    // return mul(mat, rendererData.vertexPos);*/
 
-	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
+	return float4(0,0,0,0);//TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline
@@ -753,7 +793,7 @@ half3x3 CalcTangentToLocal(FVertexFactoryInput Input, out float TangentSign)
 {
 	half3x3 Result;
 	
-#if !DEFORM_MESH
+#if !ANIM_MESH
 	
 #if MANUAL_VERTEX_FETCH
 	half3 TangentInputX = LocalVF.VertexFetch_PackedTangentsBuffer[2 * (LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) + 0].xyz;
@@ -828,7 +868,7 @@ FVertexFactoryIntermediates GetVertexFactoryIntermediates(FVertexFactoryInput In
 	Intermediates.Color = LocalVF.VertexFetch_ColorComponentsBuffer[(LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) & LocalVF.VertexFetch_Parameters[VF_ColorIndexMask_Index]] FMANUALFETCH_COLOR_COMPONENT_SWIZZLE; // Swizzle vertex color.
 
 #else
-	#if DEFORM_MESH
+	#if ANIM_MESH
 	Intermediates.Color = half4(0.0, 0.0, 0.0, 0.0);
 	#else
 	Intermediates.Color = Input.Color FCOLOR_COMPONENT_SWIZZLE; // Swizzle vertex color.
@@ -925,6 +965,8 @@ float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIn
 {
 #if USE_INSTANCING
 	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
+/*#elif ANIM_MESH
+	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId,Input);*/
 #else
 	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
 #endif	// USE_INSTANCING

@@ -42,7 +42,7 @@ public:
 		{
 			return true;
 		}
-		return false;
+		return true;
 	}
 	
 	
@@ -55,7 +55,7 @@ public:
 			OutEnvironment.SetDefine(TEXT("MANUAL_VERTEX_FETCH"), TEXT("0"));
 		}
 
-		OutEnvironment.SetDefine(TEXT("DEFORM_MESH"), TEXT("1"));
+		OutEnvironment.SetDefine(TEXT("ANIM_MESH"), TEXT("1"));
 	}
 
 	virtual void InitRHI() override 
