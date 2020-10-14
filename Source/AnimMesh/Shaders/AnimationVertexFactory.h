@@ -37,12 +37,12 @@ public:
 	static bool ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters)
 	{
 		if ((Parameters.MaterialParameters.MaterialDomain == MD_Surface &&
-			Parameters.MaterialParameters.ShadingModels == MSM_Unlit) ||
+			Parameters.MaterialParameters.ShadingModels == MSM_DefaultLit) ||
 			Parameters.MaterialParameters.bIsDefaultMaterial)
 		{
 			return true;
 		}
-		return true;
+		return false;
 	}
 	
 	
@@ -54,8 +54,12 @@ public:
 		{
 			OutEnvironment.SetDefine(TEXT("MANUAL_VERTEX_FETCH"), TEXT("0"));
 		}
-
+	
 		OutEnvironment.SetDefine(TEXT("ANIM_MESH"), TEXT("1"));
+		//OutEnvironment.SetDefine(TEXT("NUM_MATERIAL_TEXCOORDS_VERTEX"), TEXT("7"));
+		//OutEnvironment.SetDefine(TEXT("GPUSKIN_PASS_THROUGH"), TEXT("0"));
+		
+		
 	}
 
 	virtual void InitRHI() override 

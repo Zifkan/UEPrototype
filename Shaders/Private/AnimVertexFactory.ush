@@ -693,14 +693,14 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 #endif	// USE_SPLINEDEFORM
 
 
-#if ANIM_MESH
+#if ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
 
-float4 AnimDeformMesh(FVertexFactoryInput Input,float4 Position)
+float4 AnimDeformMesh(FVertexFactoryInput Input)
 {
 	CustomRenderData renderData;
 
-	float4 indexes = DecodeFloatToFloat4(/*Input.PackedTexCoords2.*/0);
-	float4 weights = DecodeFloatToFloat4(/*Input.PackedTexCoords2.y*/0);
+	float4 indexes = DecodeFloatToFloat2(Input.PackedTexCoords2.x);
+	float4 weights = DecodeFloatToFloat2(Input.PackedTexCoords2.y);
 
 	
 	int  boneIndex1 = indexes.x;
@@ -724,7 +724,7 @@ float4 AnimDeformMesh(FVertexFactoryInput Input,float4 Position)
 	
 	//mat = mul(unity_WorldToObject, mat);           
 
-	 return mul(mat, Position);
+	 return mul(mat, Input.Position);
 }
 #endif
 
@@ -732,47 +732,16 @@ float4 AnimDeformMesh(FVertexFactoryInput Input,float4 Position)
 
 #if USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
-/*#elif ANIM_MESH
-float4 CalcWorldPosition(float4 Position, uint PrimitiveId,FVertexFactoryInput Input)*/
+#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
+float4 CalcWorldPosition(FVertexFactoryInput Input)
 #else
 float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
 #if USE_INSTANCING
 	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
-#elif ANIM_MESH
-	CustomRenderData renderData;
-
-	/*float4 indexes = DecodeFloatToFloat4(Input.PackedTexCoords2.x);
-	float4 weights = DecodeFloatToFloat4(Input.PackedTexCoords2.y);
-
-	
-    renderData.boneIndex1 = indexes.x;
-    renderData.boneIndex2 = indexes.y;
-    renderData.boneIndex3 = indexes.z;
-    renderData.boneIndex4 = indexes.w;
-
-    renderData.boneWeight1 = weights.x;
-    renderData.boneWeight2 = weights.y;
-    renderData.boneWeight3 = weights.z;
-    renderData.boneWeight4 = weights.w;
-
-    renderData.renderIndex = AMRendererIndex;
-
-    
-    int index = rendererData.renderIndex;   
-    int startIdx = index * 256;
-
-    float4x4 mat = matrixBuffer[startIdx + rendererData.boneIndex1] * rendererData.boneWeight1 +
-        matrixBuffer[startIdx + rendererData.boneIndex2] * rendererData.boneWeight2 +
-        matrixBuffer[startIdx + rendererData.boneIndex3] * rendererData.boneWeight3 +
-        matrixBuffer[startIdx + rendererData.boneIndex4] * rendererData.boneWeight4;
-
-    //mat = mul(unity_WorldToObject, mat);           
-
-   // return mul(mat, rendererData.vertexPos);*/
-
-	return float4(0,0,0,0);//TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
+#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
+    return AnimDeformMesh(Input);	
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline
@@ -965,8 +934,8 @@ float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIn
 {
 #if USE_INSTANCING
 	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
-/*#elif ANIM_MESH
-	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId,Input);*/
+#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
+	float4 CalcWorldPosition(Input)
 #else
 	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
 #endif	// USE_INSTANCING
