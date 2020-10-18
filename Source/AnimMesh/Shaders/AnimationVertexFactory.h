@@ -56,8 +56,6 @@ public:
 		}
 	
 		OutEnvironment.SetDefine(TEXT("ANIM_MESH"), TEXT("1"));
-		//OutEnvironment.SetDefine(TEXT("NUM_MATERIAL_TEXCOORDS_VERTEX"), TEXT("7"));
-		//OutEnvironment.SetDefine(TEXT("GPUSKIN_PASS_THROUGH"), TEXT("0"));
 		
 		
 	}
@@ -125,6 +123,41 @@ private:
 
 
 
+static inline void InitOrUpdateResource(FRenderResource* Resource)
+{
+	if (!Resource->IsInitialized())
+	{
+		Resource->InitResource();
+	}
+	else
+	{
+		Resource->UpdateRHI();
+	}
+}
+
+
+
+static void InitVertexFactoryData(FAnimMeshVertexFactory* VertexFactory, FStaticMeshVertexBuffers* VertexBuffers)
+{
+	ENQUEUE_RENDER_COMMAND(StaticMeshVertexBuffersLegacyInit)(
+        [VertexFactory, VertexBuffers](FRHICommandListImmediate& RHICmdList)
+        {
+            //Initialize or update the RHI vertex buffers
+            InitOrUpdateResource(&VertexBuffers->PositionVertexBuffer);
+            InitOrUpdateResource(&VertexBuffers->StaticMeshVertexBuffer);
+
+            //Use the RHI vertex buffers to create the needed Vertex stream components in an FDataType instance, and then set it as the data of the vertex factory
+            FLocalVertexFactory::FDataType Data;
+            VertexBuffers->PositionVertexBuffer.BindPositionVertexBuffer(VertexFactory, Data);
+            VertexBuffers->StaticMeshVertexBuffer.BindPackedTexCoordVertexBuffer(VertexFactory, Data);
+            VertexFactory->SetData(Data);
+
+            //Initalize the vertex factory using the data that we just set, this will call the InitRHI() method that we implemented in out vertex factory
+            InitOrUpdateResource(VertexFactory);
+        });
+}
+
+
 class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy 
 {
 	public:
@@ -135,8 +168,16 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 	{
 		animMeshVertexFactory.SetSceneProxy(this);
 
-		Buffer.AddZeroed(256);
 
+		Material = UMaterial::GetDefaultMaterial(MD_Surface);
+		
+		Buffer.AddZeroed(256);
+		
+		auto& LODResource = Component->GetStaticMesh()->RenderData->LODResources[0];
+	
+		InitVertexFactoryData(&animMeshVertexFactory, &(LODResource.VertexBuffers));
+
+		
 		TResourceArray<FMatrix>* ResourceArray = new TResourceArray<FMatrix>(true);
 		FRHIResourceCreateInfo CreateInfo;
 		ResourceArray->Append(Buffer);
@@ -147,8 +188,23 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 		BindMatricesSB = RHICreateStructuredBuffer(sizeof(FMatrix), 256 * sizeof(FMatrix), BUF_ShaderResource, CreateInfo);
 		
 		BindMatricesSRV = RHICreateShaderResourceView(BindMatricesSB);
+
+		
+
+		 Component->GetStaticMesh()->RenderData->LODVertexFactories[0].InitVertexFactory(LODResource,animMeshVertexFactory,0, Component->GetStaticMesh(),false);
 	}
 
+	virtual ~FAnimationVertexSceneProxy()
+	{
+		
+
+		Buffer.Reset();
+		animMeshVertexFactory.ReleaseResource();
+		//Release the structured buffer and the SRV
+		BindMatricesSRV.SafeRelease();
+		BindMatricesSB.SafeRelease();
+	}
+	
 	SIZE_T GetTypeHash() const override
 	{
 		static size_t UniquePointer;
@@ -184,8 +240,12 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 			bBonesTransformsDirty = false;
 		}
 	}
-    
-    
+	
+	FAnimMeshVertexFactory animMeshVertexFactory;
+	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily,		uint32 VisibilityMap, FMeshElementCollector& Collector) const override;
+
+	UMaterialInterface* Material;
+
 private:
 
 	TArray<FMatrix> Buffer;
@@ -196,11 +256,14 @@ private:
 	//The structured buffer that will contain all the deform transoform and going to be used as a shader resource
 	FStructuredBufferRHIRef BindMatricesSB;
 
-	FAnimMeshVertexFactory animMeshVertexFactory;
+	
 
 	//Whether the structured buffer needs to be updated or not
 	bool bBonesTransformsDirty;
 };
+
+
+
 
 
 class FAnimMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParameters
@@ -246,6 +309,8 @@ private:
 	LAYOUT_FIELD(FShaderParameter, RendererIndex);
 	LAYOUT_FIELD(FShaderResourceParameter, MatrixBufferSRV);
 };
+
+
 
 IMPLEMENT_TYPE_LAYOUT(FAnimMeshVertexFactoryShaderParameters);
 

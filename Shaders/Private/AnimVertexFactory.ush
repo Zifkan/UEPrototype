@@ -86,7 +86,7 @@ int AMRendererIndex;
  };
 
 
-float4 DecodeFloatToFloat4( float v )
+float4 DecodeFloatToFloat2( float v )
 {
 	float4 kEncodeMul = float4(1.0, 255.0, 65025.0, 160581375.0);
 	float kEncodeBit = 1.0/255.0;
@@ -693,10 +693,11 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 #endif	// USE_SPLINEDEFORM
 
 
-#if ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
+#if ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 1
 
-float4 AnimDeformMesh(FVertexFactoryInput Input)
+float4 AnimDeformMesh(/*FVertexFactoryInput Input*/)
 {
+/*
 	CustomRenderData renderData;
 
 	float4 indexes = DecodeFloatToFloat2(Input.PackedTexCoords2.x);
@@ -721,27 +722,21 @@ float4 AnimDeformMesh(FVertexFactoryInput Input)
 					BoneMatrixBuffer[startIdx + boneIndex3] * boneWeight3 +
 					BoneMatrixBuffer[startIdx + boneIndex4] * boneWeight4;
 
-	
-	//mat = mul(unity_WorldToObject, mat);           
+	*/
 
-	 return mul(mat, Input.Position);
+	 return float4(1000,1000,41,0);
+	// return mul(mat, Input.Position);
 }
 #endif
 
-
-
 #if USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
-#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
-float4 CalcWorldPosition(FVertexFactoryInput Input)
 #else
 float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
 #if USE_INSTANCING
 	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
-#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
-    return AnimDeformMesh(Input);	
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline
@@ -757,6 +752,8 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
 #endif
 }
+
+
 
 half3x3 CalcTangentToLocal(FVertexFactoryInput Input, out float TangentSign)
 {
@@ -934,8 +931,8 @@ float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIn
 {
 #if USE_INSTANCING
 	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
-#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 7
-	float4 CalcWorldPosition(Input)
+#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 1
+	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
 #else
 	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
 #endif	// USE_INSTANCING
