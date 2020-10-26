@@ -59,7 +59,7 @@ void UAnimVertexMeshComponent::SetBuffer(TArray<FMatrix> buffer)
         ENQUEUE_RENDER_COMMAND(FDeformMeshAllTransformsSBUpdate)(
             [animMeshSceneProxy](FRHICommandListImmediate& RHICmdList)
             {
-                animMeshSceneProxy-> UpdateBoneMatrixBufferSB_RenderThread();
+         //       animMeshSceneProxy-> UpdateBoneMatrixBufferSB_RenderThread();
             });
     }
 }
