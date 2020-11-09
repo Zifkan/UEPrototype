@@ -12,12 +12,10 @@
 #include "LocalVertexFactory.h"
 #include "Engine/Engine.h"
 #include "SceneManagement.h"
-#include "DynamicMeshBuilder.h"
 #include "StaticMeshResources.h"
 #include "MeshMaterialShader.h"
-#include "ShaderParameters.h"
 #include "RHIUtilities.h"
-#include "AI/Navigation/NavCollisionBase.h"
+#include "TessellationRendering.h"
 #include "PhysicalMaterials/PhysicalMaterialMask.h"
 
 class FAnimationVertexSceneProxy;
@@ -43,6 +41,7 @@ public:
 	}
 
 	
+	
 	static bool ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters)
 	{
 		/*if ((Parameters.MaterialParameters.MaterialDomain == MD_Surface &&
@@ -63,7 +62,7 @@ public:
 	}
 	
 	
-	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
+/*	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
 	{
 		
 		/*const bool ContainsManualVertexFetch = OutEnvironment.GetDefinitions().Contains("MANUAL_VERTEX_FETCH");
@@ -72,7 +71,7 @@ public:
 			OutEnvironment.SetDefine(TEXT("MANUAL_VERTEX_FETCH"), TEXT("0"));
 		}
 	
-		OutEnvironment.SetDefine(TEXT("ANIM_MESH"), TEXT("1"));	*/
+		OutEnvironment.SetDefine(TEXT("ANIM_MESH"), TEXT("1"));	
 		OutEnvironment.SetDefine(TEXT("VF_SUPPORTS_SPEEDTREE_WIND"),TEXT("1"));
 
 		const bool ContainsManualVertexFetch = OutEnvironment.GetDefinitions().Contains("MANUAL_VERTEX_FETCH");
@@ -85,7 +84,7 @@ public:
 		OutEnvironment.SetDefine(TEXT("VF_GPU_SCENE_TEXTURE"), Parameters.VertexFactoryType->SupportsPrimitiveIdStream() && UseGPUScene(Parameters.Platform, GetMaxSupportedFeatureLevel(Parameters.Platform)) && GPUSceneUseTexture2D(Parameters.Platform));
 
 		
-	}	
+	}	*/
 
 
 	void SetTransformIndex(uint16 Index) { RendererIndex = Index; }
@@ -105,21 +104,26 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 	
 	FAnimationVertexSceneProxy(UStaticMeshComponent* Component, bool bForceLODsShareStaticLighting)
         : FStaticMeshSceneProxy(Component, bForceLODsShareStaticLighting)
-		,animMeshVertexFactory(GetScene().GetFeatureLevel())
-	{	
-		
-		animMeshVertexFactory.SetSceneProxy(this);
-		auto& LODResources = Component->GetStaticMesh()->RenderData->LODResources;		
-		
+	{		
+		auto& LODResources = Component->GetStaticMesh()->RenderData->LODResources;
 
-		for (int i = 0; i < Component->GetStaticMesh()->RenderData->LODVertexFactories.Num(); ++i)
+		for (int32 LODIndex = 0; LODIndex < LODResources.Num(); ++LODIndex)
 		{
-			Component->GetStaticMesh()->RenderData->LODVertexFactories[i].InitVertexFactory(LODResources[i],animMeshVertexFactory,i,Component->GetStaticMesh(),false);
+			auto animVertexFactory = new FAnimMeshVertexFactory(GMaxRHIFeatureLevel);
+			//	LODResources[LODIndex].InitResources(Owner);
+			InitResources(*animVertexFactory,LODResources[LODIndex], LODIndex, Component->GetStaticMesh());
+			animVertexFactory->SetSceneProxy(this);
+			animMeshVertexFactories.Add(animVertexFactory);
+		
 		}
+
 		
 		Material = UMaterial::GetDefaultMaterial(MD_Surface);
 		
-		Buffer.AddZeroed(256);
+		
+
+		
+	
 		
 	/*	TResourceArray<FMatrix>* ResourceArray = new TResourceArray<FMatrix>(true);
 		FRHIResourceCreateInfo CreateInfo;
@@ -131,14 +135,90 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 		BindMatricesSB = RHICreateStructuredBuffer(sizeof(FMatrix), 256 * sizeof(FMatrix), BUF_ShaderResource, CreateInfo);		
 		BindMatricesSRV = RHICreateShaderResourceView(BindMatricesSB);
 		*/
+	
+		Buffer.AddZeroed(256);
 
+	}
 
+	void InitResources(FAnimMeshVertexFactory& vertexFactory,const FStaticMeshLODResources& LodResources, uint32 LODIndex, const UStaticMesh* Parent)
+	{
+		InitVertexFactory(LodResources, vertexFactory, LODIndex, Parent, false);
+		BeginInitResource(&vertexFactory);
+	}
+
+	void InitVertexFactory(
+	const FStaticMeshLODResources& LodResources,
+	FAnimMeshVertexFactory& InOutVertexFactory,
+	uint32 LODIndex,
+	const UStaticMesh* InParentMesh,
+	bool bInOverrideColorVertexBuffer
+	)
+{
+	check( InParentMesh != NULL );
+
+	struct InitStaticMeshVertexFactoryParams
+	{
+		FAnimMeshVertexFactory* VertexFactory;
+		const FStaticMeshLODResources* LODResources;
+		bool bOverrideColorVertexBuffer;
+		uint32 LightMapCoordinateIndex;
+		uint32 LODIndex;
+	} Params;
+
+	uint32 LightMapCoordinateIndex = (uint32)InParentMesh->LightMapCoordinateIndex;
+	LightMapCoordinateIndex = LightMapCoordinateIndex < LodResources.VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords() ? LightMapCoordinateIndex : LodResources.VertexBuffers.StaticMeshVertexBuffer.GetNumTexCoords() - 1;
+
+	Params.VertexFactory = &InOutVertexFactory;
+	Params.LODResources = &LodResources;
+	Params.bOverrideColorVertexBuffer = bInOverrideColorVertexBuffer;
+	Params.LightMapCoordinateIndex = LightMapCoordinateIndex;
+	Params.LODIndex = LODIndex;
+
+	// Initialize the static mesh's vertex factory.
+	ENQUEUE_RENDER_COMMAND(InitStaticMeshVertexFactory)(
+		[Params, this](FRHICommandListImmediate& RHICmdList)
+		{
+			FAnimMeshVertexFactory::FDataType Data;
+
+			Params.LODResources->VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(Params.VertexFactory, Data);
+			Params.LODResources->VertexBuffers.StaticMeshVertexBuffer.BindTangentVertexBuffer(Params.VertexFactory, Data);
+			Params.LODResources->VertexBuffers.StaticMeshVertexBuffer.BindPackedTexCoordVertexBuffer(Params.VertexFactory, Data);
+			Params.LODResources->VertexBuffers.StaticMeshVertexBuffer.BindLightMapVertexBuffer(Params.VertexFactory, Data, Params.LightMapCoordinateIndex);
+
+			// bOverrideColorVertexBuffer means we intend to override the color later.  We must construct the vertexfactory such that it believes a proper stride (not 0) is set for
+			// the color stream so that the real stream works later.
+			if(Params.bOverrideColorVertexBuffer)
+			{ 
+				FColorVertexBuffer::BindDefaultColorVertexBuffer(Params.VertexFactory, Data, FColorVertexBuffer::NullBindStride::FColorSizeForComponentOverride);
+			}
+			//otherwise just bind the incoming buffer directly.
+			else
+			{
+				Params.LODResources->VertexBuffers.ColorVertexBuffer.BindColorVertexBuffer(Params.VertexFactory, Data);
+			}
+
+			Data.LODLightmapDataIndex = Params.LODIndex;
+			Params.VertexFactory->SetData(Data);
+			Params.VertexFactory->InitResource();
+
+			RenderData->LODVertexFactories[Params.LODIndex].VertexFactory = *Params.VertexFactory;
+		});
+}
+	
+	
+	void BeginInitResource(FRenderResource* Resource)
+	{
+		ENQUEUE_RENDER_COMMAND(InitCommand)(
+            [Resource](FRHICommandListImmediate& RHICmdList)
+            {
+                Resource->InitResource();
+            });
 	}
 
 	virtual ~FAnimationVertexSceneProxy()
 	{
 		Buffer.Reset();
-		animMeshVertexFactory.ReleaseResource();
+	//	animMeshVertexFactory.ReleaseResource();
 		//Release the structured buffer and the SRV
 		BindMatricesSRV.SafeRelease();
 		BindMatricesSB.SafeRelease();
@@ -180,118 +260,11 @@ class FAnimationVertexSceneProxy final : public FStaticMeshSceneProxy
 		}
 	}
 
-/*
-	virtual bool GetMeshElement(
-	int32 LODIndex, 
-	int32 BatchIndex, 
-	int32 SectionIndex, 
-	uint8 InDepthPriorityGroup, 
-	bool bUseSelectionOutline,
-	bool bAllowPreCulledIndices, 
-	FMeshBatch& OutMeshBatch) const override
-	{
-	const ERHIFeatureLevel::Type FeatureLevel = GetScene().GetFeatureLevel();
-	const FStaticMeshLODResources& LOD = RenderData->LODResources[LODIndex];
-	const FStaticMeshVertexFactories& VFs = RenderData->LODVertexFactories[LODIndex];
-	const FStaticMeshSection& Section  = LOD.Sections[SectionIndex];
-	const FLODInfo& ProxyLODInfo = LODs[LODIndex];
-
-	UMaterialInterface* MaterialInterface = ProxyLODInfo.Sections[SectionIndex].Material;
-	FMaterialRenderProxy* MaterialRenderProxy = MaterialInterface->GetRenderProxy();
-	//const FMaterial* Material = MaterialRenderProxy->GetMaterial(FeatureLevel);
-
-	const FVertexFactory* VertexFactory = nullptr;
-
-	FMeshBatchElement& OutMeshBatchElement = OutMeshBatch.Elements[0];
-
-#if WITH_EDITORONLY_DATA
-	// If material is hidden, then skip the draw.
-	if ((MaterialIndexPreview >= 0) && (MaterialIndexPreview != Section.MaterialIndex))
-	{
-		return false;
-	}
-	// If section is hidden, then skip the draw.
-	if ((SectionIndexPreview >= 0) && (SectionIndexPreview != SectionIndex))
-	{
-		return false;
-	}
-
-	OutMeshBatch.bUseSelectionOutline = bPerSectionSelection ? bUseSelectionOutline : true;
-#endif
-
-	// Has the mesh component overridden the vertex color stream for this mesh LOD?
-	if (ProxyLODInfo.OverrideColorVertexBuffer)
-	{
-		// Make sure the indices are accessing data within the vertex buffer's
-		check(Section.MaxVertexIndex < ProxyLODInfo.OverrideColorVertexBuffer->GetNumVertices())
-
-		// Use the instanced colors vertex factory.
-		VertexFactory = &animMeshVertexFactory;//&VFs.VertexFactoryOverrideColorVertexBuffer;
-
-		OutMeshBatchElement.VertexFactoryUserData = ProxyLODInfo.OverrideColorVFUniformBuffer.GetReference();
-		OutMeshBatchElement.UserData = ProxyLODInfo.OverrideColorVertexBuffer;
-		OutMeshBatchElement.bUserDataIsColorVertexBuffer = true;
-	}
-	else
-	{
-		VertexFactory = &animMeshVertexFactory;
-
-		OutMeshBatchElement.VertexFactoryUserData = VFs.VertexFactory.GetUniformBuffer();
-	}
-
-	const bool bWireframe = false;
-
-	// Disable adjacency information when the selection outline is enabled, since tessellation won't be used.
-	const bool bRequiresAdjacencyInformation = !bUseSelectionOutline;
-
-	// Two sided material use bIsFrontFace which is wrong with Reversed Indices. AdjacencyInformation use another index buffer.
-	const bool bUseReversedIndices =  IsLocalToWorldDeterminantNegative() && (LOD.bHasReversedIndices != 0) && !bRequiresAdjacencyInformation && !Material->IsTwoSided();
-
-	// No support for stateless dithered LOD transitions for movable meshes
-	const bool bDitheredLODTransition = !IsMovable() && Material->IsDitheredLODTransition();
-
-	const uint32 NumPrimitives = SetMeshElementGeometrySource(LODIndex, SectionIndex, bWireframe, bRequiresAdjacencyInformation, bUseReversedIndices, bAllowPreCulledIndices, VertexFactory, OutMeshBatch);
-
-	if(NumPrimitives > 0)
-	{
-		OutMeshBatch.SegmentIndex = SectionIndex;
-
-		OutMeshBatch.LODIndex = LODIndex;
-#if STATICMESH_ENABLE_DEBUG_RENDERING
-		OutMeshBatch.VisualizeLODIndex = LODIndex;
-		OutMeshBatch.VisualizeHLODIndex = HierarchicalLODIndex;
-#endif
-		OutMeshBatch.ReverseCulling = IsReversedCullingNeeded(bUseReversedIndices);
-		OutMeshBatch.CastShadow = bCastShadow && Section.bCastShadow;
-#if RHI_RAYTRACING
-		OutMeshBatch.CastRayTracedShadow = OutMeshBatch.CastShadow;
-#endif
-		OutMeshBatch.DepthPriorityGroup = (ESceneDepthPriorityGroup)InDepthPriorityGroup;
-		OutMeshBatch.LCI = &ProxyLODInfo;
-		OutMeshBatch.MaterialRenderProxy = MaterialRenderProxy;
-
-		OutMeshBatchElement.MinVertexIndex = Section.MinVertexIndex;
-		OutMeshBatchElement.MaxVertexIndex = Section.MaxVertexIndex;
-#if STATICMESH_ENABLE_DEBUG_RENDERING
-		OutMeshBatchElement.VisualizeElementIndex = SectionIndex;
-#endif
-
-		SetMeshElementScreenSize(LODIndex, bDitheredLODTransition, OutMeshBatch);
-
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-	
-
-	*/
-	
 
 virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
 {
+		
+		
 	QUICK_SCOPE_CYCLE_COUNTER(STAT_StaticMeshSceneProxy_GetMeshElements);
 	checkSlow(IsInRenderingThread());
 
@@ -315,12 +288,6 @@ virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, cons
 		|| IsHovered()
 		|| bIsLightmapSettingError 
 		|| !IsStaticPathAvailable() );
-
-
-	//	for (int i = 0; i < RenderData->LODVertexFactories.Num(); i++)
-		{
-	//		RenderData->LODVertexFactories[i].VertexFactory = animMeshVertexFactory;
-		}
 		
 	// Draw polygon mesh if we are either not in a collision view, or are drawing it as collision.
 	if (EngineShowFlags.StaticMeshes && bDrawMesh)
@@ -343,6 +310,8 @@ virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, cons
 
 				for (int32 LODIndex = 0; LODIndex < RenderData->LODResources.Num(); LODIndex++)
 				{
+					RenderData->LODVertexFactories[LODIndex].VertexFactory = *animMeshVertexFactories[LODIndex];
+					
 					if (LODMask.ContainsLOD(LODIndex) && LODIndex >= ClampedMinLOD)
 					{
 						const FStaticMeshLODResources& LODModel = RenderData->LODResources[LODIndex];
@@ -374,7 +343,7 @@ virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, cons
 								if (LODModel.Sections.Num() > 0)
 								{
 									FMeshBatch& Mesh = Collector.AllocateMesh();									
-									
+								//	Mesh.VertexFactory = animMeshVertexFactories[LODIndex];
 									if (GetWireframeMeshElement(LODIndex, BatchIndex, WireframeMaterialInstance, SDPG_World, true, Mesh))
 									{
 										// We implemented our own wireframe
@@ -401,7 +370,8 @@ virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, cons
 								{
 									bool bSectionIsSelected = false;
 									FMeshBatch& MeshElement = Collector.AllocateMesh();
-						 		
+									MeshElement.VertexFactory = animMeshVertexFactories[LODIndex];
+									
 	#if WITH_EDITOR
 									if (GIsEditor)
 									{
@@ -414,7 +384,7 @@ virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, cons
 
 									
 								
-									MeshElement.VertexFactory = &animMeshVertexFactory;
+								
 									if (GetMeshElement(LODIndex, BatchIndex, SectionIndex, SDPG_World, bSectionIsSelected, true, MeshElement))
 									{
 										bool bDebugMaterialRenderProxySet = false;
@@ -513,9 +483,7 @@ virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, cons
 
 
 									
-										
-										
-										
+									 	MeshElement.VertexFactory = animMeshVertexFactories[LODIndex];
 										
 										MeshElement.bCanApplyViewModeOverrides = true;
 										MeshElement.bUseWireframeSelectionColoring = bSectionIsSelected;
@@ -531,12 +499,10 @@ virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, cons
 		}
 	}
 }
-	
 
-	
-	
 
-	FAnimMeshVertexFactory animMeshVertexFactory;
+
+	TArray<FAnimMeshVertexFactory*> animMeshVertexFactories;
 	
 	UMaterialInterface* Material;
 
@@ -561,8 +527,8 @@ class FAnimMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParame
 
 	void Bind(const FShaderParameterMap& ParameterMap)
 	{	
-		RendererIndex.Bind(ParameterMap, TEXT("AMRendererIndex"), SPF_Optional);
-		MatrixBufferSRV.Bind(ParameterMap, TEXT("AMMatrixBuffer"), SPF_Optional);
+//		RendererIndex.Bind(ParameterMap, TEXT("AMRendererIndex"), SPF_Optional);
+//		MatrixBufferSRV.Bind(ParameterMap, TEXT("AMMatrixBuffer"), SPF_Optional);
 	};
 
 	void GetElementShaderBindings(
@@ -590,13 +556,13 @@ class FAnimMeshVertexFactoryShaderParameters : public FVertexFactoryShaderParame
 		}
 		const FAnimMeshVertexFactory* AnimMeshVertexFactory = ((FAnimMeshVertexFactory*)VertexFactory);
 	
-		ShaderBindings.Add(RendererIndex, AnimMeshVertexFactory->RendererIndex);		
-		ShaderBindings.Add(MatrixBufferSRV, AnimMeshVertexFactory->SceneProxy->GetDeformTransformsSRV());
+	//	ShaderBindings.Add(RendererIndex, AnimMeshVertexFactory->RendererIndex);		
+	//	ShaderBindings.Add(MatrixBufferSRV, AnimMeshVertexFactory->SceneProxy->GetDeformTransformsSRV());
 	};
 	
 private:
-	LAYOUT_FIELD(FShaderParameter, RendererIndex);
-	LAYOUT_FIELD(FShaderResourceParameter, MatrixBufferSRV);
+//	LAYOUT_FIELD(FShaderParameter, RendererIndex);
+//	LAYOUT_FIELD(FShaderResourceParameter, MatrixBufferSRV);
 };
 
 
@@ -607,4 +573,4 @@ IMPLEMENT_TYPE_LAYOUT(FAnimMeshVertexFactoryShaderParameters);
 
 IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshVertexFactory, SF_Vertex, FAnimMeshVertexFactoryShaderParameters);
 
-IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshVertexFactory, "/CustomShaders/LocalVertexFactory.ush", true, true, true, true, true,true,true);
+IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshVertexFactory, "/CustomShaders/AnimVertexFactory.ush", true, true, true, true, true,true,true);
