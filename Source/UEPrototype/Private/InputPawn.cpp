@@ -53,13 +53,13 @@ void AInputPawn::SetInput() const
 
 void AInputPawn::MoveForward(float Value)
 {
-    inputData.MovementAxis = FVector2D(Value, inputData.MovementAxis.Y);
+    inputData.MovementAxis = FVector2D(inputData.MovementAxis.X,Value);
     SetInput();
 }
 
 void AInputPawn::MoveRight(float Value)
 {
-    inputData.MovementAxis = FVector2D(inputData.MovementAxis.X, Value);
+    inputData.MovementAxis = FVector2D(Value,inputData.MovementAxis.Y);
     SetInput();
 }
 

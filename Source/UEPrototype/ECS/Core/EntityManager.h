@@ -32,7 +32,7 @@ public:
             return  flecs::entity(*defaultWorld);
         }
 
-        flecs::entity CreateEntity(flecs::entity_t id) const
+        Entity CreateEntity(flecs::entity_t id) const
         {
             return  flecs::entity(*defaultWorld,id);
         }

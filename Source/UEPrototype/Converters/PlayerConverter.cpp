@@ -11,17 +11,18 @@
 
 
 
-void UPlayerConverter::Convert(flecs::entity e, FEntityManager dstManager)
-{
+void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
+{    
     dstManager.AddComponentData<PlayerTag>(e);
     dstManager.AddComponentData<MovementVelocity>(e);
-    dstManager.SetComponentData<MovementSpeed>(e, { 20.f });
+    dstManager.SetComponentData<MovementSpeed>(e, { 2000.f });
     dstManager.AddComponentData<MoveDirectionData>(e);
     dstManager.AddComponentData<ViewDirectionData>(e);
     dstManager.AddComponentData<Rotation>(e);
     dstManager.AddComponentData<LocalToWorld>(e);
- //   dstManager.SetComponentData<Translation>(e, { FVector::ZeroVector });
-    dstManager.AddComponentData<CopyTransformFromActor>(e);
+    dstManager.AddComponentData<Translation>(e);
+  //  dstManager.AddComponentData<CopyTransformFromActor>(e);
+    dstManager.AddComponentData<CopyTransformToActor>(e);    
     dstManager.SetComponentData<FActorComponent>(e, { GetOwner() });
-
+    
 }

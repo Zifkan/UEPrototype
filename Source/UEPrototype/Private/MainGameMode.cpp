@@ -8,6 +8,9 @@
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
 #include "Systems/Camera/CameraSystem.h"
+#include "Systems/Movement/MovementCharacterSystem.h"
+#include "Systems/Movement/MovementVelocitySystem.h"
+#include "Systems/Movement/PlayerViewDirectionSystem.h"
 #include "UEPrototype/ECS/Components/CamComponent.h"
 #include "UEPrototype/ECS/Components/MovementComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
@@ -19,7 +22,7 @@ void AMainGameMode::BeginPlay()
     entityManager = world->EntityManager;
 
 
-   entityManager->RegisterComponent<CamComponent>("CamComponent");
+    entityManager->RegisterComponent<CamComponent>("CamComponent");
     entityManager->RegisterComponent<PlayerInputComponent>("InputComponent");
     entityManager->RegisterComponent<MovementVelocity>("MovementVelocity");
     entityManager->RegisterComponent<MoveDirectionData>("MoveDirectionData");
@@ -59,16 +62,12 @@ void AMainGameMode::RegisterSystem()
 
     systemsLauncher->RegisterSystem(new  CameraSystem());
     systemsLauncher->RegisterSystem(new  CameraCollisionSystem(), GetWorld());
-    systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());
-
-/*
-    systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
+    systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());      
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
-    systemsLauncher->RegisterSystem(new  CharacterRotationSystem());
-
+    systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
     systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
-    systemsLauncher->RegisterSystem(new  CharacterIdleStateMachineSystem());
-    systemsLauncher->RegisterSystem(new  CharacterStateMachineSystem());*/
+    
+
 
 }
 

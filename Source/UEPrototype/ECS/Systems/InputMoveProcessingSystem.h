@@ -1,8 +1,9 @@
 ﻿#pragma once
 #include "SystemBase.h"
-#include "UEPrototype/ECS/Components/InputComponent.h"
+#include "Components/MovementComponents.h"
+#include "Components/PlayerComponents.h"
 
-class InputMoveProcessingSystem final : public SystemBase<PlayerInputComponent>
+class InputMoveProcessingSystem final : public SystemBase<PlayerTag, MoveDirectionData, ViewDirectionData>
 {
 public:
     void OnCreate() override;
