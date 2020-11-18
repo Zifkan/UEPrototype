@@ -8,6 +8,7 @@
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
 #include "Systems/Camera/CameraSystem.h"
+#include "Systems/Movement/CharacterRotationSystem.h"
 #include "Systems/Movement/MovementCharacterSystem.h"
 #include "Systems/Movement/MovementVelocitySystem.h"
 #include "Systems/Movement/PlayerViewDirectionSystem.h"
@@ -65,6 +66,7 @@ void AMainGameMode::RegisterSystem()
     systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());      
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
+    systemsLauncher->RegisterSystem(new  CharacterRotationSystem());    
     systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
     
 

@@ -4,7 +4,7 @@
 #include "Components/TransformComponents.h"
 #include "Systems/SystemBase.h"
 
-class MovementCharacterSystem final : public SystemBase<MovementVelocity,ViewDirectionData,Translation,Rotation>
+class MovementCharacterSystem final : public SystemBase<MovementVelocity,Translation,Rotation>
 {
 public:
     virtual void OnCreate() override;
