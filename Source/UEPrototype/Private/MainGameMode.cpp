@@ -3,12 +3,14 @@
 
 #include "MainGameMode.h"
 
+
+#include "Components/AnimComponent.h"
 #include "Components/CustomBone.h"
 #include "Components/TransformComponents.h"
+#include "Components/CharacterStates/CharacterStates.h"
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
 #include "Systems/Camera/CameraSystem.h"
-#include "Systems/Movement/CharacterRotationSystem.h"
 #include "Systems/Movement/MovementCharacterSystem.h"
 #include "Systems/Movement/MovementVelocitySystem.h"
 #include "Systems/Movement/PlayerViewDirectionSystem.h"
@@ -22,6 +24,11 @@ void AMainGameMode::BeginPlay()
     world = FEcsWorld::instance();
     entityManager = world->EntityManager;
 
+    entityManager->RegisterComponent<IdleState>("IdleState");
+    entityManager->RegisterComponent<MoveState>("MoveState");
+    entityManager->RegisterComponent<AnimComponent>("AnimComponent");
+    
+    
 
     entityManager->RegisterComponent<CamComponent>("CamComponent");
     entityManager->RegisterComponent<PlayerInputComponent>("InputComponent");
@@ -52,11 +59,15 @@ void AMainGameMode::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFu
     transformLauncher->Update(DeltaTime);    
     animationSystemLaunch->Update(DeltaTime);
     systemsLauncher->Update(DeltaTime);
+    characterStateMachineLauncher->Update(DeltaTime);
 }
 
 void AMainGameMode::RegisterSystem()
 {
     animationSystemLaunch = MakeUnique<AnimationSystemLaunch>(world);
+    characterStateMachineLauncher = MakeUnique<CharacterStateMachineSystemLaunch>(world);
+
+
     
     systemsLauncher = MakeUnique<SystemLauncher>(world);
 
@@ -66,10 +77,8 @@ void AMainGameMode::RegisterSystem()
     systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());      
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
-    systemsLauncher->RegisterSystem(new  CharacterRotationSystem());    
     systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
     
-
 
 }
 
@@ -77,4 +86,3 @@ void AMainGameMode::RegisterTransformSystems()
 {
     transformLauncher = MakeUnique<TransformSystemLaunch>(world);
 }
-

@@ -14,7 +14,7 @@ void BufferSystem::OnCreate()
         if (pGroupData->Buffer.Num() != totalBufferSize)
         {
             pGroupData->Buffer.Init(FMatrix(),totalBufferSize);
-            UE_LOG(LogTemp, Warning, TEXT("buffer number: %i; render number: %i"),pGroupData->Buffer.Num(),rootCount);
+      //      UE_LOG(LogTemp, Warning, TEXT("buffer number: %i; render number: %i"),pGroupData->Buffer.Num(),rootCount);
         }
     });
 }

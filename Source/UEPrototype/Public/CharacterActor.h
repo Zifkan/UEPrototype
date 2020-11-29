@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "BoneData.h"
+#include "flecs.h"
 #include "GameFramework/Actor.h"
 #include "AnimMesh/Public/AnimVertexMeshComponent.h"
 #include "CharacterActor.generated.h"
@@ -24,13 +25,26 @@ public:
 	
 	UPROPERTY(EditAnywhere,Category=ECS)
 	UAnimVertexMeshComponent* AnimationVertexMeshComponent;
-	
+
+	/* The AnimBlueprint class to use. Use 'SetAnimInstanceClass' to change at runtime. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation)
+	class TSubclassOf<UAnimInstance> AnimClass;
+
+	/** The active animation graph program instance. */
+	UPROPERTY(transient, NonTransactional)
+	UAnimInstance* AnimScriptInstance;
+	flecs::system<>* testSys;
+
 	void SetIndex(int index);
 
 	void SetSetBuffer(TArray<FMatrix> buffer);
+
+	void StateTest();
 	
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;	
-	
+	virtual void BeginPlay() override;
+
+public:
+	virtual void Tick(float DeltaSeconds) override;
 };
