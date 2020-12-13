@@ -23,9 +23,12 @@ public:
 	UPROPERTY(EditAnywhere,Category=ECS)
 	TArray<FBoneDataInfo>  BoneInfoArray;
 	
-	UPROPERTY(EditAnywhere,Category=ECS)
-	UAnimVertexMeshComponent* AnimationVertexMeshComponent;
+/*	UPROPERTY(EditAnywhere,Category=ECS)
+	UAnimVertexMeshComponent* AnimationVertexMeshComponent;*/
 
+	UPROPERTY(Category=Animation, VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* Mesh;
+	
 	/* The AnimBlueprint class to use. Use 'SetAnimInstanceClass' to change at runtime. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Animation)
 	class TSubclassOf<UAnimInstance> AnimClass;
@@ -33,6 +36,7 @@ public:
 	/** The active animation graph program instance. */
 	UPROPERTY(transient, NonTransactional)
 	UAnimInstance* AnimScriptInstance;
+	
 	flecs::system<>* testSys;
 
 	void SetIndex(int index);
@@ -40,6 +44,8 @@ public:
 	void SetSetBuffer(TArray<FMatrix> buffer);
 
 	void StateTest();
+
+	UAnimInstance* GetAnimInstance() const; 
 	
 protected:
 	// Called when the game starts or when spawned

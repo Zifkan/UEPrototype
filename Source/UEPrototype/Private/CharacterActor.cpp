@@ -18,10 +18,11 @@ ACharacterActor::ACharacterActor()
     Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
     RootComponent = Root;
 
-	AnimationVertexMeshComponent = CreateDefaultSubobject<UAnimVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
-	AnimationVertexMeshComponent->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
+	//AnimationVertexMeshComponent = CreateDefaultSubobject<UAnimVertexMeshComponent>(TEXT("Animation Vertex Mesh Component"));
+	//AnimationVertexMeshComponent->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
 
-
+	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Animation Vertex Mesh Component"));
+	Mesh->AttachToComponent(Root, FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 // Called when the game starts or when spawned
@@ -46,9 +47,7 @@ void ACharacterActor::BeginPlay()
 		em->SetComponentData<CustomBone>(entityBone, { BoneInfoArray[i].BindMatrix });
 		entityBone.add_childof(characterEntity);   
 	}
-
-	
-	StateTest();
+	//StateTest();
 }
 
 void ACharacterActor::Tick(float DeltaSeconds)
@@ -63,7 +62,7 @@ void ACharacterActor::SetIndex(int index)
 
 void ACharacterActor::SetSetBuffer(TArray<FMatrix> buffer)
 {
-	AnimationVertexMeshComponent->SetBuffer(buffer);
+	//AnimationVertexMeshComponent->SetBuffer(buffer);
 }
 
 void ACharacterActor::StateTest()
@@ -142,5 +141,10 @@ void ACharacterActor::StateTest()
 	ecs.set_target_fps(1);
 
 	//while (ecs.progress()) { }
+}
+
+UAnimInstance* ACharacterActor::GetAnimInstance() const
+{
+	return Mesh->GetAnimInstance();
 }
 

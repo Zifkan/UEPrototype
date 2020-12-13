@@ -23,11 +23,15 @@ protected:
 	virtual void BeginPlay() override;
 
 
-    void SetInput() const;
+    void SetInput() ;
     void MoveForward(float Value);
     void MoveRight(float Value);
     void TurnAtRate(float Rate);
-    void LookUpAtRate(float Rate);
+	void Roll();
+	void Sprint();
+	void Attack();
+	void Block();
+	void LookUpAtRate(float Rate);
     void AddControllerPitchInput(float Val);
     void AddControllerYawInput(float Val);
 
@@ -38,10 +42,10 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 
+	virtual void Tick(float DeltaSeconds) override;
 private:
-
     Entity inputEntity;
-    PlayerInputComponent inputData;
+	PlayerInputComponent inputData;
     FEcsWorld* world;
     FEntityManager* entityManager;
 };

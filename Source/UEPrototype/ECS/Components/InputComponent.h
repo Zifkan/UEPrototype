@@ -19,4 +19,6 @@ struct PlayerInputComponent
     EInputEvent Sprint;
 
     CombatMapData Combat;
+
+    bool IsRoll;
 };

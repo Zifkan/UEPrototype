@@ -4,10 +4,12 @@
 #include "MainGameMode.h"
 
 
+
 #include "Components/AnimComponent.h"
 #include "Components/CustomBone.h"
 #include "Components/TransformComponents.h"
 #include "Components/CharacterStates/CharacterStates.h"
+#include "Components/StateMachine/CheckActionTag.h"
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
 #include "Systems/Camera/CameraSystem.h"
@@ -22,14 +24,24 @@
 void AMainGameMode::BeginPlay()
 {   
     world = FEcsWorld::instance();
-    entityManager = world->EntityManager;
+    
+   /* world->DefaultWorld->import<flecs::dash>();
+    world->DefaultWorld->import<flecs::systems::civetweb>();
 
+    world->DefaultWorld->entity().set<flecs::dash::Server>({9090});*/
+
+
+    
+    entityManager = world->EntityManager;
+    
     entityManager->RegisterComponent<IdleState>("IdleState");
     entityManager->RegisterComponent<MoveState>("MoveState");
     entityManager->RegisterComponent<AnimComponent>("AnimComponent");
+    entityManager->RegisterComponent<CheckActionTag>("CheckActionTag");
+    entityManager->RegisterComponent<CheckActionData>("CheckActionData");
+    entityManager->RegisterComponent<ActionAvailableTag>("ActionAvailableTag");
     
     
-
     entityManager->RegisterComponent<CamComponent>("CamComponent");
     entityManager->RegisterComponent<PlayerInputComponent>("InputComponent");
     entityManager->RegisterComponent<MovementVelocity>("MovementVelocity");
@@ -47,7 +59,7 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<CopyTransformFromActor>("CopyTransformFromActor");
     entityManager->RegisterComponent<RemoveRenderer>("RemoveRenderer");
     
-
+    
     RegisterTransformSystems();
     RegisterSystem();
 }
@@ -66,9 +78,6 @@ void AMainGameMode::RegisterSystem()
 {
     animationSystemLaunch = MakeUnique<AnimationSystemLaunch>(world);
     characterStateMachineLauncher = MakeUnique<CharacterStateMachineSystemLaunch>(world);
-
-
-    
     systemsLauncher = MakeUnique<SystemLauncher>(world);
 
 

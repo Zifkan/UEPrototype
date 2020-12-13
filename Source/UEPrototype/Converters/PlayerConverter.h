@@ -15,8 +15,6 @@ UCLASS(ClassGroup = (ECS), meta = (BlueprintSpawnableComponent))
 class UEPROTOTYPE_API UPlayerConverter : public UConvertToEntity
 {
 public:
-	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
-	USkeletalMesh* SkeletalMesh;
 
 	
     void Convert(flecs::entity entity, FEntityManager dstManager) override;

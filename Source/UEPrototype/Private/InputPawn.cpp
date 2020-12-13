@@ -9,19 +9,16 @@
 AInputPawn::AInputPawn()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 }
 
 // Called when the game starts or when spawned
 void AInputPawn::BeginPlay()
 {
-	Super::BeginPlay();
-
-   
     world = FEcsWorld::instance();
-    entityManager = world->EntityManager;
-    inputEntity = entityManager->CreateEntity("InputEntity");
+   
+	Super::BeginPlay(); 
 }
 
 // Called to bind functionality to input
@@ -43,11 +40,24 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
     InputComponent->BindAxis("Turn", this, &AInputPawn::AddControllerYawInput);
     InputComponent->BindAxis("TurnRate", this, &AInputPawn::TurnAtRate);
+
+
+    InputComponent->BindAction("Roll", EInputEvent::IE_Pressed, this, &AInputPawn::Roll);
+    InputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &AInputPawn::Sprint);
+
+    InputComponent->BindAction("Attack", EInputEvent::IE_Pressed, this, &AInputPawn::Attack);
+    InputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &AInputPawn::Block);
 }
 
-void AInputPawn::SetInput() const
+void AInputPawn::Tick(float DeltaSeconds)
 {
-    entityManager->SetComponentData<PlayerInputComponent>(inputEntity, { inputData });
+    
+}
+
+void AInputPawn::SetInput() 
+{
+    inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+     entityManager->SetComponentData<PlayerInputComponent>(inputEntity, { inputData });
 }
 
 
@@ -75,6 +85,28 @@ void AInputPawn::TurnAtRate(float Rate)
     inputData.AimAxis = FVector2D(Rate, inputData.AimAxis.Y);
   //  SetInput();
 }
+
+void AInputPawn::Roll()
+{
+    inputData.IsRoll = true;
+    SetInput();
+}
+
+void AInputPawn::Sprint()
+{
+
+}
+
+void AInputPawn::Attack()
+{
+
+}
+
+void AInputPawn::Block()
+{
+
+}
+
 
 // Y= Pitch
 void AInputPawn::AddControllerPitchInput(float Val)

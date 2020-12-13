@@ -1,6 +1,5 @@
 ﻿#include "InputMoveProcessingSystem.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
-#include "Engine/Engine.h"
 
 void InputMoveProcessingSystem::OnCreate()
 {

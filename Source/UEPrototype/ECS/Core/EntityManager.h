@@ -89,8 +89,8 @@ public:
             return e.get<T>();
         }
 
-                     
-
+        
+    flecs::world* defaultWorld;
 private:
-        flecs::world* defaultWorld;
+      
 };

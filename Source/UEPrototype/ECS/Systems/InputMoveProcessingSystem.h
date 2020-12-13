@@ -6,5 +6,5 @@
 class InputMoveProcessingSystem final : public SystemBase<PlayerTag, MoveDirectionData, ViewDirectionData>
 {
 public:
-    void OnCreate() override;
+    virtual void OnCreate() override;
 };

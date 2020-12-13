@@ -18,4 +18,18 @@ class UEPROTOTYPE_API UCharacterAnimInstance : public UAnimInstance
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
 	FVector2D MoveDirection;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
+	bool IsRoll;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
+	bool IsAttack;
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
+	bool IsHitted;
+	
+	
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
+	TArray<UAnimSequence*> animSequence;
+
 };
