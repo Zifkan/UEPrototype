@@ -4,6 +4,7 @@
 #include "InputPawn.h"
 
 #include "MainGameMode.h"
+#include "Components/CharacterActions/CharacterActionsComponents.h"
 
 // Sets default values
 AInputPawn::AInputPawn()
@@ -51,13 +52,17 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void AInputPawn::Tick(float DeltaSeconds)
 {
-    
+    /*if (inputData.MovementAxis.SizeSquared()>0)
+    {
+        inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+        entityManager->AddComponentDataSafety<MoveActionTag>(inputEntity);
+    }*/
 }
 
 void AInputPawn::SetInput() 
 {
     inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
-     entityManager->SetComponentData<PlayerInputComponent>(inputEntity, { inputData });
+    entityManager->SetComponentData<PlayerInputComponent>(inputEntity, { inputData });
 }
 
 
@@ -77,34 +82,37 @@ void AInputPawn::LookUpAtRate(float Rate)
 {
    
     inputData.AimAxis = FVector2D(inputData.AimAxis.X, Rate);
-//    SetInput();
+    SetInput();
 }
 
 void AInputPawn::TurnAtRate(float Rate)
 {
     inputData.AimAxis = FVector2D(Rate, inputData.AimAxis.Y);
-  //  SetInput();
+    SetInput();
 }
 
 void AInputPawn::Roll()
 {
-    inputData.IsRoll = true;
-    SetInput();
+ /*   inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+    entityManager->AddComponentDataSafety<RollInputTag>(inputEntity);*/
 }
 
 void AInputPawn::Sprint()
 {
-
+  /*  inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+    entityManager->AddComponentDataSafety<SprintInputTag>(inputEntity);*/
 }
 
 void AInputPawn::Attack()
 {
-
+   /* inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+    entityManager->AddComponentDataSafety<AttackInputTag>(inputEntity);*/
 }
 
 void AInputPawn::Block()
 {
-
+   /* inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+    entityManager->AddComponentDataSafety<BlockInputTag>(inputEntity);*/
 }
 
 

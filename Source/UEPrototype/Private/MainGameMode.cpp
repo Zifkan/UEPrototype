@@ -5,30 +5,37 @@
 
 
 
+#include "flecs_dash.h"
+#include "flecs_systems_civetweb.h"
 #include "Components/AnimComponent.h"
 #include "Components/CustomBone.h"
 #include "Components/TransformComponents.h"
 #include "Components/CharacterStates/CharacterStates.h"
 #include "Components/StateMachine/CheckActionTag.h"
+//#include "flecs-os_api-posix/include/flecs_os_api_posix.h"
+#include "Components/CharacterActions/CharacterActionsComponents.h"
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
 #include "Systems/Camera/CameraSystem.h"
 #include "Systems/Movement/MovementCharacterSystem.h"
 #include "Systems/Movement/MovementVelocitySystem.h"
 #include "Systems/Movement/PlayerViewDirectionSystem.h"
+#include "Systems/StateMachine/ActionProceed/BaseActionProceedSystem.h"
 #include "UEPrototype/ECS/Components/CamComponent.h"
 #include "UEPrototype/ECS/Components/MovementComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
 
 
 void AMainGameMode::BeginPlay()
-{   
+{
+
+  // posix_set_os_api();
     world = FEcsWorld::instance();
     
-   /* world->DefaultWorld->import<flecs::dash>();
+    /*  world->DefaultWorld->import<flecs::dash>();
     world->DefaultWorld->import<flecs::systems::civetweb>();
 
-    world->DefaultWorld->entity().set<flecs::dash::Server>({9090});*/
+    world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); */
 
 
     
@@ -40,6 +47,12 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<CheckActionTag>("CheckActionTag");
     entityManager->RegisterComponent<CheckActionData>("CheckActionData");
     entityManager->RegisterComponent<ActionAvailableTag>("ActionAvailableTag");
+
+    entityManager->RegisterComponent<MoveActionTag>("MoveActionTag");
+    entityManager->RegisterComponent<RollInputTag>("RollInputTag");
+    entityManager->RegisterComponent<BlockInputTag>("BlockInputTag");
+    entityManager->RegisterComponent<AttackInputTag>("AttackInputTag");
+    entityManager->RegisterComponent<SprintInputTag>("SprintInputTag");
     
     
     entityManager->RegisterComponent<CamComponent>("CamComponent");
@@ -87,8 +100,9 @@ void AMainGameMode::RegisterSystem()
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
     systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
-    
 
+ //   systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
+    
 }
 
 void AMainGameMode::RegisterTransformSystems()

@@ -674,7 +674,7 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 	*/
 	return INVARIANT(TransformLocalToTranslatedWorld(float3(mul(Position, CalcSliceTransform(dot(Position.xyz, SplineMeshDir))).xyz), PrimitiveId));
 #else
-	return TransformLocalToTranslatedWorld(Position.xyz, PrimitiveId);
+	return TransformLocalToTranslatedWorld(Position.xyz*10, PrimitiveId);
 #endif
 }
 

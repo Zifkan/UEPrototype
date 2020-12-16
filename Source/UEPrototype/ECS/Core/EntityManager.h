@@ -52,13 +52,21 @@ public:
         void SetComponentData(flecs::entity e, const T& value) const
         {
             e.set<T>(value);
-        }
+        }       
 
         template <typename T>
         void AddComponentData(flecs::entity e) const
         {
-            e.add<T>();
-            
+            e.add<T>();            
+        }
+
+        template <typename T>
+        void AddComponentDataSafety(flecs::entity e) const
+        {
+            if(!e.has<T>())
+            {
+                e.add<T>();
+            }
         }
 
         void RemoveEntity(flecs::entity e) const

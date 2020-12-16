@@ -35,7 +35,7 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     dstManager.AddComponentData<CopyTransformToActor>(e);    
     dstManager.SetComponentData<FActorComponent>(e, { characterActor });
     dstManager.SetComponentData<AnimComponent>(e, { characterAnimInstance });
-    dstManager.AddComponentData<CheckActionData>(e);
+   
     
 
     auto Idle = dstManager.defaultWorld->entity().add<IdleState>();
@@ -46,6 +46,9 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     auto stateAvailable = dstManager.SetType("StateAvailable","CheckActionTag");
     
      e.add_switch(Movement).add_case<MoveState>();
-     e.add_switch(stateAvailable).add_case<CheckActionTag>();
+     inputEntity.add_switch(stateAvailable).add_case<CheckActionTag>();
+    inputEntity.add<CheckActionData>();
+    inputEntity.add<ActionAvailableTag>();
+    
     
 }

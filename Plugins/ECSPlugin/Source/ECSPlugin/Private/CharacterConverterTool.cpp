@@ -499,7 +499,7 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 		}
 		
     	ACharacterActor* charActor = NewObject<ACharacterActor>();
-    	charActor->AnimationVertexMeshComponent->SetStaticMesh(StaticMesh);
+//    	charActor->AnimationVertexMeshComponent->SetStaticMesh(StaticMesh);
     	charActor->BoneInfoArray =BoneInfoArray;
 
     	return charActor;    	
