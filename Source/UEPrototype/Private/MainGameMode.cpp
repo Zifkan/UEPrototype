@@ -101,7 +101,7 @@ void AMainGameMode::RegisterSystem()
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
     systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
 
- //   systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
+    systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
     
 }
 

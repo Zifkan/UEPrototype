@@ -37,10 +37,7 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
     // "turnrate" is for devices that we choose to treat as a rate of change, such as an analog joystick
  
     InputComponent->BindAxis("LookUp", this, &AInputPawn::AddControllerPitchInput);
-    InputComponent->BindAxis("LookUpRate", this, &AInputPawn::LookUpAtRate);
-
     InputComponent->BindAxis("Turn", this, &AInputPawn::AddControllerYawInput);
-    InputComponent->BindAxis("TurnRate", this, &AInputPawn::TurnAtRate);
 
 
     InputComponent->BindAction("Roll", EInputEvent::IE_Pressed, this, &AInputPawn::Roll);
@@ -52,11 +49,11 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 void AInputPawn::Tick(float DeltaSeconds)
 {
-    /*if (inputData.MovementAxis.SizeSquared()>0)
+    if (inputData.MovementAxis.SizeSquared()>0)
     {
         inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
         entityManager->AddComponentDataSafety<MoveActionTag>(inputEntity);
-    }*/
+    }
 }
 
 void AInputPawn::SetInput() 
@@ -78,18 +75,6 @@ void AInputPawn::MoveRight(float Value)
     SetInput();
 }
 
-void AInputPawn::LookUpAtRate(float Rate)
-{
-   
-    inputData.AimAxis = FVector2D(inputData.AimAxis.X, Rate);
-    SetInput();
-}
-
-void AInputPawn::TurnAtRate(float Rate)
-{
-    inputData.AimAxis = FVector2D(Rate, inputData.AimAxis.Y);
-    SetInput();
-}
 
 void AInputPawn::Roll()
 {
@@ -105,8 +90,8 @@ void AInputPawn::Sprint()
 
 void AInputPawn::Attack()
 {
-   /* inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
-    entityManager->AddComponentDataSafety<AttackInputTag>(inputEntity);*/
+    inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+    entityManager->AddComponentDataSafety<AttackInputTag>(inputEntity);
 }
 
 void AInputPawn::Block()
