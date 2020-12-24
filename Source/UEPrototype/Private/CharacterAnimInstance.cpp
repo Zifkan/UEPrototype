@@ -2,3 +2,13 @@
 
 
 #include "CharacterAnimInstance.h"
+
+void UCharacterAnimInstance::PlayAnim()
+{
+   if (Montage_IsPlaying(animMontage)) return;
+   auto t =  Montage_Play(animMontage);
+
+ 
+   
+   UE_LOG(LogTemp, Warning, TEXT("AttackState Working PLay Time: %f"),t);
+}

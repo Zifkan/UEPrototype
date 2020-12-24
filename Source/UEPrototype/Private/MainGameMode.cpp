@@ -21,6 +21,7 @@
 #include "Systems/Movement/MovementVelocitySystem.h"
 #include "Systems/Movement/PlayerViewDirectionSystem.h"
 #include "Systems/StateMachine/ActionProceed/BaseActionProceedSystem.h"
+#include "Systems/StateMachine/ActionProceed/BaseRemoveActionProceedSystem.h"
 #include "UEPrototype/ECS/Components/CamComponent.h"
 #include "UEPrototype/ECS/Components/MovementComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
@@ -54,6 +55,8 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<AttackInputTag>("AttackInputTag");
     entityManager->RegisterComponent<SprintInputTag>("SprintInputTag");
     
+    entityManager->RegisterComponent<InheritsFrom>("InheritsFrom");
+    entityManager->RegisterComponent<InputTag>("InputTag");
     
     entityManager->RegisterComponent<CamComponent>("CamComponent");
     entityManager->RegisterComponent<PlayerInputComponent>("InputComponent");
@@ -85,6 +88,7 @@ void AMainGameMode::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFu
     animationSystemLaunch->Update(DeltaTime);
     systemsLauncher->Update(DeltaTime);
     characterStateMachineLauncher->Update(DeltaTime);
+    removeActionProceedSystemLauncher->Update(DeltaTime);
 }
 
 void AMainGameMode::RegisterSystem()
@@ -92,16 +96,20 @@ void AMainGameMode::RegisterSystem()
     animationSystemLaunch = MakeUnique<AnimationSystemLaunch>(world);
     characterStateMachineLauncher = MakeUnique<CharacterStateMachineSystemLaunch>(world);
     systemsLauncher = MakeUnique<SystemLauncher>(world);
-
+    removeActionProceedSystemLauncher = MakeUnique<RemoveActionProceedSystemLauncher>(world);
+    
+    
 
     systemsLauncher->RegisterSystem(new  CameraSystem());
     systemsLauncher->RegisterSystem(new  CameraCollisionSystem(), GetWorld());
     systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());      
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
+   // systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());
     systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
 
     systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
+    
     
 }
 

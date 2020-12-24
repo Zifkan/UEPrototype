@@ -32,4 +32,8 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
 	TArray<UAnimSequence*> animSequence;
 
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
+	UAnimMontage* animMontage;
+	
+	void PlayAnim();
 };

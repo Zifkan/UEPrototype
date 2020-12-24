@@ -11,7 +11,9 @@ public:
 
     CharacterStateMachineSystemLaunch(FEcsWorld* world) : SystemLauncher(world)
     {
-        RegisterSystem(new MovementStateSystem());
         RegisterSystem(new CheckActionAvailableSystem());
+        RegisterSystem(new MovementStateSystem());
+        RegisterSystem(new AttackStateSystem());       
+     
     }    
 };

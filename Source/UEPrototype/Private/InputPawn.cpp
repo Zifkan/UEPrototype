@@ -51,7 +51,7 @@ void AInputPawn::Tick(float DeltaSeconds)
 {
     if (inputData.MovementAxis.SizeSquared()>0)
     {
-        inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+        inputEntity = world->DefaultWorld->get<InputTag>()->Owner;
         entityManager->AddComponentDataSafety<MoveActionTag>(inputEntity);
     }
 }
@@ -90,8 +90,12 @@ void AInputPawn::Sprint()
 
 void AInputPawn::Attack()
 {
-    inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+    inputEntity = world->DefaultWorld->get<InputTag>()->Owner;
+
+    UE_LOG(LogTemp, Warning, TEXT("AInputPawn Input Entity, %i"),inputEntity.id());
+    
     entityManager->AddComponentDataSafety<AttackInputTag>(inputEntity);
+    entityManager->AddComponentDataSafety<InputTag>(inputEntity);
 }
 
 void AInputPawn::Block()

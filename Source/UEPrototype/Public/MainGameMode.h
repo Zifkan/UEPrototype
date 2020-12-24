@@ -10,9 +10,11 @@
 #include "Systems/AnimationSystemLaunch.h"
 #include "Systems/SystemLauncher.h"
 #include "Systems/StateMachine/CharacterStateMachineSystemLaunch.h"
+#include "Systems/StateMachine/ActionProceed/BaseRemoveActionProceedSystem.h"
 #include "Systems/Transforms/TransformSystemLaunch.h"
 
 #include "MainGameMode.generated.h"
+
 
 /**
  * 
@@ -46,8 +48,10 @@ private:
     FEcsWorld* world;
     TUniquePtr<AnimationSystemLaunch> animationSystemLaunch;
     TUniquePtr<SystemLauncher> systemsLauncher;
-    TUniquePtr <TransformSystemLaunch> transformLauncher;
-    TUniquePtr <CharacterStateMachineSystemLaunch> characterStateMachineLauncher;
+    TUniquePtr<TransformSystemLaunch> transformLauncher;
+    TUniquePtr<CharacterStateMachineSystemLaunch> characterStateMachineLauncher;
+    TUniquePtr<RemoveActionProceedSystemLauncher> removeActionProceedSystemLauncher;
     
     FEntityManager* entityManager;
+   
 };

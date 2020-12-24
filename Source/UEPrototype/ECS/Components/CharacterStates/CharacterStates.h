@@ -7,4 +7,9 @@ struct IdleState
 struct MoveState
 {
 };
+
+struct AttackState
+{
+};
+    
     

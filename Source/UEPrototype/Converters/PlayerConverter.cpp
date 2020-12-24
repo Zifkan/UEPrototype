@@ -9,6 +9,7 @@
 #include "Components/StateMachine/CheckActionTag.h"
 #include "Components/PlayerComponents.h"
 #include "Components/TransformComponents.h"
+#include "Components/CharacterActions/CharacterActionsComponents.h"
 #include "Components/CharacterStates/CharacterStates.h"
 #include "Core/EcsWorld.h"
 
@@ -17,8 +18,14 @@
 void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
 {
     auto inputEntity = dstManager.CreateEntity("InputEntity");
+    
 
+    dstManager.defaultWorld->set<InputTag>({inputEntity});
+
+    
     inputEntity.add_childof(e);
+
+    
     
     const auto characterActor = Cast<ACharacterActor>(GetOwner());
     const auto characterAnimInstance = Cast<UCharacterAnimInstance>(characterActor->GetAnimInstance());
@@ -34,21 +41,28 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
   //  dstManager.AddComponentData<CopyTransformFromActor>(e);
     dstManager.AddComponentData<CopyTransformToActor>(e);    
     dstManager.SetComponentData<FActorComponent>(e, { characterActor });
-    dstManager.SetComponentData<AnimComponent>(e, { characterAnimInstance });
+    dstManager.SetComponentData<AnimComponent>(e, { characterAnimInstance }); 
    
-    
+    UE_LOG(LogTemp, Warning, TEXT("Player Entity, %i"),e.id());
+    UE_LOG(LogTemp, Warning, TEXT("Input Entity, %i"),inputEntity.id());
+
+    UE_LOG(LogTemp, Warning, TEXT("AttackActionProceedSystem parentEntity, %s"),UTF8_TO_TCHAR (inputEntity.get_parent<PlayerTag>().has<PlayerTag>()?"true" : "false"));
 
     auto Idle = dstManager.defaultWorld->entity().add<IdleState>();
     auto Move = dstManager.defaultWorld->entity().add<MoveState>();
-    auto Movement = dstManager.SetType("Movement","IdleState, MoveState");
+    auto Attack = dstManager.defaultWorld->entity().add<AttackState>();
+    auto Movement = dstManager.SetType("Movement","IdleState, MoveState, AttackState");
 
     auto CheckAction = dstManager.defaultWorld->entity().add<CheckActionTag>();    
     auto stateAvailable = dstManager.SetType("StateAvailable","CheckActionTag");
     
-     e.add_switch(Movement).add_case<MoveState>();
-     inputEntity.add_switch(stateAvailable).add_case<CheckActionTag>();
+    e.add_switch(Movement);
+    e.add_case<MoveState>();
+    inputEntity.add_switch(stateAvailable).add_case<CheckActionTag>();
     inputEntity.add<CheckActionData>();
     inputEntity.add<ActionAvailableTag>();
+
+    auto input_tag = dstManager.defaultWorld->component<InputTag>();
     
-    
+    inputEntity.set<InheritsFrom>({ input_tag });
 }

@@ -21,7 +21,7 @@ public:
         }
 
         template <typename T>
-        void RegisterComponent(const char *name = nullptr)
+        void RegisterComponent(const char *name = nullptr) const
         {
             flecs::component<T>(*defaultWorld, name);
         }
@@ -97,8 +97,21 @@ public:
             return e.get<T>();
         }
 
+
+        Entity GetFirstParent(flecs::entity e)
+        {
+
+            for(auto cid : e.type().vector())
+            {
+                if (cid & flecs::Childof)
+                {
+                    return flecs::entity(*defaultWorld, cid & ECS_COMPONENT_MASK);
+                }
+            }
+
+            return e.null();
+        }
+       
         
-    flecs::world* defaultWorld;
-private:
-      
+        flecs::world* defaultWorld;      
 };
