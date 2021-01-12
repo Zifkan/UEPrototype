@@ -3,10 +3,10 @@
 
 struct InputTag
 {
-    Entity Owner;
+   // Entity Owner;
 };
 
-struct MoveActionTag :  InputTag
+struct MoveInputTag :  InputTag
 {
    
 };

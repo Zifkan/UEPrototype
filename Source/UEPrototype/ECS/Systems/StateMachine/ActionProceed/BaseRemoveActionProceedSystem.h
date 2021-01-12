@@ -33,7 +33,7 @@ class  SprintRemoveActionProceedSystem   :public BaseRemoveActionProceedSystem<S
 {
 };
 
-class  MoveRemoveActionProceedSystem   :public BaseRemoveActionProceedSystem<MoveActionTag>
+class  MoveRemoveActionProceedSystem   :public BaseRemoveActionProceedSystem<MoveInputTag>
 {
 };
 

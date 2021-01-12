@@ -16,23 +16,22 @@
 
 
 void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
-{
-    auto inputEntity = dstManager.CreateEntity("InputEntity");
+{  
+
+	//dstManager.RegisterComponent<InputTag>("InputTag");
     
-
-    dstManager.defaultWorld->set<InputTag>({inputEntity});
-
+	auto inputEntity =   dstManager.defaultWorld->entity(flecs::type_id<InputTag>());
     
     inputEntity.add_childof(e);
 
-    
+	
     
     const auto characterActor = Cast<ACharacterActor>(GetOwner());
     const auto characterAnimInstance = Cast<UCharacterAnimInstance>(characterActor->GetAnimInstance());
     
     dstManager.AddComponentData<PlayerTag>(e);
     dstManager.AddComponentData<MovementVelocity>(e);
-    dstManager.SetComponentData<MovementSpeed>(e, { 2000.f });
+    dstManager.SetComponentData<MovementSpeed>(e, { 0.f });
     dstManager.AddComponentData<MoveDirectionData>(e);
     dstManager.AddComponentData<ViewDirectionData>(e);
     dstManager.AddComponentData<Rotation>(e);
@@ -41,8 +40,8 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
   //  dstManager.AddComponentData<CopyTransformFromActor>(e);
     dstManager.AddComponentData<CopyTransformToActor>(e);    
     dstManager.SetComponentData<FActorComponent>(e, { characterActor });
-    dstManager.SetComponentData<AnimComponent>(e, { characterAnimInstance }); 
-   
+    dstManager.SetComponentData<AnimComponent>(e, { characterAnimInstance }); 	
+	
     UE_LOG(LogTemp, Warning, TEXT("Player Entity, %i"),e.id());
     UE_LOG(LogTemp, Warning, TEXT("Input Entity, %i"),inputEntity.id());
 
@@ -57,12 +56,12 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     auto stateAvailable = dstManager.SetType("StateAvailable","CheckActionTag");
     
     e.add_switch(Movement);
-    e.add_case<MoveState>();
+  //  e.add_case<MoveState>();
     inputEntity.add_switch(stateAvailable).add_case<CheckActionTag>();
     inputEntity.add<CheckActionData>();
     inputEntity.add<ActionAvailableTag>();
 
-    auto input_tag = dstManager.defaultWorld->component<InputTag>();
+   // auto input_tag = dstManager.defaultWorld->component<InputTag>();
     
-    inputEntity.set<InheritsFrom>({ input_tag });
+  //  inputEntity.set<InheritsFrom>({ input_tag });
 }

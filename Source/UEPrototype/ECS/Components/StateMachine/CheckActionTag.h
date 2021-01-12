@@ -8,7 +8,7 @@ struct ActionAvailableTag
 
 struct CheckActionData
 {
-    float StartTime;
+    double StartTime;
     float Duration;
     float Space;
 };

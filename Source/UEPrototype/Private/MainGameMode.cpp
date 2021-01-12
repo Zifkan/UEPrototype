@@ -4,7 +4,7 @@
 #include "MainGameMode.h"
 
 
-
+//#include "flecs-os_api-posix/include/flecs_os_api_posix.h"
 #include "flecs_dash.h"
 #include "flecs_systems_civetweb.h"
 #include "Components/AnimComponent.h"
@@ -12,7 +12,6 @@
 #include "Components/TransformComponents.h"
 #include "Components/CharacterStates/CharacterStates.h"
 #include "Components/StateMachine/CheckActionTag.h"
-//#include "flecs-os_api-posix/include/flecs_os_api_posix.h"
 #include "Components/CharacterActions/CharacterActionsComponents.h"
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
@@ -30,10 +29,10 @@
 void AMainGameMode::BeginPlay()
 {
 
-  // posix_set_os_api();
+   //posix_set_os_api();
     world = FEcsWorld::instance();
     
-    /*  world->DefaultWorld->import<flecs::dash>();
+  /*  world->DefaultWorld->import<flecs::dash>();
     world->DefaultWorld->import<flecs::systems::civetweb>();
 
     world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); */
@@ -49,15 +48,14 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<CheckActionData>("CheckActionData");
     entityManager->RegisterComponent<ActionAvailableTag>("ActionAvailableTag");
 
-    entityManager->RegisterComponent<MoveActionTag>("MoveActionTag");
+    entityManager->RegisterComponent<MoveInputTag>("MoveActionTag");
     entityManager->RegisterComponent<RollInputTag>("RollInputTag");
     entityManager->RegisterComponent<BlockInputTag>("BlockInputTag");
     entityManager->RegisterComponent<AttackInputTag>("AttackInputTag");
     entityManager->RegisterComponent<SprintInputTag>("SprintInputTag");
-    
+
+	entityManager->RegisterComponent<InputTag>("InputTag");
     entityManager->RegisterComponent<InheritsFrom>("InheritsFrom");
-    entityManager->RegisterComponent<InputTag>("InputTag");
-    
     entityManager->RegisterComponent<CamComponent>("CamComponent");
     entityManager->RegisterComponent<PlayerInputComponent>("InputComponent");
     entityManager->RegisterComponent<MovementVelocity>("MovementVelocity");
