@@ -1,11 +1,14 @@
 ﻿#include "InputMoveProcessingSystem.h"
+
+#include "Components/CharacterActions/CharacterActionsComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
 
 void InputMoveProcessingSystem::OnCreate()
 {
     SystemRun->each([this](flecs::entity e, PlayerTag& player, MoveDirectionData& moveDirection, ViewDirectionData& viewDirection)
     {
-        auto inputEnt = Entity(*m_pWorld->DefaultWorld, "InputEntity");  
+      
+        auto inputEnt =  GetEntityManager()->Singleton<InputEntityType>();
         const PlayerInputComponent* input = inputEnt.get<PlayerInputComponent>();
 
         if (input==nullptr) return;

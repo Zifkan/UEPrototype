@@ -100,13 +100,17 @@ void AMainGameMode::RegisterSystem()
 
     systemsLauncher->RegisterSystem(new  CameraSystem());
     systemsLauncher->RegisterSystem(new  CameraCollisionSystem(), GetWorld());
-    systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());      
+
+	
+    systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());
+	systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());
+	systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
+	
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
-   // systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());
     systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
 
-    systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
+	
     
     
 }

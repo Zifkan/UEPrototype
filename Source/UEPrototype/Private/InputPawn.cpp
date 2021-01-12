@@ -53,6 +53,9 @@ void AInputPawn::Tick(float DeltaSeconds)
     {
         inputEntity = entityManager->Singleton<InputEntityType>();
         entityManager->AddComponentDataSafety<MoveInputTag>(inputEntity);
+
+      //  UE_LOG(LogTemp, Warning, TEXT("Pressing movement MoveInputTag, %i"),inputEntity.id());
+        SetInput() ;
     }
 }
 
@@ -66,13 +69,13 @@ void AInputPawn::SetInput()
 void AInputPawn::MoveForward(float Value)
 {
     inputData.MovementAxis = FVector2D(inputData.MovementAxis.X,Value);
-    SetInput();
+  //  SetInput();
 }
 
 void AInputPawn::MoveRight(float Value)
 {
     inputData.MovementAxis = FVector2D(Value,inputData.MovementAxis.Y);
-    SetInput();
+   // SetInput();
 }
 
 

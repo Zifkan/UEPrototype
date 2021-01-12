@@ -3,7 +3,8 @@
 void MovementStateSystem::OnCreate()
 {
     SystemRun->signature("CASE | MoveState").each([](flecs::entity e, AnimComponent& animComponent, MoveDirectionData& moveDirectionData,MovementSpeed& movementSpeed)
-    {    
+    {
+        UE_LOG(LogTemp, Warning, TEXT("MoveState Working Ent ID : %i"),e.id());
         movementSpeed.Speed = 2000.0f;
         animComponent.AnimInstancePtr->MoveDirection = FVector2D(moveDirectionData.Axises);
         e.set<CheckActionData>({ FPlatformTime::Seconds(),0.0f,0.1f});

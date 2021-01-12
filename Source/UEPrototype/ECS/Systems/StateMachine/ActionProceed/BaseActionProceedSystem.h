@@ -26,7 +26,7 @@ inline void MoveActionProceedSystem::OnCreate()
        const auto parentEntity = e.get_parent<PlayerTag>();
 
      
-        UE_LOG(LogTemp, Warning, TEXT("AttackActionProceedSystem parentEntity, %i"), parentEntity.id());
+        UE_LOG(LogTemp, Warning, TEXT(" MoveActionProceedSystem parentEntity, %i"), parentEntity.id());
      
         parentEntity.add_case<MoveState>();  
      
@@ -45,13 +45,13 @@ inline void AttackActionProceedSystem::OnCreate()
 {
     SystemRun->each([this](Entity e, AttackInputTag& AttackInputTag, ActionAvailableTag& availableTag)
     {
-   //    const auto parentEntity= e.get_parent<PlayerTag>();
+        const auto parentEntity= e.get_parent<PlayerTag>();
 
         
     //  UE_LOG(LogTemp, Warning, TEXT("AttackActionProceedSystem parentEntity, %s"),UTF8_TO_TCHAR ( e.has<PlayerTag>()?"true" : "false"));
        UE_LOG(LogTemp, Warning, TEXT("Player Entity, %i"),GetECSWorld()->DefaultWorld->entity(flecs::type_id<InputEntityType>()).id());
        UE_LOG(LogTemp, Warning, TEXT("Input Entity, %i"),e.id());
 
-    //   inputTag.Owner.add_case<AttackState>(); 
+        parentEntity.add_case<AttackState>(); 
     });
 }
