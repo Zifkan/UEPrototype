@@ -343,6 +343,30 @@ typedef int32_t ecs_size_t;
 #endif
 
 #endif
+/* This is an implementation of a simple vector type. The vector is allocated in
+ * a single block of memory, with the element count, and allocated number of
+ * elements encoded in the block. As this vector is used for user-types it has
+ * been designed to support alignments higher than 8 bytes. This makes the size
+ * of the vector header variable in size. To reduce the overhead associated with
+ * retrieving or computing this size, the functions are wrapped in macro calls
+ * that compute the header size at compile time.
+ *
+ * The API provides a number of _t macro's, which accept a size and alignment.
+ * These macro's are used when no compile-time type is available.
+ *
+ * The vector guarantees contiguous access to its elements. When an element is
+ * removed from the vector, the last element is copied to the removed element.
+ *
+ * The API requires passing in the type of the vector. This type is used to test
+ * whether the size of the provided type equals the size of the type with which
+ * the vector was created. In release mode this check is not performed.
+ *
+ * When elements are added to the vector, it will automatically resize to the
+ * next power of two. This can change the pointer of the vector, which is why
+ * operations that can increase the vector size, accept a double pointer to the
+ * vector.
+ */
+
 #ifndef FLECS_VECTOR_H
 #define FLECS_VECTOR_H
 
@@ -351,7 +375,7 @@ typedef int32_t ecs_size_t;
 extern "C" {
 #endif
 
-/* Public, so we can do compile-time offset calculation */
+/* Public, so we can do compile-time header size calculation */
 struct ecs_vector_t {
     int32_t count;
     int32_t size;
@@ -361,10 +385,13 @@ struct ecs_vector_t {
 #endif
 };
 
+/* Compute the header size of the vector from size & alignment */
 #define ECS_VECTOR_U(size, alignment) size, ECS_MAX(ECS_SIZEOF(ecs_vector_t), alignment)
+
+/* Compute the header size of the vector from a provided compile-time type */
 #define ECS_VECTOR_T(T) ECS_VECTOR_U(ECS_SIZEOF(T), ECS_ALIGNOF(T))
 
-/* Macro's for creating vector on stack */
+/* Utility macro's for creating vector on stack */
 #ifndef NDEBUG
 #define ECS_VECTOR_VALUE(T, elem_count)\
 {\
@@ -405,6 +432,7 @@ typedef int (*ecs_comparator_t)(
     const void* p1,
     const void *p2);
 
+/** Create new vector. */
 FLECS_API
 ecs_vector_t* _ecs_vector_new(
     ecs_size_t elem_size,
@@ -417,6 +445,7 @@ ecs_vector_t* _ecs_vector_new(
 #define ecs_vector_new_t(size, alignment, elem_count) \
     _ecs_vector_new(ECS_VECTOR_U(size, alignment), elem_count)    
 
+/* Create new vector, initialize it with provided array */
 FLECS_API
 ecs_vector_t* _ecs_vector_from_array(
     ecs_size_t elem_size,
@@ -427,6 +456,7 @@ ecs_vector_t* _ecs_vector_from_array(
 #define ecs_vector_from_array(T, elem_count, array)\
     _ecs_vector_from_array(ECS_VECTOR_T(T), elem_count, array)
 
+/* Initialize vector with zero's */
 FLECS_API
 void _ecs_vector_zero(
     ecs_vector_t *vector,
@@ -436,24 +466,29 @@ void _ecs_vector_zero(
 #define ecs_vector_zero(vector, T) \
     _ecs_vector_zero(vector, ECS_VECTOR_T(T))
 
+/** Free vector */
 FLECS_API
 void ecs_vector_free(
     ecs_vector_t *vector);
 
+/** Clear values in vector */
 FLECS_API
 void ecs_vector_clear(
     ecs_vector_t *vector);
 
+/** Assert when the provided size does not match the vector type. */
 FLECS_API
 void ecs_vector_assert_size(
     ecs_vector_t* vector_inout,
     ecs_size_t elem_size);
 
+/** Assert when the provided alignment does not match the vector type. */
 FLECS_API
 void ecs_vector_assert_alignment(
     ecs_vector_t* vector,
     ecs_size_t elem_alignment);    
 
+/** Add element to vector. */
 FLECS_API
 void* _ecs_vector_add(
     ecs_vector_t **array_inout,
@@ -466,6 +501,7 @@ void* _ecs_vector_add(
 #define ecs_vector_add_t(vector, size, alignment) \
     _ecs_vector_add(vector, ECS_VECTOR_U(size, alignment))
 
+/** Add n elements to the vector. */
 FLECS_API
 void* _ecs_vector_addn(
     ecs_vector_t **array_inout,
@@ -479,6 +515,7 @@ void* _ecs_vector_addn(
 #define ecs_vector_addn_t(vector, size, alignment, elem_count) \
     _ecs_vector_addn(vector, ECS_VECTOR_U(size, alignment), elem_count)
 
+/** Get element from vector. */
 FLECS_API
 void* _ecs_vector_get(
     const ecs_vector_t *vector,
@@ -492,6 +529,7 @@ void* _ecs_vector_get(
 #define ecs_vector_get_t(vector, size, alignment, index) \
     _ecs_vector_get(vector, ECS_VECTOR_U(size, alignment), index)
 
+/** Get last element from vector. */
 FLECS_API
 void* _ecs_vector_last(
     const ecs_vector_t *vector,
@@ -501,6 +539,8 @@ void* _ecs_vector_last(
 #define ecs_vector_last(vector, T) \
     (T*)_ecs_vector_last(vector, ECS_VECTOR_T(T))
 
+/** Set minimum size for vector. If the current size of the vector is larger, 
+ * the function will have no side effects. */
 FLECS_API
 int32_t _ecs_vector_set_min_size(
     ecs_vector_t **array_inout,
@@ -511,6 +551,8 @@ int32_t _ecs_vector_set_min_size(
 #define ecs_vector_set_min_size(vector, T, size) \
     _ecs_vector_set_min_size(vector, ECS_VECTOR_T(T), size)
 
+/** Set minimum count for vector. If the current count of the vector is larger, 
+ * the function will have no side effects. */
 FLECS_API
 int32_t _ecs_vector_set_min_count(
     ecs_vector_t **vector_inout,
@@ -521,10 +563,12 @@ int32_t _ecs_vector_set_min_count(
 #define ecs_vector_set_min_count(vector, T, size) \
     _ecs_vector_set_min_count(vector, ECS_VECTOR_T(T), size)
 
+/** Remove last element. This operation requires no swapping of values. */
 FLECS_API
 void ecs_vector_remove_last(
     ecs_vector_t *vector);
 
+/** Remove last value, store last element in provided value. */
 FLECS_API
 bool _ecs_vector_pop(
     ecs_vector_t *vector,
@@ -535,6 +579,7 @@ bool _ecs_vector_pop(
 #define ecs_vector_pop(vector, T, value) \
     _ecs_vector_pop(vector, ECS_VECTOR_T(T), value)
 
+/** Append element at specified index to another vector. */
 FLECS_API
 int32_t _ecs_vector_move_index(
     ecs_vector_t **dst,
@@ -546,6 +591,7 @@ int32_t _ecs_vector_move_index(
 #define ecs_vector_move_index(dst, src, T, index) \
     _ecs_vector_move_index(dst, src, ECS_VECTOR_T(T), index)
 
+/** Remove element at specified index. Moves the last value to the index. */
 FLECS_API
 int32_t _ecs_vector_remove_index(
     ecs_vector_t *vector,
@@ -559,6 +605,7 @@ int32_t _ecs_vector_remove_index(
 #define ecs_vector_remove_index_t(vector, size, alignment, index) \
     _ecs_vector_remove_index(vector, ECS_VECTOR_U(size, alignment), index)
 
+/** Shrink vector to make the size match the count. */
 FLECS_API
 void _ecs_vector_reclaim(
     ecs_vector_t **vector,
@@ -568,6 +615,7 @@ void _ecs_vector_reclaim(
 #define ecs_vector_reclaim(vector, T)\
     _ecs_vector_reclaim(vector, ECS_VECTOR_T(T))
 
+/** Grow size of vector with provided number of elements. */
 FLECS_API
 int32_t _ecs_vector_grow(
     ecs_vector_t **vector,
@@ -578,6 +626,7 @@ int32_t _ecs_vector_grow(
 #define ecs_vector_grow(vector, T, size) \
     _ecs_vector_grow(vector, ECS_VECTOR_T(T), size)
 
+/** Set allocation size of vector. */
 FLECS_API
 int32_t _ecs_vector_set_size(
     ecs_vector_t **vector,
@@ -591,6 +640,8 @@ int32_t _ecs_vector_set_size(
 #define ecs_vector_set_size_t(vector, size, alignment, elem_count) \
     _ecs_vector_set_size(vector, ECS_VECTOR_U(size, alignment), elem_count)
 
+/** Set count of vector. If the size of the vector is smaller than the provided
+ * count, the vector is resized. */
 FLECS_API
 int32_t _ecs_vector_set_count(
     ecs_vector_t **vector,
@@ -604,14 +655,17 @@ int32_t _ecs_vector_set_count(
 #define ecs_vector_set_count_t(vector, size, alignment, elem_count) \
     _ecs_vector_set_count(vector, ECS_VECTOR_U(size, alignment), elem_count)
 
+/** Return number of elements in vector. */
 FLECS_API
 int32_t ecs_vector_count(
     const ecs_vector_t *vector);
 
+/** Return size of vector. */
 FLECS_API
 int32_t ecs_vector_size(
     const ecs_vector_t *vector);
 
+/** Return first element of vector. */
 FLECS_API
 void* _ecs_vector_first(
     const ecs_vector_t *vector,
@@ -624,6 +678,7 @@ void* _ecs_vector_first(
 #define ecs_vector_first_t(vector, size, alignment) \
     _ecs_vector_first(vector, ECS_VECTOR_U(size, alignment))
 
+/** Sort elements in vector. */
 FLECS_API
 void _ecs_vector_sort(
     ecs_vector_t *vector,
@@ -634,6 +689,7 @@ void _ecs_vector_sort(
 #define ecs_vector_sort(vector, T, compare_action) \
     _ecs_vector_sort(vector, ECS_VECTOR_T(T), compare_action)
 
+/** Return memory occupied by vector. */
 FLECS_API
 void _ecs_vector_memory(
     const ecs_vector_t *vector,
@@ -648,6 +704,7 @@ void _ecs_vector_memory(
 #define ecs_vector_memory_t(vector, size, alignment, allocd, used) \
     _ecs_vector_memory(vector, ECS_VECTOR_U(size, alignment), allocd, used)
 
+/** Copy vectors */
 FLECS_API
 ecs_vector_t* _ecs_vector_copy(
     const ecs_vector_t *src,
@@ -675,6 +732,8 @@ ecs_vector_t* _ecs_vector_copy(
 }
 #endif
 
+
+/** C++ wrapper for vector class. */
 #ifdef __cplusplus
 #ifndef FLECS_NO_CPP
 
@@ -805,6 +864,37 @@ private:
 #endif
 
 #endif
+/** This is an implementation of a paged sparse set that stores the payload in
+ * the sparse array.
+ *
+ * A sparse set has a dense and a sparse array. The sparse array is directly
+ * indexed by a 64 bit identifier. The sparse element is linked with a dense
+ * element, which allows for liveliness checking. The liveliness check itself
+ * can be performed by doing (psuedo code):
+ *  dense[sparse[sparse_id].dense] == sparse_id
+ *
+ * To ensure that the sparse array doesn't have to grow to a large size when
+ * using large sparse_id's, the sparse set uses paging. This cuts up the array
+ * into several pages of 4096 elements. When an element is set, the sparse set
+ * ensures that the corresponding page is created. The page associated with an
+ * id is determined by shifting a bit 12 bits to the right.
+ *
+ * The sparse set keeps track of a generation count per id, which is increased
+ * each time an id is deleted. The generation is encoded in the returned id.
+ *
+ * This sparse set implementation stores payload in the sparse array, which is
+ * not typical. The reason for this is to guarantee that (in combination with
+ * paging) the returned payload pointers are stable. This allows for various
+ * optimizations in the parts of the framework that uses the sparse set.
+ *
+ * The sparse set has been designed so that new ids can be generated in bulk, in
+ * an O(1) operation. The way this works is that once a dense-sparse pair is
+ * created, it is never unpaired. Instead it is moved to the end of the dense
+ * array, and the sparse set stores an additional count to keep track of the
+ * last alive id in the sparse set. To generate new ids in bulk, the sparse set
+ * only needs to increase this count by the number of requested ids.
+ */
+
 #ifndef FLECS_SPARSE_H
 #define FLECS_SPARSE_H
 
@@ -815,54 +905,57 @@ extern "C" {
 
 typedef struct ecs_sparse_t ecs_sparse_t;
 
-FLECS_API
-ecs_sparse_t* _ecs_sparse_new(
+/** Create new sparse set */
+FLECS_API ecs_sparse_t* _ecs_sparse_new(
     ecs_size_t elem_size);
-
-FLECS_API
-void ecs_sparse_set_id_source(
-    ecs_sparse_t *sparse,
-    uint64_t *id_source);
 
 #define ecs_sparse_new(type)\
     _ecs_sparse_new(sizeof(type))
 
-FLECS_API
-void ecs_sparse_free(
+/** Set id source. This allows the sparse set to use an external variable for
+ * issuing and increasing new ids. */
+FLECS_API void ecs_sparse_set_id_source(
+    ecs_sparse_t *sparse,
+    uint64_t *id_source);
+
+/** Free sparse set */
+FLECS_API void ecs_sparse_free(
     ecs_sparse_t *sparse);
 
-FLECS_API
-void ecs_sparse_clear(
+/** Remove all elements from sparse set */
+FLECS_API void ecs_sparse_clear(
     ecs_sparse_t *sparse);
 
-FLECS_API
-void* _ecs_sparse_add(
+/** Add element to sparse set, this generates or recycles an id */
+FLECS_API void* _ecs_sparse_add(
     ecs_sparse_t *sparse,
     ecs_size_t elem_size);
 
 #define ecs_sparse_add(sparse, type)\
     ((type*)_ecs_sparse_add(sparse, sizeof(type)))
 
-FLECS_API
-uint64_t ecs_sparse_last_id(
+/** Get last issued id. */
+FLECS_API uint64_t ecs_sparse_last_id(
     ecs_sparse_t *sparse);
 
-FLECS_API
-uint64_t ecs_sparse_new_id(
+/** Generate or recycle a new id. */
+FLECS_API uint64_t ecs_sparse_new_id(
     ecs_sparse_t *sparse);
 
-FLECS_API
-const uint64_t* ecs_sparse_new_ids(
+/** Generate or recycle new ids in bulk. The returned pointer points directly to
+ * the internal dense array vector with sparse ids. Operations on the sparse set
+ * can (and likely will) modify the contents of the buffer. */
+FLECS_API const uint64_t* ecs_sparse_new_ids(
     ecs_sparse_t *sparse,
     int32_t count);
 
-FLECS_API
-void ecs_sparse_remove(
+/** Remove an element */
+FLECS_API void ecs_sparse_remove(
     ecs_sparse_t *sparse,
     uint64_t index);
 
-FLECS_API
-void* _ecs_sparse_remove_get(
+/** Remove an element, return pointer to the value in the sparse array */
+FLECS_API void* _ecs_sparse_remove_get(
     ecs_sparse_t *sparse,
     ecs_size_t elem_size,
     uint64_t index);    
@@ -870,18 +963,24 @@ void* _ecs_sparse_remove_get(
 #define ecs_sparse_remove_get(sparse, type, index)\
     ((type*)_ecs_sparse_remove_get(sparse, sizeof(type), index))
 
-FLECS_API
-void ecs_sparse_set_generation(
+/** Override the generation count for a specific id */
+FLECS_API void ecs_sparse_set_generation(
     ecs_sparse_t *sparse,
     uint64_t index);    
 
-FLECS_API
-bool ecs_sparse_exists(
+/** Check whether an id has ever been issued. */
+FLECS_API bool ecs_sparse_exists(
     ecs_sparse_t *sparse,
     uint64_t index);
 
-FLECS_API
-void* _ecs_sparse_get(
+/** Test if id is alive, which requires the generation count tp match. */
+FLECS_API bool ecs_sparse_is_alive(
+    const ecs_sparse_t *sparse,
+    uint64_t index);
+
+/** Get value from sparse set by dense id. This function is useful in 
+ * combination with ecs_sparse_count for iterating all values in the set. */
+FLECS_API void* _ecs_sparse_get(
     const ecs_sparse_t *sparse,
     ecs_size_t elem_size,
     int32_t index);
@@ -889,21 +988,17 @@ void* _ecs_sparse_get(
 #define ecs_sparse_get(sparse, type, index)\
     ((type*)_ecs_sparse_get(sparse, sizeof(type), index))
 
-FLECS_API
-bool ecs_sparse_is_alive(
-    const ecs_sparse_t *sparse,
-    uint64_t index);
-
-FLECS_API
-int32_t ecs_sparse_count(
+/** Get the number of alive elements in the sparse set. */
+FLECS_API int32_t ecs_sparse_count(
     const ecs_sparse_t *sparse);
 
-FLECS_API
-int32_t ecs_sparse_size(
+/** Return total number of allocated elements in the dense array */
+FLECS_API int32_t ecs_sparse_size(
     const ecs_sparse_t *sparse);
 
-FLECS_API
-void* _ecs_sparse_get_sparse(
+/** Get element by (sparse) id. The returned pointer is stable for the duration
+ * of the sparse set, as it is stored in the sparse array. */
+FLECS_API void* _ecs_sparse_get_sparse(
     const ecs_sparse_t *sparse,
     ecs_size_t elem_size,
     uint64_t index);
@@ -911,8 +1006,8 @@ void* _ecs_sparse_get_sparse(
 #define ecs_sparse_get_sparse(sparse, type, index)\
     ((type*)_ecs_sparse_get_sparse(sparse, sizeof(type), index))
 
-FLECS_API
-void* _ecs_sparse_get_sparse_any(
+/** Like get_sparse, but don't care whether element is alive or not. */
+FLECS_API void* _ecs_sparse_get_sparse_any(
     ecs_sparse_t *sparse,
     ecs_size_t elem_size,
     uint64_t index);
@@ -920,8 +1015,8 @@ void* _ecs_sparse_get_sparse_any(
 #define ecs_sparse_get_sparse_any(sparse, type, index)\
     ((type*)_ecs_sparse_get_sparse_any(sparse, sizeof(type), index))
 
-FLECS_API
-void* _ecs_sparse_get_or_create(
+/** Get or create element by (sparse) id. */
+FLECS_API void* _ecs_sparse_get_or_create(
     ecs_sparse_t *sparse,
     ecs_size_t elem_size,
     uint64_t index);
@@ -929,8 +1024,8 @@ void* _ecs_sparse_get_or_create(
 #define ecs_sparse_get_or_create(sparse, type, index)\
     ((type*)_ecs_sparse_get_or_create(sparse, sizeof(type), index))
 
-FLECS_API
-void* _ecs_sparse_set(
+/** Set value. */
+FLECS_API void* _ecs_sparse_set(
     ecs_sparse_t *sparse,
     ecs_size_t elem_size,
     uint64_t index,
@@ -939,27 +1034,26 @@ void* _ecs_sparse_set(
 #define ecs_sparse_set(sparse, type, index, value)\
     ((type*)_ecs_sparse_set(sparse, sizeof(type), index, value))
 
-
-FLECS_API
-const uint64_t* ecs_sparse_ids(
+/** Get pointer to ids (alive and not alive). Use with count() or size(). */
+FLECS_API const uint64_t* ecs_sparse_ids(
     const ecs_sparse_t *sparse);
 
-FLECS_API
-void ecs_sparse_set_size(
+/** Set size of the dense array. */
+FLECS_API void ecs_sparse_set_size(
     ecs_sparse_t *sparse,
     int32_t elem_count);
 
-FLECS_API
-ecs_sparse_t* ecs_sparse_copy(
+/** Copy sparse set into a new sparse set. */
+FLECS_API ecs_sparse_t* ecs_sparse_copy(
     const ecs_sparse_t *src);    
 
-FLECS_API
-void ecs_sparse_restore(
+/** Restore sparse set into destination sparse set. */
+FLECS_API void ecs_sparse_restore(
     ecs_sparse_t *dst,
     const ecs_sparse_t *src);
 
-FLECS_API
-void ecs_sparse_memory(
+/** Get memory usage of sparse set. */
+FLECS_API void ecs_sparse_memory(
     ecs_sparse_t *sparse,
     int32_t *allocd,
     int32_t *used);
@@ -980,6 +1074,10 @@ void ecs_sparse_memory(
 #endif
 
 #endif
+/** Simple bitset implementation. The bitset allows for storage of arbitrary
+ * numbers of bits.
+ */
+
 #ifndef FLECS_BITSET_H
 #define FLECS_BITSET_H
 
@@ -994,36 +1092,45 @@ typedef struct ecs_bitset_t {
     ecs_size_t size;
 } ecs_bitset_t;
 
+/** Initialize bitset. */
 void ecs_bitset_init(
     ecs_bitset_t *bs);
 
+/** Deinialize bitset. */
 void ecs_bitset_deinit(
     ecs_bitset_t *bs);
 
+/** Add n elements to bitset. */
 void ecs_bitset_addn(
     ecs_bitset_t *bs,
     int32_t count);
 
+/** Ensure element exists. */
 void ecs_bitset_ensure(
     ecs_bitset_t *bs,
     int32_t count);
 
+/** Set element. */
 void ecs_bitset_set(
     ecs_bitset_t *bs,
     int32_t elem,
     bool value);
 
+/** Get element. */
 bool ecs_bitset_get(
     const ecs_bitset_t *bs,
     int32_t elem);
 
+/** Return number of elements. */
 int32_t ecs_bitset_count(
     const ecs_bitset_t *bs);
 
+/** Remove from bitset. */
 void ecs_bitset_remove(
     ecs_bitset_t *bs,
     int32_t elem);
 
+/** Swap values in bitset. */
 void ecs_bitset_swap(
     ecs_bitset_t *bs,
     int32_t elem_a,
@@ -1034,6 +1141,28 @@ void ecs_bitset_swap(
 #endif
 
 #endif
+/** Key-value datastructure. The map allows for fast retrieval of a payload for
+ * a 64-bit key. While it is not as fast as the sparse set, it is better at
+ * handling randomly distributed values.
+ *
+ * Payload is stored in bucket arrays. A bucket is computed from an id by
+ * using the (bucket_count - 1) as an AND-mask. The number of buckets is always
+ * a power of 2. Multiple keys will be stored in the same bucket. As a result
+ * the worst case retrieval performance of the map is O(n), though this is rare.
+ * On average lookup performance should equal O(1).
+ *
+ * The datastructure will automatically grow the number of buckets when the
+ * ratio between elements and buckets exceeds a certain threshold (LOAD_FACTOR).
+ *
+ * Note that while the implementation is a hashmap, it can only compute hashes
+ * for the provided 64 bit keys. This means that the provided keys must always
+ * be unique. If the provided keys are hashes themselves, it is the 
+ * responsibility of the user to ensure that collisions are handled.
+ *
+ * In debug mode the map verifies that the type provided to the map functions
+ * matches the one used at creation time.
+ */
+
 #ifndef FLECS_MAP_H
 #define FLECS_MAP_H
 
@@ -1054,6 +1183,7 @@ typedef struct ecs_map_iter_t {
     void *payload;
 } ecs_map_iter_t;
 
+/** Create new map. */
 FLECS_API
 ecs_map_t * _ecs_map_new(
     ecs_size_t elem_size,
@@ -1063,6 +1193,7 @@ ecs_map_t * _ecs_map_new(
 #define ecs_map_new(T, elem_count)\
     _ecs_map_new(sizeof(T), ECS_ALIGNOF(T), elem_count)
 
+/** Get element for key, returns NULL if they key doesn't exist. */
 FLECS_API
 void * _ecs_map_get(
     const ecs_map_t *map,
@@ -1072,6 +1203,10 @@ void * _ecs_map_get(
 #define ecs_map_get(map, T, key)\
     (T*)_ecs_map_get(map, sizeof(T), (ecs_map_key_t)key)
 
+/** Get pointer element. This dereferences the map element as a pointer. This
+ * operation returns NULL when either the element does not exist or whether the
+ * pointer is NULL, and should therefore only be used when the application knows
+ * for sure that a pointer should never be NULL. */
 FLECS_API
 void * _ecs_map_get_ptr(
     const ecs_map_t *map,
@@ -1080,8 +1215,19 @@ void * _ecs_map_get_ptr(
 #define ecs_map_get_ptr(map, T, key)\
     (T)_ecs_map_get_ptr(map, key)
 
+/** Get or create element for key. */
 FLECS_API
-void _ecs_map_set(
+void * _ecs_map_ensure(
+    ecs_map_t *map,
+    ecs_size_t elem_size,
+    ecs_map_key_t key);
+
+#define ecs_map_ensure(map, T, key)\
+    (T*)_ecs_map_ensure(map, sizeof(T), (ecs_map_key_t)key)
+
+/** Set element. */
+FLECS_API
+void* _ecs_map_set(
     ecs_map_t *map,
     ecs_size_t elem_size,
     ecs_map_key_t key,
@@ -1090,31 +1236,38 @@ void _ecs_map_set(
 #define ecs_map_set(map, key, payload)\
     _ecs_map_set(map, sizeof(*payload), (ecs_map_key_t)key, payload);
 
+/** Free map. */
 FLECS_API
 void ecs_map_free(
     ecs_map_t *map);
 
+/** Remove key from map. */
 FLECS_API
 void ecs_map_remove(
     ecs_map_t *map,
     ecs_map_key_t key);
 
+/** Remove all elements from map. */
 FLECS_API
 void ecs_map_clear(
     ecs_map_t *map);
 
+/** Return number of elements in map. */
 FLECS_API
 int32_t ecs_map_count(
     const ecs_map_t *map);
 
+/** Return number of buckets in map. */
 FLECS_API
 int32_t ecs_map_bucket_count(
     const ecs_map_t *map);
 
+/** Return iterator to map contents. */
 FLECS_API
 ecs_map_iter_t ecs_map_iter(
     const ecs_map_t *map);
 
+/** Obtain next element in map from iterator. */
 FLECS_API
 void* _ecs_map_next(
     ecs_map_iter_t* iter,
@@ -1124,6 +1277,7 @@ void* _ecs_map_next(
 #define ecs_map_next(iter, T, key) \
     (T*)_ecs_map_next(iter, sizeof(T), key)
 
+/** Obtain next pointer element from iterator. See ecs_map_get_ptr. */
 FLECS_API
 void* _ecs_map_next_ptr(
     ecs_map_iter_t* iter,
@@ -1132,25 +1286,24 @@ void* _ecs_map_next_ptr(
 #define ecs_map_next_ptr(iter, T, key) \
     (T)_ecs_map_next_ptr(iter, key)
 
+/** Grow number of buckets in the map for specified number of elements. */
 FLECS_API
 void ecs_map_grow(
     ecs_map_t *map, 
     int32_t elem_count);
 
+/** Set number of buckets in the map for specified number of elements. */
 FLECS_API
 void ecs_map_set_size(
     ecs_map_t *map, 
     int32_t elem_count);
 
+/** Return memory occupied by map. */
 FLECS_API
 void ecs_map_memory(
     ecs_map_t *map, 
     int32_t *allocd,
     int32_t *used);
-
-FLECS_API
-ecs_map_t* ecs_map_copy(
-    const ecs_map_t *map);
 
 #ifndef FLECS_LEGACY
 #define ecs_map_each(map, T, key, var, ...)\
@@ -1169,6 +1322,7 @@ ecs_map_t* ecs_map_copy(
 }
 #endif
 
+/** C++ wrapper for map. */
 #ifdef __cplusplus
 #ifndef FLECS_NO_CPP
 
@@ -1224,94 +1378,114 @@ private:
 #endif
 
 #endif
+/* Datastructure that stores N interleaved linked lists in an array. 
+ * This allows for efficient storage of elements with mutually exclusive values.
+ * Each linked list has a header element which points to the index in the array
+ * that stores the first node of the list. Each list node points to the next
+ * array element.
+ *
+ * The datastructure needs to be created with min and max values, so that it can
+ * allocate an array of headers that can be directly indexed by the value. The
+ * values are stored in a contiguous array, which allows for the values to be
+ * iterated without having to follow the linked list nodes.
+ *
+ * The datastructure allows for efficient storage and retrieval for values with
+ * mutually exclusive values, such as enumeration values. The linked list allows
+ * an application to obtain all elements for a given (enumeration) value without
+ * having to search.
+ *
+ * While the list accepts 64 bit values, it only uses the lower 32bits of the
+ * value for selecting the correct linked list.
+ */
+
 #ifndef FLECS_SWITCH_LIST_H
 #define FLECS_SWITCH_LIST_H
 
 
 typedef struct ecs_switch_header_t {
-    int32_t element;
-    int32_t count;
+    int32_t element;        /* First element for value */
+    int32_t count;          /* Number of elements for value */
 } ecs_switch_header_t;
 
 typedef struct ecs_switch_node_t {
-    int32_t next;
-    int32_t prev;
+    int32_t next;           /* Next node in list */
+    int32_t prev;           /* Prev node in list */
 } ecs_switch_node_t;
 
 typedef struct ecs_switch_t {
-    uint64_t min;
-    uint64_t max;
-    ecs_switch_header_t *headers;
-    ecs_vector_t *nodes;
-    ecs_vector_t *values;
+    uint64_t min;           /* Minimum value the switch can store */
+    uint64_t max;           /* Maximum value the switch can store */
+    ecs_switch_header_t *headers;   /* Array with headers, indexed by value */
+    ecs_vector_t *nodes;    /* Vector with nodes, of type ecs_switch_node_t */
+    ecs_vector_t *values;   /* Vector with values, of type uint64_t */
 } ecs_switch_t;
 
-FLECS_API
+/** Create new switch. */
 ecs_switch_t* ecs_switch_new(
     uint64_t min, 
     uint64_t max,
     int32_t elements);
 
-FLECS_API
+/** Free switch. */
 void ecs_switch_free(
     ecs_switch_t *sw);
 
-FLECS_API
+/** Add element to switch, initialize value to 0 */
 void ecs_switch_add(
     ecs_switch_t *sw);
 
-FLECS_API
+/** Set number of elements in switch list */
 void ecs_switch_set_count(
     ecs_switch_t *sw,
     int32_t count);
 
-FLECS_API
+/** Ensure that element exists. */
 void ecs_switch_ensure(
     ecs_switch_t *sw,
     int32_t count);
 
-FLECS_API
+/** Add n elements. */
 void ecs_switch_addn(
     ecs_switch_t *sw,
     int32_t count);    
 
-FLECS_API
+/** Set value of element. */
 void ecs_switch_set(
     ecs_switch_t *sw,
     int32_t element,
     uint64_t value);
 
-FLECS_API
+/** Remove element. */
 void ecs_switch_remove(
     ecs_switch_t *sw,
     int32_t element);
 
-FLECS_API
+/** Get value for element. */
 uint64_t ecs_switch_get(
     const ecs_switch_t *sw,
     int32_t element);
 
-FLECS_API
+/** Swap element. */
 void ecs_switch_swap(
     ecs_switch_t *sw,
     int32_t elem_1,
     int32_t elem_2);
 
-FLECS_API
+/** Get vector with all values. Use together with count(). */
 ecs_vector_t* ecs_switch_values(
     const ecs_switch_t *sw);    
 
-FLECS_API
+/** Return number of different values. */
 int32_t ecs_switch_case_count(
     const ecs_switch_t *sw,
     uint64_t value);
 
-FLECS_API
+/** Return first element for value. */
 int32_t ecs_switch_first(
     const ecs_switch_t *sw,
     uint64_t value);
 
-FLECS_API
+/** Return next element for value. Use with first(). */
 int32_t ecs_switch_next(
     const ecs_switch_t *sw,
     int32_t elem);
@@ -1980,9 +2154,9 @@ typedef bool (*ecs_iter_next_action_t)(
 /** Compare callback used for sorting */
 typedef int (*ecs_compare_action_t)(
     ecs_entity_t e1,
-    void *ptr1,
+    const void *ptr1,
     ecs_entity_t e2,
-    void *ptr2);    
+    const void *ptr2);    
 
 /** Compare callback used for sorting */
 typedef int32_t (*ecs_rank_type_action_t)(
@@ -2499,6 +2673,8 @@ ecs_sig_t* ecs_query_get_sig(
 #endif
 
 #endif
+/** Internal utility functions for tracing, warnings and errors. */
+
 #ifndef FLECS_LOG_H
 #define FLECS_LOG_H
 
@@ -6998,13 +7174,17 @@ ecs_vector_t* ecs_table_get_column(
  * target column. If the size and/or alignment do not match, the behavior will
  * be undefined. In debug mode the operation may assert.
  *
+ * If the provided vector is NULL, the table will ensure that a vector is
+ * created for the provided column. If a vector exists that is not of the
+ * same size as the entities vector, it will be resized to match.
+ *
  * @param world The world.
  * @param table The table.
  * @param column The column index.
  * @param vector The column data to assing.
  */
 FLECS_API
-void ecs_table_set_column(
+ecs_vector_t* ecs_table_set_column(
     ecs_world_t *world,
     ecs_table_t *table,
     int32_t column,
@@ -7032,6 +7212,32 @@ ecs_vector_t* ecs_table_get_entities(
  */ 
 FLECS_API
 ecs_vector_t* ecs_table_get_records(
+    ecs_table_t *table);
+
+/** Clear records.
+ * This operation clears records for a world so that they no longer point to a
+ * table. This is useful to ensure that a world is left in a consistent state
+ * after moving data to destination world. 
+ *
+ * @param records The vector with record pointers
+ */
+FLECS_API
+void ecs_records_clear(
+    ecs_vector_t *records);
+
+/** Initialize records.
+ * This operation ensures entity records are updated to the provided table. 
+ *
+ * @param world The world.
+ * @param entities The vector with entity identifiers.
+ * @param records The vector with record pointers.
+ * @param table The table in which the entities are stored.
+ */
+FLECS_API
+void ecs_records_update(
+    ecs_world_t *world,
+    ecs_vector_t *entities,
+    ecs_vector_t *records,
     ecs_table_t *table);
 
 /** Set the vector containing entity ids for the table.
@@ -7119,6 +7325,20 @@ void ecs_table_delete_column(
  */
 FLECS_API
 ecs_record_t* ecs_record_find(
+    ecs_world_t *world,
+    ecs_entity_t entity);
+
+/** Same as ecs_record_find, but creates record if it doesn't exist.
+ * If an entity id has not been created with ecs_new_*, this function can be
+ * used to ensure that a record exists for an entity id. If the provided id
+ * already exists in the world, the operation will return the existing record.
+ *
+ * @param world The world.
+ * @param entity The entity for which to retrieve the record.
+ * @return The (new or existing) record that belongs to the entity.
+ */
+FLECS_API
+ecs_record_t* ecs_record_ensure(
     ecs_world_t *world,
     ecs_entity_t entity);
 
@@ -8383,6 +8603,18 @@ public:
      */
     template <typename T>
     void remove() const;
+
+    /** Get id for type.
+     */
+    template <typename T>
+    entity_t type_id() {
+        return _::component_info<T>::id(m_world);
+    }
+
+    /** Get singleton entity for type.
+     */
+    template <typename T>
+    flecs::entity singleton();
 
     /** Create alias for component.
      *
@@ -10444,13 +10676,16 @@ private:
 //// Register component, provide global access to component handles / metadata
 ////////////////////////////////////////////////////////////////////////////////
 
-/* Trick to obtain typename from type, as described here
- * https://blog.molecular-matters.com/2015/12/11/getting-the-type-of-a-template-argument-as-string-without-rtti/
- */
-
 namespace _
 {
+    // Trick to obtain typename from type, as described here
+    // https://blog.molecular-matters.com/2015/12/11/getting-the-type-of-a-template-argument-as-string-without-rtti/
+    //
+    // The code from the link has been modified to work with more types, and across
+    // multiple compilers.
+    //
     struct name_util {
+        /* Remove parts from typename that aren't needed for component name */
         static void trim_name(char *typeName) {
             ecs_size_t len = ecs_os_strlen(typeName);
             
@@ -10495,6 +10730,12 @@ namespace _
         }
     };
 
+// Compiler-specific conversion from __PRETTY_FUNCTION__ to component name. 
+// This code uses a trick that instantiates a function for the component type. 
+// Then __PRETTY_FUNCTION__ is used to obtain the name of the function. Because
+// the result of __PRETTY_FUNCTION__ is not standardized, there are different
+// implementations for clang, gcc and msvc. Code that uses a different compiler
+// needs to register component names explicitly.
 #if defined(__clang__)
   static const unsigned int FRONT_SIZE = sizeof("static const char* flecs::_::name_helper<") - 1u;
   static const unsigned int BACK_SIZE = sizeof(">::name() [T = ]") - 1u;
@@ -10543,6 +10784,14 @@ namespace _
 #elif
 #error "implicit component registration not supported"
 #endif
+
+// The following functions are lifecycle callbacks that are automatically
+// registered with flecs to ensure component lifecycle is handled correctly. Not
+// all types require this, yet callbacks are registered by default, which
+// introduces some overhead when working with components.
+//
+// An application can optimize this by explicitly registering a component as a
+// plain old datatype, with world.pod_component<T>().
 
 template <typename T>
 void component_ctor(
@@ -10648,6 +10897,7 @@ void component_move(
     }
 }
 
+// Register component lifecycle callbacks with flecs.
 template<typename T>
 void register_lifecycle_actions(
     ecs_world_t *world,
@@ -10660,109 +10910,243 @@ void register_lifecycle_actions(
     if (!ecs_component_has_actions(world, component)) {
         EcsComponentLifecycle cl{};
         if (ctor) {
-            cl.ctor = _::component_ctor<typename std::remove_const<typename std::remove_pointer<T>::type>::type>;
+            cl.ctor = _::component_ctor<
+                typename std::remove_const<
+                    typename std::remove_pointer<T>::type>::type>;
         }
         if (dtor) {
-            cl.dtor = _::component_dtor<typename std::remove_const<typename std::remove_pointer<T>::type>::type>;
+            cl.dtor = _::component_dtor<
+                typename std::remove_const<
+                    typename std::remove_pointer<T>::type>::type>;
         }
         if (copy) {
-            cl.copy = _::component_copy<typename std::remove_const<typename std::remove_pointer<T>::type>::type>;
+            cl.copy = _::component_copy<
+                typename std::remove_const<
+                    typename std::remove_pointer<T>::type>::type>;
         }
         if (move) {
-            cl.move = _::component_move<typename std::remove_const<typename std::remove_pointer<T>::type>::type>;
+            cl.move = _::component_move<
+                typename std::remove_const<
+                    typename std::remove_pointer<T>::type>::type>;
         }
+
         ecs_set_component_actions_w_entity( world, component, &cl);
     }
 }
 
+// Class that holds component identifier and name.
+// This class is used by most component operations to obtain the component id in
+// a transparent way for the application. The component id is stored in a static
+// member of a class, and is shared by all worlds in an application. As such,
+// each world in an application must (and will) have the same id.
+//
+// Because of how global (templated) variables are instantiated, it is possible
+// that different instances for the same component exist across different
+// translation units. This is handled transparently by flecs. When a component
+// id is requested from the component_info class, but the id is uninitialized, a 
+// lookup by name will be performed for the component on the world, which will 
+// return the id with which the component was already registered. This means 
+// component identifiers are eventually consistent across translation units.
+//
+// When a component id is requested for a world that had not yet registered the
+// component, it will be registered with the existing identifier. This ensures
+// that multiple worlds in the same application use the same component ids.
+//
+// There are a few limitations of this approach.
+//
+// 1) When two worlds register components in different orders, it is possible
+//    that different components receive the same identifier. When a world 
+//    attempts to re-register a component with a different identifier, an error
+//    will be thrown. To prevent this from happening, worlds should register
+//    components in the same order.
+//
+// 2) Component names are used to ensure that different translation units use
+//    the same identifiers. If a component is registered under different names
+//    in the same application, id conflicts can occur.
+//
+// Known issues:
+//
+// It seems like component registration does not always work correctly in Unreal
+// engine when recreating a world. A plausible cause for this is the hot 
+// reloading of dynamic libraries by the engine. A workaround for this issue is
+// to call flecs::_::component_info<T>::reset() before recreating the world.
+// This will reset the global component state and avoids conflicts. The exact
+// cause of the issue is investigated here: 
+//   https://github.com/SanderMertens/flecs/issues/293
+
 template <typename T>
 class component_info final {
 public:
+    // Initialize component identifier
     static void init(world_t* world, entity_t entity, bool allow_tag = true) {
+        // If an identifier was already set, check for consistency
         if (s_id) {
+            // If an identifier was registered, a name should've been registered
+            // as well.
+            ecs_assert(s_name.c_str() != nullptr, ECS_INTERNAL_ERROR, NULL);
+
+            // A component cannot be registered using a different identifier.
             ecs_assert(s_id == entity, ECS_INCONSISTENT_COMPONENT_ID, 
                 _::name_helper<T>::name());
 
+            // Ensure the entity has the same name as what was registered.
             if (s_id >= EcsFirstUserComponentId) {
                 char *path = ecs_get_fullpath(world, entity);
-                ecs_assert(!strcmp(path, s_name.c_str()), ECS_INCONSISTENT_COMPONENT_NAME, 
+                ecs_assert(!strcmp(path, s_name.c_str()), 
+                    ECS_INCONSISTENT_COMPONENT_NAME, 
                     _::name_helper<T>::name());
                 ecs_os_free(path);
             }
+
+            // Component was already registered and data is consistent with new
+            // identifier, so nothing else to be done.
+            return;
         }
 
+        // Component wasn't registered yet, set the values. Register component
+        // name as the fully qualified flecs path.
         char *path = ecs_get_fullpath(world, entity);
         s_id = entity;
         s_name = path;
         s_allow_tag = allow_tag;
+
+        // s_name is an std::string, so it will have made a copy
         ecs_os_free(path);
     }
 
-    static entity_t id_no_lifecycle(world_t *world = nullptr, const char *name = nullptr, bool allow_tag = true) {
+    // Obtain a component identifier without registering lifecycle callbacks.
+    static entity_t id_no_lifecycle(world_t *world = nullptr, 
+        const char *name = nullptr, bool allow_tag = true) 
+    {
+        // If no id has been registered yet, do it now.
         if (!s_id) {
             if (!name) {
+                // If no name was provided, retrieve the name implicitly from
+                // the name_helper class.
                 name = _::name_helper<T>::name();
             }
 
             s_allow_tag = allow_tag;
 
+            // If no world was provided, we can't implicitly register the 
+            // component. While there are a few cases where calling this 
+            // function without a world is OK, in general functions should 
+            // always provide a world to enable implicit registration.
             ecs_assert(world != nullptr, ECS_COMPONENT_NOT_REGISTERED, name);
 
             // Create entity with name first. This ensurs that the component is
             // created in the right location in the hierarchy, in case a scoped
-            // name is used.
+            // name is used. This allows registering components with the same
+            // name in different namespaces.
+            //
+            // If the component was already registered for this world, this will 
+            // resolve the existing component identifier. This enables 
+            // transparent component registeration across multiple translation 
+            // units, as long as the same world is used.
+            //
+            // The last parameter ('true') ensures that when the component was
+            // not yet registered, a new component identifier is created. 
+            // Component identifiers and entity identifiers are equivalent,
+            // though a pool of identifiers at the start of the id range is 
+            // reserved for components. This is a performance optimization, as
+            // low ids in some parts of the code allow for direct indexing.
             flecs::world w(world);
             flecs::entity result = entity(w, name, true);
             
+            // Now use the resulting identifier to register the component. Note
+            // that the name is not passed into this function, as the entity was
+            // already created with the correct name.
             ecs_entity_t entity = ecs_new_component(
                 world, result.id(), nullptr, 
                 size(), 
                 alignment());
-                
+            
+            // The identifier returned by the function should be the same as the
+            // identifier that was passed in.
             ecs_assert(entity == result.id(), ECS_INTERNAL_ERROR, NULL);
 
+            // Init the component_info instance with the identiifer.
             init(world, entity);
         }
 
+        // By now we should have a valid identifier
         ecs_assert(s_id != 0, ECS_INTERNAL_ERROR, NULL);
 
         return s_id;
     }
 
-    static entity_t id(world_t *world = nullptr, const char *name = nullptr, bool allow_tag = true) {
+    // Obtain a component identifier, register lifecycle callbacks if this is
+    // the first time the component is used.
+    static entity_t id(world_t *world = nullptr, const char *name = nullptr, 
+        bool allow_tag = true) 
+    {
+        // If no id has been registered yet, do it now.
         if (!s_id) {
+            // This will register a component id, but will not register 
+            // lifecycle callbacks.
             id_no_lifecycle(world, name, allow_tag);
 
+            // Register lifecycle callbacks, but only if the component has a
+            // size. Components that don't have a size are tags, and tags don't
+            // require construction/destruction/copy/move's. */
             if (size()) {
                 register_lifecycle_actions<T>(world, s_id,
                     true, true, true, true);
             }
         }
 
+        // By now we should have a valid identifier
         ecs_assert(s_id != 0, ECS_INTERNAL_ERROR, NULL);
 
         return s_id;
     }
 
+    // Obtain a component name
     static const char* name(world_t *world = nullptr) {
+        // If no id has been registered yet, do it now.
         if (!s_id) {
-            ecs_assert(world != nullptr, ECS_COMPONENT_NOT_REGISTERED, 
-                _::name_helper<T>::name());
-
-            id_no_lifecycle(world);
+            id(world);
         }
 
+        // By now we should have a valid identifier
+        ecs_assert(s_id != 0, ECS_INTERNAL_ERROR, NULL);
+
+        // If the id is set, the name should also have been set
         return s_name.c_str();
     }
 
-    static type_t type(world_t *world = nullptr) {
+    // Obtain a component name, don't register lifecycle if the component hadn't
+    // been registered yet. While functionally the same could be achieved by
+    // first calling id_no_lifecycle() and then name(), this function ensures
+    // that the lifecycle callback templates are not instantiated. This allows
+    // some types (such as module classes) to be created without a default
+    // constructor.
+    static const char* name_no_lifecycle(world_t *world = nullptr) {
+        // If no id has been registered yet, do it now.
         if (!s_id) {
-            ecs_assert(world != nullptr, ECS_COMPONENT_NOT_REGISTERED, 
-                _::name_helper<T>::name());
-
             id_no_lifecycle(world);
         }
 
+        // By now we should have a valid identifier
+        ecs_assert(s_id != 0, ECS_INTERNAL_ERROR, NULL);
+
+        // Return 
+        return s_name.c_str();
+    }    
+
+    // Return the type of a component.
+    // The type is a vector of component ids. This will return a type with just
+    // the current component id.
+    static type_t type(world_t *world = nullptr) {
+        // If no id has been registered yet, do it now.
+        if (!s_id) {
+            id(world);
+        }
+
+        // By now we should have a valid identifier
+        ecs_assert(s_id != 0, ECS_INTERNAL_ERROR, NULL);        
+
+        // Create a type from the component id.
         if (!s_type) {
             s_type = ecs_type_from_entity(world, s_id);
         }
@@ -10772,24 +11156,33 @@ public:
         return s_type;
     }
 
+    // Return the size of a component.
     static size_t size() {
+        // C++ types that have no members still have a size. Use std::is_empty
+        // to check if the type is empty. If so, use 0 for the component size.
+        //
+        // If s_allow_tag is set to false, the size returned by C++ is used.
+        // This is useful in cases where class instances are still required, as
+        // is the case with module classes.
         if (s_allow_tag && std::is_empty<T>::value) {
             return 0;
         } else {
             return sizeof(typename std::remove_pointer<T>::type);
         }
-    }    
-
-    static bool registered() {
-        return s_id != 0;
     }
 
+    // Return the alignment of a component.
     static size_t alignment() {
         if (size() == 0) {
             return 0;
         } else {
             return alignof(typename std::remove_pointer<T>::type);
         }
+    }
+
+    // Was the component already registered.
+    static bool registered() {
+        return s_id != 0;
     }
 
     // This function is only used to test cross-translation unit features. No
@@ -10807,6 +11200,7 @@ private:
     static bool s_allow_tag;
 };
 
+// Global templated variables that hold component identifier and other info
 template <typename T> entity_t component_info<T>::s_id( 0 );
 template <typename T> type_t component_info<T>::s_type( nullptr );
 template <typename T> std::string component_info<T>::s_name("");
@@ -10950,7 +11344,7 @@ flecs::entity import(world& world) {
 
         ecs_set_scope(world.c_ptr(), scope);
 
-        flecs::entity m = world.lookup(_::component_info<T>::name(world.c_ptr()));
+        flecs::entity m = world.lookup(_::component_info<T>::name_no_lifecycle(world.c_ptr()));
 
         ecs_set_ptr_w_entity(
             world.c_ptr(),
@@ -11231,11 +11625,114 @@ private:
 
 class query_base {
 public:
+    /** Get pointer to C query object.
+     */
     query_t* c_ptr() const {
         return m_query;
     }
 
+    /** Sort the output of a query.
+     * This enables sorting of entities across matched tables. As a result of this
+     * operation, the order of entities in the matched tables may be changed. 
+     * Resorting happens when a query iterator is obtained, and only if the table
+     * data has changed.
+     *
+     * If multiple queries that match the same (sub)set of tables specify different 
+     * sorting functions, resorting is likely to happen every time an iterator is
+     * obtained, which can significantly slow down iterations.
+     *
+     * The sorting function will be applied to the specified component. Resorting
+     * only happens if that component has changed, or when the entity order in the
+     * table has changed. If no component is provided, resorting only happens when
+     * the entity order changes.
+     *
+     * @tparam T The component used to sort.
+     * @param compare The compare function used to sort the components.
+     */
+    template <typename T>
+    void order_by(int(*compare)(flecs::entity_t, const T*, flecs::entity_t, const T*)) {
+        ecs_query_order_by(m_world, m_query, 
+            flecs::_::component_info<T>::id(m_world),
+            (ecs_compare_action_t)compare);
+    }
+
+    /** Sort the output of a query.
+     * Same as order_by<T>, but with component identifier.
+     *
+     * @param component The component used to sort.
+     * @param compare The compare function used to sort the components.
+     */
+    void order_by(flecs::entity component, int(*compare)(flecs::entity_t, const void*, flecs::entity_t, const void*)) {
+        ecs_query_order_by(m_world, m_query, component.id(), compare);
+    }    
+
+    /** Group and sort matched tables.
+     * Similar yo ecs_query_order_by, but instead of sorting individual entities, this
+     * operation only sorts matched tables. This can be useful of a query needs to
+     * enforce a certain iteration order upon the tables it is iterating, for 
+     * example by giving a certain component or tag a higher priority.
+     *
+     * The sorting function assigns a "rank" to each type, which is then used to
+     * sort the tables. Tables with higher ranks will appear later in the iteration.
+     * 
+     * Resorting happens when a query iterator is obtained, and only if the set of
+     * matched tables for a query has changed. If table sorting is enabled together
+     * with entity sorting, table sorting takes precedence, and entities will be
+     * sorted within each set of tables that are assigned the same rank.
+     *
+     * @tparam T The component used to determine the group rank.
+     * @param rank The rank action.
+     */
+    template <typename T>
+    void group_by(int(*rank)(flecs::world_t*, flecs::entity_t, flecs::type_t type)) {
+        ecs_query_group_by(m_world, m_query, 
+            flecs::_::component_info<T>::id(m_world), rank);
+    }
+
+    /** Group and sort matched tables.
+     * Same as group_by<T>, but with component identifier.
+     *
+     * @param component The component used to determine the group rank.
+     * @param rank The rank action.
+     */
+    void group_by(flecs::entity component, int(*rank)(flecs::world_t*, flecs::entity_t, flecs::type_t type)) {
+        ecs_query_group_by(m_world, m_query, component.id(), rank);
+    }
+
+    /** Returns whether the query data changed since the last iteration.
+     * This operation must be invoked before obtaining the iterator, as this will
+     * reset the changed state. The operation will return true after:
+     * - new entities have been matched with
+     * - matched entities were deleted
+     * - matched components were changed
+     * 
+     * @return true if entities changed, otherwise false.
+     */
+    bool changed() {
+        return ecs_query_changed(m_query);
+    }
+
+    /** Returns whether query is orphaned.
+     * When the parent query of a subquery is deleted, it is left in an orphaned
+     * state. The only valid operation on an orphaned query is deleting it. Only
+     * subqueries can be orphaned.
+     *
+     * @return true if query is orphaned, otherwise false.
+     */
+    bool orphaned() {
+        return ecs_query_orphaned(m_query);
+    }
+
+    /** Free the query.
+     */
+    void destruct() {
+        ecs_query_free(m_query);
+        m_world = nullptr;
+        m_query = nullptr;
+    }
+
 protected:
+    world_t *m_world;
     query_t *m_query;
 };
 
@@ -11245,6 +11742,7 @@ class query : public query_base {
 
 public:
     query() { 
+        m_world = nullptr;
         m_query = nullptr;
     }
 
@@ -11254,6 +11752,7 @@ public:
             ecs_abort(ECS_INVALID_PARAMETER, NULL);
         }
 
+        m_world = world.c_ptr();
         m_query = ecs_query_new(world.c_ptr(), str.str().c_str());
     }
 
@@ -11263,11 +11762,13 @@ public:
             ecs_abort(ECS_INVALID_PARAMETER, NULL);
         }
 
+        m_world = world.c_ptr();
         m_query = ecs_subquery_new(world.c_ptr(), parent.c_ptr(), str.str().c_str());
     }
 
     explicit query(const world& world, const char *expr) {
         std::stringstream str;
+        m_world = world.c_ptr();
         if (!_::pack_args_to_string<Components...>(world.c_ptr(), str, true)) {
             m_query = ecs_query_new(world.c_ptr(), expr);
         } else {
@@ -11278,6 +11779,7 @@ public:
 
     explicit query(const world& world, query_base& parent, const char *expr) {
         std::stringstream str;
+        m_world = world.c_ptr();
         if (!_::pack_args_to_string<Components...>(world.c_ptr(), str, true)) {
             m_query = ecs_subquery_new(world.c_ptr(), parent.c_ptr(), expr);
         } else {
@@ -11322,7 +11824,7 @@ public:
             _::iter_invoker<Func, Components...> ctx(func);
             ctx.call_system(&it, func, 0, columns.m_columns);
         }
-    }        
+    }    
 };
 
 
@@ -12334,6 +12836,11 @@ template <typename T>
 void world::remove() const {
     flecs::entity e(m_world, _::component_info<T>::id(m_world));
     e.remove<T>();
+}
+
+template <typename T>
+flecs::entity world::singleton() {
+    return flecs::entity(m_world, _::component_info<T>::id(m_world));
 }
 
 template <typename... Args>

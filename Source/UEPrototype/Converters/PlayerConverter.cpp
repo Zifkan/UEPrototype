@@ -18,9 +18,8 @@
 void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
 {  
 
-	//dstManager.RegisterComponent<InputTag>("InputTag");
-    
-	auto inputEntity =   dstManager.defaultWorld->entity(flecs::type_id<InputTag>());
+	dstManager.RegisterComponent<InputEntityType>("InputEntityType");
+	auto inputEntity =   dstManager.defaultWorld->singleton<InputEntityType>();
     
     inputEntity.add_childof(e);
 

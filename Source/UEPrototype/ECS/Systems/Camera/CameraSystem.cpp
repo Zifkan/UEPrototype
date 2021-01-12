@@ -1,6 +1,7 @@
 #include "CameraSystem.h"
 
 #include "Components/GeneralComponents.h"
+#include "Components/CharacterActions/CharacterActionsComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
 
 void CameraSystem::OnCreate()
@@ -8,7 +9,7 @@ void CameraSystem::OnCreate()
     SystemRun->each([this](flecs::entity e, CamComponent& camera, Rotation& camRotation,Translation& camTranslation)
     {
         auto player = Entity(*m_pWorld->DefaultWorld, "Player");
-        auto inputEnt = Entity(*m_pWorld->DefaultWorld, "InputEntity");
+        auto inputEnt =  GetEntityManager()->Singleton<InputEntityType>();
         const LocalToWorld* playerLocalToWorld = player.get<LocalToWorld>();
         const PlayerInputComponent* input = inputEnt.get<PlayerInputComponent>();
 

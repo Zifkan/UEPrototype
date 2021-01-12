@@ -1,34 +1,34 @@
 #pragma once
 
 
-struct InputTag
-{
-   // Entity Owner;
-};
-
-struct MoveInputTag :  InputTag
+struct InputEntityType
 {
    
 };
 
-struct RollInputTag:  InputTag
+struct MoveInputTag  
+{
+   
+};
+
+struct RollInputTag  
 {
     
 };
 
-struct BlockInputTag:  InputTag
+struct BlockInputTag 
 {
     
 };
 
 
-struct AttackInputTag:  InputTag
+struct AttackInputTag
 {
     
 };
 
 
-struct SprintInputTag:  InputTag
+struct SprintInputTag
 {
     
 };

@@ -69,6 +69,12 @@ public:
             }
         }
 
+       template <typename T>
+       flecs::entity Singleton() const
+        {
+            return defaultWorld->singleton<T>();
+        }
+
         void RemoveEntity(flecs::entity e) const
         {
             e.remove(e);

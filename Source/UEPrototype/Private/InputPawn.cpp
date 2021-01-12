@@ -18,7 +18,7 @@ AInputPawn::AInputPawn()
 void AInputPawn::BeginPlay()
 {
     world = FEcsWorld::instance();
-   
+    entityManager = world->EntityManager;
 	Super::BeginPlay(); 
 }
 
@@ -51,14 +51,14 @@ void AInputPawn::Tick(float DeltaSeconds)
 {
     if (inputData.MovementAxis.SizeSquared()>0)
     {
-        inputEntity =world->DefaultWorld->entity(flecs::type_id<InputTag>());
+        inputEntity = entityManager->Singleton<InputEntityType>();
         entityManager->AddComponentDataSafety<MoveInputTag>(inputEntity);
     }
 }
 
 void AInputPawn::SetInput() 
 {
-    inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
+    inputEntity = entityManager->Singleton<InputEntityType>();
     entityManager->SetComponentData<PlayerInputComponent>(inputEntity, { inputData });
 }
 
@@ -90,7 +90,7 @@ void AInputPawn::Sprint()
 
 void AInputPawn::Attack()
 {
-    inputEntity = world->DefaultWorld->entity(flecs::type_id<InputTag>());
+    inputEntity = entityManager->Singleton<InputEntityType>();
     
     UE_LOG(LogTemp, Warning, TEXT("AInputPawn Input Entity, %i"),inputEntity.id());
     

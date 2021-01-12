@@ -48,16 +48,16 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<CheckActionData>("CheckActionData");
     entityManager->RegisterComponent<ActionAvailableTag>("ActionAvailableTag");
 
-    entityManager->RegisterComponent<MoveInputTag>("MoveActionTag");
+    entityManager->RegisterComponent<MoveInputTag>("MoveInputTag");
     entityManager->RegisterComponent<RollInputTag>("RollInputTag");
     entityManager->RegisterComponent<BlockInputTag>("BlockInputTag");
     entityManager->RegisterComponent<AttackInputTag>("AttackInputTag");
     entityManager->RegisterComponent<SprintInputTag>("SprintInputTag");
 
-	entityManager->RegisterComponent<InputTag>("InputTag");
+
     entityManager->RegisterComponent<InheritsFrom>("InheritsFrom");
     entityManager->RegisterComponent<CamComponent>("CamComponent");
-    entityManager->RegisterComponent<PlayerInputComponent>("InputComponent");
+    entityManager->RegisterComponent<PlayerInputComponent>("PlayerInputComponent");
     entityManager->RegisterComponent<MovementVelocity>("MovementVelocity");
     entityManager->RegisterComponent<MoveDirectionData>("MoveDirectionData");
     entityManager->RegisterComponent<MovementSpeed>("MovementSpeed"); 
@@ -66,7 +66,7 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<CopyTransformToActor>("CopyTransformToActor");
     entityManager->RegisterComponent<Scale>("Scale");
     entityManager->RegisterComponent<Rotation>("Rotation");
-    entityManager->RegisterComponent<FActorComponent>("ActorComponent");
+    entityManager->RegisterComponent<FActorComponent>("FActorComponent");
     entityManager->RegisterComponent<CustomBone>("CustomBone");
     entityManager->RegisterComponent<RendererRoot>("RendererRoot");
     entityManager->RegisterComponent<CharacterActorComponent>("CharacterActorComponent");
