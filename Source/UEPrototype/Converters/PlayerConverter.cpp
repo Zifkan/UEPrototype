@@ -19,12 +19,10 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
 {  
 
 	dstManager.RegisterComponent<InputEntityType>("InputEntityType");
-	auto inputEntity =   dstManager.defaultWorld->singleton<InputEntityType>();
-    
+	auto inputEntity =  dstManager.defaultWorld->singleton<InputEntityType>();
+	
     inputEntity.add_childof(e);
 
-	
-    
     const auto characterActor = Cast<ACharacterActor>(GetOwner());
     const auto characterAnimInstance = Cast<UCharacterAnimInstance>(characterActor->GetAnimInstance());
     

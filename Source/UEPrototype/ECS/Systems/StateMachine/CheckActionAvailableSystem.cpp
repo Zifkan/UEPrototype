@@ -4,9 +4,9 @@ void CheckActionAvailableSystem::OnCreate()
 {
     SystemRun->signature("!ActionAvailableTag").each([](flecs::entity e, CheckActionData& checkData)
     {       
-        if(checkData.StartTime+checkData.Duration <= FPlatformTime::Seconds()-checkData.Space)
+        if(FPlatformTime::Seconds()>= checkData.StartTime+checkData.Duration -checkData.Space)
         {
-            UE_LOG(LogTemp, Warning, TEXT("CheckActionTag Add  ActionAvailableTag Ent Id, %i"), e.id());
+            UE_LOG(LogTemp, Warning, TEXT("CheckActionTag  Start time: %f; Duration: %f, Result: %f; Now: %f"),  checkData.StartTime, checkData.Duration,checkData.StartTime+checkData.Duration -checkData.Space,FPlatformTime::Seconds());
             e.add<ActionAvailableTag>();
         }
     });

@@ -84,14 +84,14 @@ void AMainGameMode::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFu
     transformLauncher->Update(DeltaTime);    
     animationSystemLaunch->Update(DeltaTime);
     systemsLauncher->Update(DeltaTime);
-    characterStateMachineLauncher->Update(DeltaTime);
+ //   characterStateMachineLauncher->Update(DeltaTime);
     removeActionProceedSystemLauncher->Update(DeltaTime);
 }
 
 void AMainGameMode::RegisterSystem()
 {
     animationSystemLaunch = MakeUnique<AnimationSystemLaunch>(world);
-    characterStateMachineLauncher = MakeUnique<CharacterStateMachineSystemLaunch>(world);
+ //   characterStateMachineLauncher = MakeUnique<CharacterStateMachineSystemLaunch>(world);
     systemsLauncher = MakeUnique<SystemLauncher>(world);
     removeActionProceedSystemLauncher = MakeUnique<RemoveActionProceedSystemLauncher>(world);
     
@@ -102,13 +102,21 @@ void AMainGameMode::RegisterSystem()
 
 	
     systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());
+
+	systemsLauncher->RegisterSystem(new CheckActionAvailableSystem());
+	
 	systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());
 	systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
+
+	systemsLauncher->RegisterSystem(new MovementStateSystem());
+	systemsLauncher->RegisterSystem(new AttackStateSystem());       
 	
+
+	systemsLauncher->RegisterSystem(new  MovementCharacterSystem());	
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
-    systemsLauncher->RegisterSystem(new  MovementCharacterSystem());
 
+	
 	
     
     

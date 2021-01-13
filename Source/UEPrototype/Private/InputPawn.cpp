@@ -95,7 +95,7 @@ void AInputPawn::Attack()
 {
     inputEntity = entityManager->Singleton<InputEntityType>();
     
-    UE_LOG(LogTemp, Warning, TEXT("AInputPawn Input Entity, %i"),inputEntity.id());
+ //   UE_LOG(LogTemp, Warning, TEXT("AInputPawn Input Entity, %i"),inputEntity.id());
     
     entityManager->AddComponentDataSafety<AttackInputTag>(inputEntity);
   //  entityManager->AddComponentDataSafety<InputTag>(inputEntity);
