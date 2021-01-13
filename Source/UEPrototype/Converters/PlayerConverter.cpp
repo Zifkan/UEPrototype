@@ -44,23 +44,15 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     UE_LOG(LogTemp, Warning, TEXT("Player Entity, %i"),e.id());
     UE_LOG(LogTemp, Warning, TEXT("Input Entity, %i"),inputEntity.id());
 
-    UE_LOG(LogTemp, Warning, TEXT("AttackActionProceedSystem parentEntity, %s"),UTF8_TO_TCHAR (inputEntity.get_parent<PlayerTag>().has<PlayerTag>()?"true" : "false"));
+    UE_LOG(LogTemp, Warning, TEXT("Has PlayerTag, %s"),UTF8_TO_TCHAR (inputEntity.get_parent<PlayerTag>().has<PlayerTag>()?"true" : "false"));
 
     auto Idle = dstManager.defaultWorld->entity().add<IdleState>();
     auto Move = dstManager.defaultWorld->entity().add<MoveState>();
     auto Attack = dstManager.defaultWorld->entity().add<AttackState>();
     auto Movement = dstManager.SetType("Movement","IdleState, MoveState, AttackState");
-
-    auto CheckAction = dstManager.defaultWorld->entity().add<CheckActionTag>();    
-    auto stateAvailable = dstManager.SetType("StateAvailable","CheckActionTag");
-    
-    e.add_switch(Movement);
-  //  e.add_case<MoveState>();
-    inputEntity.add_switch(stateAvailable).add_case<CheckActionTag>();
-    inputEntity.add<CheckActionData>();
-    inputEntity.add<ActionAvailableTag>();
-
-   // auto input_tag = dstManager.defaultWorld->component<InputTag>();
-    
-  //  inputEntity.set<InheritsFrom>({ input_tag });
+	e.add_switch(Movement);
+	e.add_case<IdleState>();
+	
+	inputEntity.set<CheckActionData>({});
+	inputEntity.add<ActionAvailableTag>();  
 }

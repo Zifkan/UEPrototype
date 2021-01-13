@@ -12,8 +12,3 @@ struct CheckActionData
     float Duration;
     float Space;
 };
-
-struct CheckActionTag
-{
-   
-};

@@ -43,8 +43,7 @@ void AMainGameMode::BeginPlay()
     
     entityManager->RegisterComponent<IdleState>("IdleState");
     entityManager->RegisterComponent<MoveState>("MoveState");
-    entityManager->RegisterComponent<AnimComponent>("AnimComponent");
-    entityManager->RegisterComponent<CheckActionTag>("CheckActionTag");
+    entityManager->RegisterComponent<AnimComponent>("AnimComponent"); 
     entityManager->RegisterComponent<CheckActionData>("CheckActionData");
     entityManager->RegisterComponent<ActionAvailableTag>("ActionAvailableTag");
 
