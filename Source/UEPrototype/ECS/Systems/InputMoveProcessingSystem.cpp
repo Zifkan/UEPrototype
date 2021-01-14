@@ -13,11 +13,16 @@ void InputMoveProcessingSystem::OnCreate()
 
         if (input==nullptr) return;
 
-        auto dir = viewDirection.Axises;      
-
+        auto dir = viewDirection.Axises; 
+        dir.Z=0;
+        dir = dir.GetSafeNormal();
+        
         const auto moveDir = input->MovementAxis.Y * dir + input->MovementAxis.X * FVector(-dir.Y, dir.X, dir.Z);
         
         moveDirection.Axises = FVector::DotProduct(moveDir,moveDir) > 1 ?  moveDir.GetSafeNormal() : moveDir;
         moveDirection.Axises.Z = 0;
+
+        UE_LOG(LogTemp, Warning, TEXT(" moveDirection.Axises: x = %f; y = %f"),  moveDirection.Axises.X, moveDirection.Axises.Y);
+          
     });
 }

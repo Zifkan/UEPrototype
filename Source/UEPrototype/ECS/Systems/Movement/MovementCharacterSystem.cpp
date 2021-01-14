@@ -6,7 +6,7 @@ void MovementCharacterSystem::OnCreate()
 {
     SystemRun->each([this](flecs::entity e,MovementVelocity& velocity , Translation& translation, Rotation& rotation)
     {
-        auto newRot = FQuat::Identity;     
+        auto newRot = rotation.Value;     
 
         if (!velocity.Value.IsZero())
         {

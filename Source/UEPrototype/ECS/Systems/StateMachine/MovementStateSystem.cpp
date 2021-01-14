@@ -8,7 +8,7 @@ void MovementStateSystem::OnCreate()
     SystemRun->signature("CASE | MoveState").each([](flecs::entity e, AnimComponent& animComponent, MoveDirectionData& moveDirectionData,MovementSpeed& movementSpeed,FActorComponent actor)
     {       
         movementSpeed.Speed = 2000.0f;              
-        animComponent.AnimInstancePtr->MoveDirection = FVector2D( actor.ptr->GetActorForwardVector()-moveDirectionData.Axises);
+        animComponent.AnimInstancePtr->MoveDirection = FVector2D( moveDirectionData.Axises);
      
     	for (auto children : e.children())
     	{

@@ -112,9 +112,11 @@ void AMainGameMode::RegisterSystem()
 	systemsLauncher->RegisterSystem(new AttackStateSystem());       
 	
 
-	systemsLauncher->RegisterSystem(new  MovementCharacterSystem());	
+	
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
+
+	systemsLauncher->RegisterSystem(new  MovementCharacterSystem());	
 
 	
 	
