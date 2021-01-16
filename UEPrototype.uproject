@@ -18,6 +18,12 @@
 			"Type": "Runtime",
 			"LoadingPhase": "PostConfigInit"
 		}
+	,
+		{
+			"Name": "FlecsModule",
+			"Type": "Runtime",
+			"LoadingPhase": "PostConfigInit"
+		}
 	],
 	"Plugins": [
 		{

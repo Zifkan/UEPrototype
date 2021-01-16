@@ -11,7 +11,7 @@ public class UEPrototype : ModuleRules
         bAddDefaultIncludePaths = true;
         
         
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "AnimMesh"});
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay", "AnimMesh", "FlecsModule"});
 
         PrivateIncludePathModuleNames.AddRange(
             new string[] {
