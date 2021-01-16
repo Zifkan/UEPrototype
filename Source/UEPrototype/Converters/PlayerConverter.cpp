@@ -28,7 +28,7 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     
     dstManager.AddComponentData<PlayerTag>(e);
     dstManager.AddComponentData<MovementVelocity>(e);
-    dstManager.SetComponentData<MovementSpeed>(e, { 0.f });
+    dstManager.SetComponentData<MovementSpeed>(e, { 0.f,1 });
     dstManager.AddComponentData<MoveDirectionData>(e);
     dstManager.AddComponentData<ViewDirectionData>(e);
     dstManager.AddComponentData<Rotation>(e);

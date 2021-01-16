@@ -5,6 +5,7 @@
 struct MovementSpeed
 {
     float Speed;
+    float SpeedModifier;
 };
 
 struct MoveDirectionData

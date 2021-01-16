@@ -104,8 +104,10 @@ void AMainGameMode::RegisterSystem()
     systemsLauncher->RegisterSystem(new  InputMoveProcessingSystem());
 
 	systemsLauncher->RegisterSystem(new CheckActionAvailableSystem());
+
 	
-	systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());
+	systemsLauncher->RegisterSystem(new  SprintActionProceedSystem());	
+	systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());	
 	systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
 
 	systemsLauncher->RegisterSystem(new MovementStateSystem());

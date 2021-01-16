@@ -22,7 +22,7 @@ void InputMoveProcessingSystem::OnCreate()
         moveDirection.Axises = FVector::DotProduct(moveDir,moveDir) > 1 ?  moveDir.GetSafeNormal() : moveDir;
         moveDirection.Axises.Z = 0;
 
-        UE_LOG(LogTemp, Warning, TEXT(" moveDirection.Axises: x = %f; y = %f"),  moveDirection.Axises.X, moveDirection.Axises.Y);
+//        UE_LOG(LogTemp, Warning, TEXT(" moveDirection.Axises: x = %f; y = %f"),  moveDirection.Axises.X, moveDirection.Axises.Y);
           
     });
 }

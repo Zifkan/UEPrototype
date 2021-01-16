@@ -41,21 +41,30 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 
     InputComponent->BindAction("Roll", EInputEvent::IE_Pressed, this, &AInputPawn::Roll);
-    InputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &AInputPawn::Sprint);
+    
+    InputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &AInputPawn::SprintPressed);    
+    InputComponent->BindAction("Sprint", EInputEvent::IE_Released, this, &AInputPawn::SprintReleased);
 
     InputComponent->BindAction("Attack", EInputEvent::IE_Pressed, this, &AInputPawn::Attack);
-    InputComponent->BindAction("Sprint", EInputEvent::IE_Pressed, this, &AInputPawn::Block);
+    
+    InputComponent->BindAction("Block", EInputEvent::IE_Pressed, this, &AInputPawn::Block);
 }
 
 void AInputPawn::Tick(float DeltaSeconds)
 {
+    inputEntity = entityManager->Singleton<InputEntityType>();
+    
     if (inputData.MovementAxis.SizeSquared()>0)
-    {
-        inputEntity = entityManager->Singleton<InputEntityType>();
+    {       
         entityManager->AddComponentDataSafety<MoveInputTag>(inputEntity);
-
       //  UE_LOG(LogTemp, Warning, TEXT("Pressing movement MoveInputTag, %i"),inputEntity.id());
         SetInput() ;
+    }
+
+    if(isSprint)
+    {
+        inputEntity = entityManager->Singleton<InputEntityType>();
+        entityManager->AddComponentData<SprintInputTag>(inputEntity);
     }
 }
 
@@ -85,20 +94,24 @@ void AInputPawn::Roll()
     entityManager->AddComponentDataSafety<RollInputTag>(inputEntity);*/
 }
 
-void AInputPawn::Sprint()
+
+
+void AInputPawn::SprintPressed()
 {
-  /*  inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
-    entityManager->AddComponentDataSafety<SprintInputTag>(inputEntity);*/
+   isSprint = true;
+}
+
+
+void AInputPawn::SprintReleased()
+{
+    isSprint = false;
 }
 
 void AInputPawn::Attack()
 {
-    inputEntity = entityManager->Singleton<InputEntityType>();
-    
- //   UE_LOG(LogTemp, Warning, TEXT("AInputPawn Input Entity, %i"),inputEntity.id());
-    
+    inputEntity = entityManager->Singleton<InputEntityType>();    
+ //   UE_LOG(LogTemp, Warning, TEXT("AInputPawn Input Entity, %i"),inputEntity.id());    
     entityManager->AddComponentDataSafety<AttackInputTag>(inputEntity);
-  //  entityManager->AddComponentDataSafety<InputTag>(inputEntity);
 }
 
 void AInputPawn::Block()

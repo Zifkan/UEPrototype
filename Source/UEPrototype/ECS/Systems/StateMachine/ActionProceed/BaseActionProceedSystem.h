@@ -43,3 +43,18 @@ inline void AttackActionProceedSystem::OnCreate()
         parentEntity.add_case<AttackState>(); 
     });
 }
+
+class  SprintActionProceedSystem   :public SystemBase<SprintInputTag>
+{
+public:
+    virtual void OnCreate() override;
+};
+
+inline void SprintActionProceedSystem::OnCreate()
+{
+    SystemRun->each([](Entity e, SprintInputTag& sprintInputTag)
+    {
+        const auto parentEntity= e.get_parent<MovementSpeed>();  
+        parentEntity.set<MovementSpeed>({1000,2});
+    });
+}

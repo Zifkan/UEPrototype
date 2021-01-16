@@ -6,7 +6,7 @@ void CheckActionAvailableSystem::OnCreate()
     {       
         if(FPlatformTime::Seconds()>= checkData.StartTime+checkData.Duration -checkData.Space)
         {
-            UE_LOG(LogTemp, Warning, TEXT("CheckActionTag  Start time: %f; Duration: %f, Result: %f; Now: %f"),  checkData.StartTime, checkData.Duration,checkData.StartTime+checkData.Duration -checkData.Space,FPlatformTime::Seconds());
+           // UE_LOG(LogTemp, Warning, TEXT("CheckActionTag  Start time: %f; Duration: %f, Result: %f; Now: %f"),  checkData.StartTime, checkData.Duration,checkData.StartTime+checkData.Duration -checkData.Space,FPlatformTime::Seconds());
             e.add<ActionAvailableTag>();
         }
     });

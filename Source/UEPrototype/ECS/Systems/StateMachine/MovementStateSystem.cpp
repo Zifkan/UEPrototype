@@ -6,10 +6,14 @@
 void MovementStateSystem::OnCreate()
 {
     SystemRun->signature("CASE | MoveState").each([](flecs::entity e, AnimComponent& animComponent, MoveDirectionData& moveDirectionData,MovementSpeed& movementSpeed,FActorComponent actor)
-    {       
-        movementSpeed.Speed = 2000.0f;              
-        animComponent.AnimInstancePtr->MoveDirection = FVector2D( moveDirectionData.Axises);
-     
+    {
+    	auto dir = moveDirectionData.Axises - actor.ptr->GetActorForwardVector();
+        movementSpeed.Speed = 1000.0f;  
+    	
+        animComponent.AnimInstancePtr->MoveDirection = FVector2D( dir.Y,dir.X);
+
+    //	UE_LOG(LogTemp, Warning, TEXT(" moveDirection.Axises: x = %f; y = %f"),  dir.X,  dir.Y);
+    	
     	for (auto children : e.children())
     	{
             for (auto i : children)

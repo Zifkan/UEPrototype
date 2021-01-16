@@ -28,7 +28,8 @@ protected:
     void MoveRight(float Value);
     void TurnAtRate(float Rate);
 	void Roll();
-	void Sprint();
+	void SprintPressed();
+	void SprintReleased();	
 	void Attack();
 	void Block();
 	void LookUpAtRate(float Rate);
@@ -48,4 +49,6 @@ private:
 	PlayerInputComponent inputData;
     FEcsWorld* world;
     FEntityManager* entityManager;
+
+	bool isSprint;
 };
