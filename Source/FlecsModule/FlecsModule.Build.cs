@@ -1,5 +1,6 @@
 // Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
 
+using System.IO;
 using UnrealBuildTool;
 
 public class FlecsModule : ModuleRules
@@ -23,5 +24,22 @@ public class FlecsModule : ModuleRules
 			"RHI",
 			"StaticMeshDescription"
 		});
+		
+		PublicIncludePaths.AddRange(new string[]
+		{
+			"FlecsModule/Public",
+		});
+		
+		PrivateIncludePaths.AddRange(new string[]
+		{
+			"FlecsModule/Private",
+		});
+
+	
+	}
+	
+	private string ThirdPartyPath
+	{
+		get { return Path.GetFullPath(Path.Combine(ModuleDirectory, "../../Source/FlecsModule/")); }
 	}
 }

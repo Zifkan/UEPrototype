@@ -42,11 +42,16 @@ public class UEPrototype : ModuleRules
             "RHI",
             "StaticMeshDescription"
         });
+        
+     //   RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(ThirdPartyPath, "pthreadVC2.dll")));
+		
+        PublicDelayLoadDLLs.Add(Path.Combine(ThirdPartyPath,"pthreadVC2.dll"));
+        PublicAdditionalLibraries.Add(Path.Combine(ThirdPartyPath,"pthreadVC2.lib"));
     }
 
     private string ThirdPartyPath
     {
-        get { return Path.GetFullPath(Path.Combine(ModuleDirectory, "../../Plugins/")); }
+        get { return Path.GetFullPath(Path.Combine(ModuleDirectory, "../../Source/UEPrototype/")); }
     }
 }
 

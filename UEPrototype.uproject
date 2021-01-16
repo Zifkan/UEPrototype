@@ -17,8 +17,7 @@
 			"Name": "AnimMesh",
 			"Type": "Runtime",
 			"LoadingPhase": "PostConfigInit"
-		}
-	,
+		},
 		{
 			"Name": "FlecsModule",
 			"Type": "Runtime",

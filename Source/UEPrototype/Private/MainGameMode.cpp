@@ -13,6 +13,7 @@
 #include "Components/CharacterStates/CharacterStates.h"
 #include "Components/StateMachine/CheckActionTag.h"
 #include "Components/CharacterActions/CharacterActionsComponents.h"
+#include "flecs-os_api-posix/include/flecs_os_api_posix.h"
 #include "GameFramework/PlayerInput.h"
 #include "Systems/InputMoveProcessingSystem.h"
 #include "Systems/Camera/CameraSystem.h"
@@ -29,13 +30,13 @@
 void AMainGameMode::BeginPlay()
 {
 
-   //posix_set_os_api();
+   posix_set_os_api();
     world = FEcsWorld::instance();
     
-  /*  world->DefaultWorld->import<flecs::dash>();
+    world->DefaultWorld->import<flecs::dash>();
     world->DefaultWorld->import<flecs::systems::civetweb>();
 
-    world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); */
+    world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); 
 
 
     
