@@ -25,7 +25,7 @@ void MovementStateSystem::OnCreate()
                 }
             }
         }
-    });
+    }).kind(0);
 }
 
 void AttackStateSystem::OnCreate()
@@ -48,5 +48,5 @@ void AttackStateSystem::OnCreate()
 		}
 		
 		e.remove_case<AttackState>();
-	});
+	}).kind(0);
 }

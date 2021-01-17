@@ -24,5 +24,5 @@ void BoneMatrixCalculationSystem::OnCreate()
                 rendererGroup->Buffer[renderEntityListId * 256 + i] = result;
             }
         }
-   });
+   }).kind(0);
 }

@@ -25,5 +25,5 @@ void MovementCharacterSystem::OnCreate()
         
         translation.Value+=velocity.Value;
         rotation.Value = newRot;
-    });
+    }).kind(0);
 }

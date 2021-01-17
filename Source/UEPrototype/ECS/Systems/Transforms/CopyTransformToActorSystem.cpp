@@ -7,5 +7,5 @@ void CopyTransformToActorSystem::OnCreate()
     {
         actor.ptr->SetActorTransform(FTransform(localToWorld.Value));
      //   actor.ptr->SetActorRotation(localToWorld.Rotation());
-    });
+    }).kind(0);
 }

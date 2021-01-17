@@ -18,7 +18,7 @@ void AnimationInitializeSystem::OnCreate()
         rootRendererData.RenderEntityListId = rootRenderId;
 
         e.set<RemoveRenderer>({rootRenderId});
-    });
+    }).kind(0);
 }
 
 RendererGroupData AnimationInitializeSystem::RegisterRendererInGroup(Entity customRendererEntity) const

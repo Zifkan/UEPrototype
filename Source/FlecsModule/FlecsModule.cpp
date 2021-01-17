@@ -3,13 +3,13 @@
 #include "FlecsModule.h"
 #include "Modules/ModuleManager.h"
 #include "Modules/ModuleInterface.h"
-#include "Misc/Paths.h"
 
 IMPLEMENT_GAME_MODULE(FFlecsModule, FlecsModule);
 
 
 void FFlecsModule::StartupModule()
-{	
+{
+	
 }
 
 void FFlecsModule::ShutdownModule()

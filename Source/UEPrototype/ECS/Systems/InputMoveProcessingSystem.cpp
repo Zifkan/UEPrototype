@@ -24,5 +24,5 @@ void InputMoveProcessingSystem::OnCreate()
 
 //        UE_LOG(LogTemp, Warning, TEXT(" moveDirection.Axises: x = %f; y = %f"),  moveDirection.Axises.X, moveDirection.Axises.Y);
           
-    });
+    }).kind(0);
 }

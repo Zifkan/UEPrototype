@@ -24,7 +24,7 @@ inline void MoveActionProceedSystem::OnCreate()
     {  
         const auto parentEntity = e.get_parent<PlayerTag>(); 
         parentEntity.add_case<MoveState>();  
-    });
+    }).kind(0);
 }
 
 
@@ -41,7 +41,7 @@ inline void AttackActionProceedSystem::OnCreate()
     {
         const auto parentEntity= e.get_parent<PlayerTag>();  
         parentEntity.add_case<AttackState>(); 
-    });
+    }).kind(0);
 }
 
 class  SprintActionProceedSystem   :public SystemBase<SprintInputTag>
@@ -56,5 +56,5 @@ inline void SprintActionProceedSystem::OnCreate()
     {
         const auto parentEntity= e.get_parent<MovementSpeed>();  
         parentEntity.set<MovementSpeed>({1000,2});
-    });
+    }).kind(0);
 }

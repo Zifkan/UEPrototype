@@ -41,6 +41,7 @@ public:
         Filter = flecs::filter(*m_pWorld->DefaultWorld);
 
         SystemRun = new flecs::system<ComponentType...>(*m_pWorld->DefaultWorld, name,signature);
+      //  SystemRun->kind(0);
     }
 
 

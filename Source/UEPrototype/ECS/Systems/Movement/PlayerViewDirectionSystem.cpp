@@ -14,5 +14,5 @@ void PlayerViewDirectionSystem::OnCreate()
         if (camLocalToWorld ==nullptr) return;
 
         viewDirection.Axises = camLocalToWorld->Forward();
-    });
+    }).kind(0);
 }

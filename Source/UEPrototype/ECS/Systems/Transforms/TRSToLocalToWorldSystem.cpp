@@ -8,5 +8,5 @@ void TRSToLocalToWorldSystem::OnCreate()
     {
         localToWorld.Value = FScaleRotationTranslationMatrix(FVector(1,1,1), FRotator(rot.Value), translation.Value);
 
-    });
+    }).kind(0);
 }

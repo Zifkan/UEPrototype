@@ -21,7 +21,7 @@ void BaseRemoveActionProceedSystem<ComponentType>::OnCreate()
        e.remove<ComponentType>();
       // UE_LOG(LogTemp, Warning, TEXT("Remove AttackInputTag"));
        Execute(e);
-   }); 
+   }).kind(0); 
 }
 
 template <class ComponentType>

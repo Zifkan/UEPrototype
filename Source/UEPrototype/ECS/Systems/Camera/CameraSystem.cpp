@@ -73,7 +73,7 @@ void CameraSystem::OnCreate()
         const auto position = camRotation.Value * negDistance + (playerLocalToWorld->Position() + FVector(0, 0,heightOffset));
       
         camTranslation.Value = position;
-    });
+    }).kind(0);
 }
 
 float CameraSystem::ClampAngle(float angle, float min, float max)
@@ -107,7 +107,7 @@ void CameraCollisionSystem::OnCreate()
 
        
         camTranslation.Value = BlendLocations(DesiredLoc, Result.Location, Result.bBlockingHit);
-    });
+    }).kind(0);
 }
 
 

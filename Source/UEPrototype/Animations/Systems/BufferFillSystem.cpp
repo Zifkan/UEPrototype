@@ -9,7 +9,7 @@ void BufferFillSystem::OnCreate()
     SystemRun->action([this](flecs::iter it)
     {   
         SetComputeBuffer();
-    });
+    }).kind(0);
 }
 
 
