@@ -3,8 +3,6 @@
 #include "Components/CharacterActions/CharacterActionsComponents.h"
 
 
-
-
 void MovementStateSystem::OnCreate()
 {
     SystemRun->signature("CASE | MoveState").each([this](flecs::entity e, AnimComponent& animComponent, MoveDirectionData& moveDirectionData,MovementSpeed& movementSpeed,FActorComponent actor)

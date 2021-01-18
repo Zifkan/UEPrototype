@@ -9,19 +9,18 @@
 template<class ... ComponentType>
 class BaseStateSystem  :public SystemBase<ComponentType...>
 {
-public:
-    
+public:    
     
     template<class T>
-    void SetActionAvailable(flecs::entity e, const CheckActionData actionData)
+    void SetActionAvailable(flecs::entity e,const  CheckActionData actionData)
     {
         for (auto children : e.children())
         {
             for (auto i : children)
             {
                 if(children.entity(i).has<T>())
-                {
-                    children.entity(i).remove<T>();
+                {                   
+                    children.entity(i).remove<ActionAvailableTag>();
                     children.entity(i).set<CheckActionData>(actionData);
                 }
             }
