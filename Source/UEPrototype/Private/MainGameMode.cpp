@@ -33,7 +33,7 @@ void AMainGameMode::BeginPlay()
     posix_set_os_api();
     world = FEcsWorld::instance();
     
-  world->DefaultWorld->import<flecs::dash>();
+    world->DefaultWorld->import<flecs::dash>();
     world->DefaultWorld->import<flecs::systems::civetweb>();
 
     world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); 
@@ -113,10 +113,12 @@ void AMainGameMode::RegisterSystem()
 
 	
 	systemsLauncher->RegisterSystem(new  SprintActionProceedSystem());	
-	systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());	
+	systemsLauncher->RegisterSystem(new  MoveActionProceedSystem());
+	systemsLauncher->RegisterSystem(new  BlockActionProceedSystem());	
 	systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
 
 	systemsLauncher->RegisterSystem(new MovementStateSystem());
+	systemsLauncher->RegisterSystem(new BlockingStateSystem());	
 	systemsLauncher->RegisterSystem(new AttackStateSystem());       
 	
 

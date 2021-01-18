@@ -31,7 +31,8 @@ protected:
 	void SprintPressed();
 	void SprintReleased();	
 	void Attack();
-	void Block();
+	void BlockPressed();
+	void BlockReleased();
 	void LookUpAtRate(float Rate);
     void AddControllerPitchInput(float Val);
     void AddControllerYawInput(float Val);
@@ -50,5 +51,6 @@ private:
     FEcsWorld* world;
     FEntityManager* entityManager;
 
+	bool isBlock;
 	bool isSprint;
 };

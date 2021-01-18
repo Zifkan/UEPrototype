@@ -3,12 +3,12 @@
 
 #include "CharacterAnimInstance.h"
 
-void UCharacterAnimInstance::PlayAnim()
+void UCharacterAnimInstance::PlayAttack()
 {
-  /* if (Montage_IsPlaying(animMontage)) return;
-   auto t =  Montage_Play(animMontage);*/
+	/* if (Montage_IsPlaying(animMontage)) return;
+	auto t =  Montage_Play(animMontage);*/
 
- IsAttack = true;
-   
-  // UE_LOG(LogTemp, Warning, TEXT("AttackState Working PLay Time: %f"),t);
+	IsAttack = true;
+	IsBlocking = false;
+	// UE_LOG(LogTemp, Warning, TEXT("AttackState Working PLay Time: %f"),t);
 }

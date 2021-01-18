@@ -47,7 +47,11 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     auto Idle = dstManager.defaultWorld->entity().add<IdleState>();
     auto Move = dstManager.defaultWorld->entity().add<MoveState>();
     auto Attack = dstManager.defaultWorld->entity().add<AttackState>();
-    auto Movement = dstManager.SetType("Movement","IdleState, MoveState, AttackState");
+	auto MoveBlock  = dstManager.defaultWorld->entity().add<MoveBlockState>();
+    auto Movement = dstManager.SetType("Movement","IdleState, MoveState,MoveBlockState, AttackState");
+
+    
+	
 	e.add_switch(Movement);
 	e.add_case<IdleState>();
 	

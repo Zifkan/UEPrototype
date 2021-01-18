@@ -37,5 +37,5 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
 	UAnimMontage* animMontage;
 	
-	void PlayAnim();
+	void PlayAttack();
 };

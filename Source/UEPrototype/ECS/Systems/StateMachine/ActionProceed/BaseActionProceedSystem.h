@@ -47,14 +47,28 @@ inline void AttackActionProceedSystem::OnCreate()
 class  SprintActionProceedSystem   :public SystemBase<SprintInputTag>
 {
 public:
+    virtual void OnCreate()
+    {        
+        SystemRun->each([](Entity e, SprintInputTag& sprintInputTag)
+        {
+            const auto parentEntity= e.get_parent<MovementSpeed>();  
+            parentEntity.set<MovementSpeed>({1000,2});
+        }).kind(0);
+    }
+};
+
+
+class  BlockActionProceedSystem   :public SystemBase<BlockInputTag,  ActionAvailableTag>
+{
+public:
     virtual void OnCreate() override;
 };
 
-inline void SprintActionProceedSystem::OnCreate()
+inline void BlockActionProceedSystem::OnCreate()
 {
-    SystemRun->each([](Entity e, SprintInputTag& sprintInputTag)
+    SystemRun->each([](Entity e,const BlockInputTag blockInputTag,const ActionAvailableTag& availableTag)
     {
-        const auto parentEntity= e.get_parent<MovementSpeed>();  
-        parentEntity.set<MovementSpeed>({1000,2});
+        const auto parentEntity= e.get_parent<MovementSpeed>();
+        parentEntity.add_case<MoveBlockState>();    
     }).kind(0);
 }

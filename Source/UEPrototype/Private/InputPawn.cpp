@@ -47,7 +47,8 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
     InputComponent->BindAction("Attack", EInputEvent::IE_Pressed, this, &AInputPawn::Attack);
     
-    InputComponent->BindAction("Block", EInputEvent::IE_Pressed, this, &AInputPawn::Block);
+    InputComponent->BindAction("Block", EInputEvent::IE_Pressed, this, &AInputPawn::BlockPressed);
+    InputComponent->BindAction("Block", EInputEvent::IE_Released, this, &AInputPawn::BlockReleased);
 }
 
 void AInputPawn::Tick(float DeltaSeconds)
@@ -65,6 +66,12 @@ void AInputPawn::Tick(float DeltaSeconds)
     {
         inputEntity = entityManager->Singleton<InputEntityType>();
         entityManager->AddComponentData<SprintInputTag>(inputEntity);
+    }
+
+    if (isBlock)
+    {
+        inputEntity = entityManager->Singleton<InputEntityType>();
+        entityManager->AddComponentData<BlockInputTag>(inputEntity);
     }
 }
 
@@ -114,10 +121,14 @@ void AInputPawn::Attack()
     entityManager->AddComponentDataSafety<AttackInputTag>(inputEntity);
 }
 
-void AInputPawn::Block()
+void AInputPawn::BlockReleased()
 {
-   /* inputEntity = Entity(*world->DefaultWorld, "InputEntity");  
-    entityManager->AddComponentDataSafety<BlockInputTag>(inputEntity);*/
+    isBlock = false;
+}
+
+void AInputPawn::BlockPressed()
+{
+    isBlock = true;
 }
 
 

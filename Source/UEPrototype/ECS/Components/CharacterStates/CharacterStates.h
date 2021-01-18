@@ -8,6 +8,11 @@ struct MoveState
 {
 };
 
+struct MoveBlockState
+{
+};
+
+
 struct AttackState
 {
 };

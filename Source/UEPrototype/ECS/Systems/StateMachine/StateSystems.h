@@ -42,7 +42,7 @@ public:
     virtual void OnCreate() override;
 };
 
-class BlockingStateSystem final :public BaseStateSystem<AnimComponent>
+class BlockingStateSystem final :public BaseStateSystem<AnimComponent,MoveDirectionData,MovementSpeed,FActorComponent>
 {
 public:
     virtual void OnCreate() override;
