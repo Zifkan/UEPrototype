@@ -33,11 +33,11 @@ void AMainGameMode::BeginPlay()
     posix_set_os_api();
     world = FEcsWorld::instance();
     
- /*   world->DefaultWorld->import<flecs::dash>();
+  world->DefaultWorld->import<flecs::dash>();
     world->DefaultWorld->import<flecs::systems::civetweb>();
 
     world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); 
-	world->DefaultWorld->set_target_fps(60);*/
+	world->DefaultWorld->set_target_fps(60);
 
     
     entityManager = world->EntityManager;
@@ -91,7 +91,7 @@ void AMainGameMode::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFu
  //   characterStateMachineLauncher->Update(DeltaTime);
     removeActionProceedSystemLauncher->Update(DeltaTime);
 
-//	world->DefaultWorld->progress(DeltaTime);
+	world->DefaultWorld->progress(DeltaTime);
 }
 
 void AMainGameMode::RegisterSystem()

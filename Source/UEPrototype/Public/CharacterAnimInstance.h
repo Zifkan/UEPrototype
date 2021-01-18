@@ -27,7 +27,9 @@ public:
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
 	bool IsHitted;
-	
+
+	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
+	bool IsBlocking;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadWrite,Category=Anim)
 	TArray<UAnimSequence*> animSequence;
