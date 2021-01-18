@@ -3,7 +3,6 @@
 #endif
 #include <stdio.h>
 #include <ctype.h>
-
 static
 bool parse_filter(
     ecs_world_t *world,
@@ -15,16 +14,19 @@ bool parse_filter(
     if (ecs_http_get_query_param(
         request->params, "include", buffer, sizeof(buffer)))
     {
+        printf(buffer);
+       
         filter->include = ecs_type_from_str(world, buffer);
         filter->include_kind = EcsMatchAny;
         if (!filter->include) {
             return false;
         }
     }
-
+    filter->exclude = ecs_type_from_str(world, "buffer");
     if (ecs_http_get_query_param(
         request->params, "exclude", buffer, sizeof(buffer)))
-    {
+    {  printf(buffer);
+     
         filter->exclude = ecs_type_from_str(world, buffer);
         if (!filter->exclude) {
             return false;
@@ -92,7 +94,7 @@ bool endpoint_filter(
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
-    ecs_filter_t filter = { };
+    ecs_filter_t filter;
     ecs_type_t select = NULL;
 
     if (!parse_filter(world, request, &filter)) {
@@ -119,7 +121,7 @@ bool endpoint_scope(
     EcsHttpReply *reply)
 {
     ecs_entity_t e = 0;
-    ecs_filter_t filter = { };
+    ecs_filter_t filter;
     ecs_type_t select = NULL;
     
     if (!parse_entity(world, request, &e)) {
@@ -263,7 +265,7 @@ bool endpoint_browse(
     EcsHttpRequest *request,
     EcsHttpReply *reply)
 {
-    ecs_filter_t filter = { };
+    ecs_filter_t filter;
     ecs_entity_t e;
 
     if (!parse_entity(world, request, &e)) {

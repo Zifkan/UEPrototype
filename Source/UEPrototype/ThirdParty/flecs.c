@@ -31,6 +31,15 @@
 # include <endian.h>    /* attempt to define endianness */
 #endif
 
+/**
+ * @file entity_index.h
+ * @brief Entity index data structure.
+ *
+ * The entity index stores the table, row for an entity id. It is implemented as
+ * a sparse set. This file contains convenience macro's for working with the
+ * entity index.
+ */
+
 #ifndef FLECS_ENTITY_INDEX_H
 #define FLECS_ENTITY_INDEX_H
 
@@ -774,11 +783,11 @@ void ecs_stage_merge_post_frame(
     ecs_stage_t *stage);
 
 /* Begin defer for stage */
-void ecs_stage_defer_begin(
+bool ecs_stage_defer_begin(
     ecs_world_t *world,
     ecs_stage_t *stage);
 
-void ecs_stage_defer_end(
+bool ecs_stage_defer_end(
     ecs_world_t *world,
     ecs_stage_t *stage);    
 
@@ -862,7 +871,7 @@ bool ecs_defer_set(
     void **value_out,
     bool *is_added);
 
-void ecs_defer_flush(
+bool ecs_defer_flush(
     ecs_world_t *world,
     ecs_stage_t *stage);
 
@@ -3938,6 +3947,9 @@ bool ecs_get_info(
     ecs_entity_info_t * info)
 {
     info->table = NULL;
+    info->record = NULL;
+    info->data = NULL;
+    info->is_watched = false;
 
     if (entity & ECS_ROLE) {
         return false;
@@ -3946,8 +3958,6 @@ bool ecs_get_info(
     ecs_record_t *record = ecs_eis_get(world, entity);
 
     if (!record) {
-        info->is_watched = false;
-        info->record = NULL;
         return false;
     }
 
@@ -4151,6 +4161,14 @@ void ecs_run_set_systems(
     int32_t count,
     bool set_all)
 {
+    (void)world;
+    (void)components;
+    (void)table;
+    (void)data;
+    (void)row;
+    (void)count;
+    (void)set_all;
+
 #ifdef FLECS_SYSTEM    
     if (!count || !data) {
         return;
@@ -4176,6 +4194,13 @@ void ecs_run_monitors(
     int32_t count, 
     ecs_vector_t *v_src_monitors)
 {
+    (void)world;
+    (void)dst_table;
+    (void)v_dst_monitors;
+    (void)dst_row;
+    (void)count;
+    (void)v_src_monitors;
+
 #ifdef FLECS_SYSTEM    
     if (v_dst_monitors == v_src_monitors) {
         return;
@@ -6301,27 +6326,27 @@ int32_t ecs_count_w_filter(
     return result;
 }
 
-void ecs_defer_begin(
+bool ecs_defer_begin(
     ecs_world_t *world)
 {
     ecs_stage_t *stage = ecs_get_stage(&world);
     
     if (world->in_progress) {
-        ecs_stage_defer_begin(world, stage);
+        return ecs_stage_defer_begin(world, stage);
     } else {
-        ecs_defer_none(world, stage);
+        return ecs_defer_none(world, stage);
     }
 }
 
-void ecs_defer_end(
+bool ecs_defer_end(
     ecs_world_t *world)
 {
     ecs_stage_t *stage = ecs_get_stage(&world);
     
     if (world->in_progress) {
-        ecs_stage_defer_end(world, stage);
+        return ecs_stage_defer_end(world, stage);
     } else {
-        ecs_defer_flush(world, stage);
+        return ecs_defer_flush(world, stage);
     }
 }
 
@@ -6507,7 +6532,7 @@ bool valid_components(
 }
 
 /* Leave safe section. Run all deferred commands. */
-void ecs_defer_flush(
+bool ecs_defer_flush(
     ecs_world_t * world,
     ecs_stage_t * stage)
 {
@@ -6609,7 +6634,11 @@ void ecs_defer_flush(
                 ecs_vector_free(defer_queue);
             }
         }
+
+        return true;
     }
+
+    return false;
 }
 
 static
@@ -6687,8 +6716,7 @@ bool ecs_defer_none(
     ecs_stage_t *stage)
 {
     (void)world;
-    stage->defer ++;
-    return false;
+    return (++ stage->defer) == 1;
 }
 
 bool ecs_defer_modified(
@@ -6973,18 +7001,19 @@ void ecs_stage_merge(
     }    
 }
 
-void ecs_stage_defer_begin(
+bool ecs_stage_defer_begin(
     ecs_world_t *world,
     ecs_stage_t *stage)
 {   
     (void)world; 
-    ecs_defer_none(world, stage);
-    if (stage->defer == 1) {
-        stage->defer_queue = stage->defer_merge_queue;      
+    if (ecs_defer_none(world, stage)) {
+        stage->defer_queue = stage->defer_merge_queue;    
+        return true;  
     }
+    return false;
 }
 
-void ecs_stage_defer_end(
+bool ecs_stage_defer_end(
     ecs_world_t *world,
     ecs_stage_t *stage)
 { 
@@ -6993,7 +7022,9 @@ void ecs_stage_defer_end(
     if (!stage->defer) {
         stage->defer_merge_queue = stage->defer_queue;
         stage->defer_queue = NULL;
+        return true;
     }
+    return false;
 }
 
 void ecs_stage_merge_post_frame(
@@ -8968,6 +8999,7 @@ int32_t ecs_queue_count(
 
 #ifdef FLECS_STATS
 
+#ifdef FLECS_SYSTEM
 #ifndef FLECS_SYSTEM_PRIVATE_H
 #define FLECS_SYSTEM_PRIVATE_H
 
@@ -9009,6 +9041,9 @@ ecs_entity_t ecs_run_intern(
     bool ran_by_app);
 
 #endif
+#endif
+
+#ifdef FLECS_PIPELINE
 #ifndef FLECS_PIPELINE_PRIVATE_H
 #define FLECS_PIPELINE_PRIVATE_H
 
@@ -9064,6 +9099,7 @@ void ecs_worker_end(
 void ecs_workers_progress(
     ecs_world_t *world);
 
+#endif
 #endif
 
 static
@@ -9266,6 +9302,7 @@ void ecs_get_query_stats(
     record_gauge(&s->matched_entity_count, t, entity_count);
 }
 
+#ifdef FLECS_SYSTEM
 bool ecs_get_system_stats(
     ecs_world_t *world,
     ecs_entity_t system,
@@ -9286,6 +9323,10 @@ bool ecs_get_system_stats(
 
     return true;
 }
+#endif
+
+
+#ifdef FLECS_PIPELINE
 
 static ecs_system_stats_t* get_system_stats(
     ecs_map_t *systems,
@@ -9358,6 +9399,7 @@ bool ecs_get_pipeline_stats(
 
     return true;
 }
+#endif
 
 void ecs_dump_world_stats(
     ecs_world_t *world,
@@ -16664,6 +16706,8 @@ void activate_table(
     ecs_table_t *table,
     bool active)
 {
+    (void)world;
+    
     ecs_vector_t *src_array, *dst_array;
     int32_t activated = 0;
 
@@ -16720,8 +16764,6 @@ void activate_table(
                     ecs_system_activate(world, query->system, false, NULL);
                 }
             }
-#else
-            (void)src_count;
 #endif
         }
 
@@ -18767,6 +18809,10 @@ ecs_table_t *find_or_create(
         }
     }
 
+    /* If we get here, table needs to be created which is only allowed when the
+     * application is not currently in progress */
+    ecs_assert(!world->in_progress, ECS_INTERNAL_ERROR, NULL);
+
     ecs_entities_t ordered_entities = {
         .array = ordered,
         .count = type_count
@@ -18791,8 +18837,6 @@ ecs_table_t* ecs_table_find_or_create(
     ecs_entities_t * components)
 {
     ecs_assert(world != NULL, ECS_INTERNAL_ERROR, NULL);
-    ecs_assert(!world->in_progress, ECS_INTERNAL_ERROR, NULL);
-
     return find_or_create(world, components);
 }
 
