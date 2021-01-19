@@ -4,7 +4,9 @@
 #include "InputPawn.h"
 
 #include "MainGameMode.h"
+#include "Components/PlayerComponents.h"
 #include "Components/CharacterActions/CharacterActionsComponents.h"
+
 
 // Sets default values
 AInputPawn::AInputPawn()
@@ -54,6 +56,9 @@ void AInputPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 void AInputPawn::Tick(float DeltaSeconds)
 {
     inputEntity = entityManager->Singleton<InputEntityType>();
+
+    const auto parentEntity = inputEntity.get_parent<PlayerTag>(); 
+    parentEntity.add_case<IdleState>();
     
     if (inputData.MovementAxis.SizeSquared()>0)
     {       

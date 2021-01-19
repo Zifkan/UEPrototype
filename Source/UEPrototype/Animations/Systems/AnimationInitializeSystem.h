@@ -15,6 +15,8 @@ struct RendererGroupData
 class AnimationInitializeSystem :public SystemBase<RendererRoot,CharacterActorComponent>
 {
 public:
+    AnimationInitializeSystem() : SystemBase("AnimationInitializeSystem"){}
+       
     virtual void OnCreate() override;
     RendererGroupData RegisterRendererInGroup(Entity customRendererEntity) const;
     RendererGroup* rendererGroup;

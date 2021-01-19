@@ -7,5 +7,7 @@
 class CopyTransformToActorSystem final :public SystemBase< LocalToWorld, FActorComponent>
 {
 public:
+    CopyTransformToActorSystem() : SystemBase("CopyTransformToActorSystem"){}    
+
     void OnCreate() override;
 };

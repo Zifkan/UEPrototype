@@ -1,7 +1,7 @@
 #include "CheckActionAvailableSystem.h"
 
 void CheckActionAvailableSystem::OnCreate()
-{
+{    
     SystemRun->signature("!ActionAvailableTag").each([](flecs::entity e, CheckActionData& checkData)
     {       
         if(FPlatformTime::Seconds()>= checkData.StartTime+checkData.Duration -checkData.Space)

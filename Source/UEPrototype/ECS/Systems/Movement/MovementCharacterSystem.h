@@ -7,6 +7,8 @@
 class MovementCharacterSystem final : public SystemBase<MovementVelocity,Translation,Rotation>
 {
 public:
+    MovementCharacterSystem() : SystemBase("MovementCharacterSystem"){}
+   
     virtual void OnCreate() override;
 private:   
     FQuat lastRot;

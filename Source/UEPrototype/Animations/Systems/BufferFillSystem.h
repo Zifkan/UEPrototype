@@ -5,6 +5,8 @@
 class BufferFillSystem :public SystemBase<>
 {
 public:
+    BufferFillSystem() : SystemBase("BufferFillSystem"){}
+   
     virtual void OnCreate() override;
     
 

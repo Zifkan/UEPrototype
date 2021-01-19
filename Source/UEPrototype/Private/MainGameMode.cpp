@@ -117,6 +117,9 @@ void AMainGameMode::RegisterSystem()
 	systemsLauncher->RegisterSystem(new  BlockActionProceedSystem());	
 	systemsLauncher->RegisterSystem(new  AttackActionProceedSystem());
 
+
+	
+	systemsLauncher->RegisterSystem(new IdleStateSystem());
 	systemsLauncher->RegisterSystem(new MovementStateSystem());
 	systemsLauncher->RegisterSystem(new BlockingStateSystem());	
 	systemsLauncher->RegisterSystem(new AttackStateSystem());       

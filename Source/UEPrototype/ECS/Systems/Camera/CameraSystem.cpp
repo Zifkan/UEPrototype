@@ -8,8 +8,11 @@ void CameraSystem::OnCreate()
 {
     SystemRun->each([this](flecs::entity e, CamComponent& camera, Rotation& camRotation,Translation& camTranslation)
     {
-        auto player = Entity(*m_pWorld->DefaultWorld, "Player");
         auto inputEnt =  GetEntityManager()->Singleton<InputEntityType>();
+      
+        auto player = Entity(*m_pWorld->DefaultWorld, "Player");
+       
+      
         const LocalToWorld* playerLocalToWorld = player.get<LocalToWorld>();
         const PlayerInputComponent* input = inputEnt.get<PlayerInputComponent>();
 
@@ -90,6 +93,8 @@ void CameraCollisionSystem::OnCreate()
     SystemRun->each([this](flecs::entity e, CamComponent& camera,FActorComponent& owner, Translation& camTranslation)
     {
         auto player = Entity(*m_pWorld->DefaultWorld, "Player");
+
+        
         const LocalToWorld* playerLocalToWorld = player.get<LocalToWorld>();
      
         if (playerLocalToWorld == nullptr) return;

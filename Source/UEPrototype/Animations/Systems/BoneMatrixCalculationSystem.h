@@ -6,6 +6,8 @@
 class  BoneMatrixCalculationSystem final :public SystemBase<RendererRoot>
 {
 public:
+    BoneMatrixCalculationSystem() : SystemBase("BoneMatrixCalculationSystem"){}
+   
     virtual void OnCreate() override;
 
 private:    

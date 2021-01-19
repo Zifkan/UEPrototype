@@ -6,5 +6,8 @@
 class CheckActionAvailableSystem final :public SystemBase<CheckActionData>
 {
 public:
+
+    CheckActionAvailableSystem() : SystemBase("CheckActionAvailableSystem"){}    
+    
     virtual void OnCreate() override;
 };

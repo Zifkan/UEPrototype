@@ -6,5 +6,7 @@
 class MovementVelocitySystem final :public SystemBase<MoveDirectionData,MovementSpeed, MovementVelocity>
 {
 public:
+    MovementVelocitySystem() : SystemBase("MovementVelocitySystem"){}
+   
     virtual void OnCreate() override;
 };

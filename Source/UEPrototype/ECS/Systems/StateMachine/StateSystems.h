@@ -10,6 +10,10 @@ template<class ... ComponentType>
 class BaseStateSystem  :public SystemBase<ComponentType...>
 {
 public:    
+    BaseStateSystem(const char *name = nullptr, const char *signature = nullptr): SystemBase(name,signature)
+    {
+        
+    }
     
     template<class T>
     void SetActionAvailable(flecs::entity e,const  CheckActionData actionData)
@@ -32,18 +36,31 @@ public:
 class MovementStateSystem final :public BaseStateSystem<AnimComponent,MoveDirectionData,MovementSpeed,FActorComponent>
 {
 public:
+    MovementStateSystem() : BaseStateSystem("MovementStateSystem"){}
+    
     virtual void OnCreate() override;
 };
 
+class IdleStateSystem final :public BaseStateSystem<AnimComponent,MovementSpeed>
+{
+public:    
+    IdleStateSystem() : BaseStateSystem("IdleStateSystem"){}
+
+    virtual void OnCreate() override;
+};
 
 class AttackStateSystem final :public BaseStateSystem<AnimComponent,MovementSpeed>
 {
-public:
+public:    
+    AttackStateSystem() : BaseStateSystem("AttackStateSystem"){}   
+
     virtual void OnCreate() override;
 };
 
 class BlockingStateSystem final :public BaseStateSystem<AnimComponent,MoveDirectionData,MovementSpeed,FActorComponent>
 {
-public:
+public:    
+    BlockingStateSystem() : BaseStateSystem("BlockingStateSystem"){}
+    
     virtual void OnCreate() override;
 };

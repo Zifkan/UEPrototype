@@ -7,5 +7,7 @@
 class WorldToLocalSystem final :public SystemBase<LocalToWorld, WorldToLocal>
 {
 public:
+    WorldToLocalSystem() : SystemBase("WorldToLocalSystem"){}    
+
     void OnCreate() override;
 };

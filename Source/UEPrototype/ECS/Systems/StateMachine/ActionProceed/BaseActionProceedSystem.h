@@ -15,6 +15,8 @@ class  BaseActionProceedSystem   :public SystemBase<ComponentType,ActionAvailabl
 class MoveActionProceedSystem   :public SystemBase<MoveInputTag,ActionAvailableTag>
 {
 public:
+    MoveActionProceedSystem() : SystemBase("MoveActionProceedSystem"){}
+    
     virtual void OnCreate() override;
 };
 
@@ -32,6 +34,8 @@ inline void MoveActionProceedSystem::OnCreate()
 class  AttackActionProceedSystem   :public SystemBase<AttackInputTag,ActionAvailableTag>
 {
 public:
+    AttackActionProceedSystem() : SystemBase("AttackActionProceedSystem"){}
+    
     virtual void OnCreate() override;
 };
 
@@ -47,6 +51,8 @@ inline void AttackActionProceedSystem::OnCreate()
 class  SprintActionProceedSystem   :public SystemBase<SprintInputTag>
 {
 public:
+    SprintActionProceedSystem() : SystemBase("SprintActionProceedSystem"){}
+  
     virtual void OnCreate()
     {        
         SystemRun->each([](Entity e, SprintInputTag& sprintInputTag)
@@ -61,6 +67,8 @@ public:
 class  BlockActionProceedSystem   :public SystemBase<BlockInputTag,  ActionAvailableTag>
 {
 public:
+    BlockActionProceedSystem() : SystemBase("BlockActionProceedSystem"){}
+  
     virtual void OnCreate() override;
 };
 

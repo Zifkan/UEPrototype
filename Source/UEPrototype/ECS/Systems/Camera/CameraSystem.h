@@ -7,6 +7,8 @@
 class CameraSystem final : public SystemBase<CamComponent, Rotation , Translation>
 {
 public:
+    CameraSystem() : SystemBase("CameraSystem"){}
+      
     void OnCreate() override;
 
     float ClampAngle(float angle, float min, float max);
@@ -17,6 +19,8 @@ public:
 class CameraCollisionSystem final : public SystemBase<CamComponent, FActorComponent, Translation>
 {
 public:
+    CameraCollisionSystem() : SystemBase("CameraCollisionSystem"){}
+   
     void OnCreate() override;
     FVector BlendLocations(const FVector& DesiredArmLocation, const FVector& TraceHitLocation, bool bHitSomething);
 };

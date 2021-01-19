@@ -45,7 +45,7 @@ public:
     }
 
 
-    void Init(FEcsWorld* world,UWorld* uWorld) override
+    virtual void Init(FEcsWorld* world,UWorld* uWorld) override
     {
         m_pWorld = world;
         EntityManager = m_pWorld->EntityManager;
@@ -74,14 +74,17 @@ public:
     flecs::system<ComponentType...>* SystemRun;
     UWorld* GetUWorld() const { return UWorld; }
 
+protected:
+    const char *name = nullptr;
+    const char *signature = nullptr;
+
 private:
     flecs::filter Filter;
    
     FEntityManager* EntityManager = nullptr;
     float deltaTime;
 
-    const char *name = nullptr;
-    const char *signature = nullptr;
+  
 
     UWorld* UWorld = nullptr;
 };
