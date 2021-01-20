@@ -3,7 +3,7 @@
 #include "Components/MovementComponents.h"
 #include "Components/PlayerComponents.h"
 
-class InputMoveProcessingSystem final : public SystemBase<PlayerTag, MoveDirectionData, ViewDirectionData>
+class InputMoveProcessingSystem final : public SystemBase< MoveDirectionData, ViewDirectionData>
 {
 public:
     InputMoveProcessingSystem() : SystemBase("InputMoveProcessingSystem"){}

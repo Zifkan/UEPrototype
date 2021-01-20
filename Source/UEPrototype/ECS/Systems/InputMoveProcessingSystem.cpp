@@ -5,7 +5,7 @@
 
 void InputMoveProcessingSystem::OnCreate()
 {
-    SystemRun->each([this](flecs::entity e, PlayerTag& player, MoveDirectionData& moveDirection, ViewDirectionData& viewDirection)
+    SystemRun->signature("PlayerTag").each([this](flecs::entity e,MoveDirectionData& moveDirection, ViewDirectionData& viewDirection)
     {
       
         auto inputEnt =  GetEntityManager()->Singleton<InputEntityType>();

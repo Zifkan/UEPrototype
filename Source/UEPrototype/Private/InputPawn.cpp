@@ -57,7 +57,7 @@ void AInputPawn::Tick(float DeltaSeconds)
 {
     inputEntity = entityManager->Singleton<InputEntityType>();
 
-    const auto parentEntity = inputEntity.get_parent<PlayerTag>(); 
+    const auto parentEntity = inputEntity.get_parent<CharacterTag>(); 
     parentEntity.add_case<IdleState>();
     
     if (inputData.MovementAxis.SizeSquared()>0)

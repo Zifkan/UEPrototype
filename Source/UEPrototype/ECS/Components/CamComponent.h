@@ -1,5 +1,10 @@
 ﻿#pragma once
 
+struct CamEntityType
+{
+    
+};
+
 struct  CamComponent
 {
     float HeightOffset;

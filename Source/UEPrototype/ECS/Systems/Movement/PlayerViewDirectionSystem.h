@@ -1,4 +1,5 @@
 #pragma once
+#include "Components/PlayerComponents.h"
 #include "Systems/SystemBase.h"
 
 struct ViewDirectionData;

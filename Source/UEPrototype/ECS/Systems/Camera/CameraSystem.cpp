@@ -1,6 +1,7 @@
 #include "CameraSystem.h"
 
 #include "Components/GeneralComponents.h"
+#include "Components/PlayerComponents.h"
 #include "Components/CharacterActions/CharacterActionsComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
 
@@ -10,7 +11,7 @@ void CameraSystem::OnCreate()
     {
         auto inputEnt =  GetEntityManager()->Singleton<InputEntityType>();
       
-        auto player = Entity(*m_pWorld->DefaultWorld, "Player");
+        auto player =  GetEntityManager()->Singleton<PlayerEntityType>();
        
       
         const LocalToWorld* playerLocalToWorld = player.get<LocalToWorld>();
@@ -92,9 +93,8 @@ void CameraCollisionSystem::OnCreate()
 {
     SystemRun->each([this](flecs::entity e, CamComponent& camera,FActorComponent& owner, Translation& camTranslation)
     {
-        auto player = Entity(*m_pWorld->DefaultWorld, "Player");
-
-        
+        auto player = m_pWorld->DefaultWorld->singleton<PlayerEntityType>();     
+              
         const LocalToWorld* playerLocalToWorld = player.get<LocalToWorld>();
      
         if (playerLocalToWorld == nullptr) return;

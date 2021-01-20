@@ -1,5 +1,6 @@
 #pragma once
 #include "flecs.h"
+#include "Components/PlayerComponents.h"
 #include "Components/CharacterActions/CharacterActionsComponents.h"
 #include "Components/CharacterStates/CharacterStates.h"
 #include "Components/StateMachine/CheckActionTag.h"
@@ -24,7 +25,7 @@ inline void MoveActionProceedSystem::OnCreate()
 {
     SystemRun->each([this](Entity e, MoveInputTag& moveActionTag, ActionAvailableTag& availableTag)
     {  
-        const auto parentEntity = e.get_parent<PlayerTag>(); 
+        const auto parentEntity = e.get_parent<CharacterTag>(); 
         parentEntity.add_case<MoveState>();  
     }).kind(0);
 }
@@ -43,7 +44,7 @@ inline void AttackActionProceedSystem::OnCreate()
 {
     SystemRun->each([this](Entity e, AttackInputTag& AttackInputTag, ActionAvailableTag& availableTag)
     {
-        const auto parentEntity= e.get_parent<PlayerTag>();  
+        const auto parentEntity= e.get_parent<CharacterTag>();  
         parentEntity.add_case<AttackState>(); 
     }).kind(0);
 }

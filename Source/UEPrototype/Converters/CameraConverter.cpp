@@ -8,9 +8,11 @@
 #include "Systems/Transforms/WorldToLocalSystem.h"
 #include "UEPrototype/ECS/Components/CamComponent.h"
 
-void UCameraConverter::Convert(flecs::entity entity, FEntityManager dstManager)
+void UCameraConverter::Convert(flecs::entity e, FEntityManager dstManager)
 {
-         dstManager.SetComponentData<CamComponent>(entity,
+	auto entity = dstManager.defaultWorld->singleton<CamEntityType>();
+	
+    dstManager.SetComponentData<CamComponent>(entity,
     {
             HeightOffset, FocusHeightOffset,0,0,Radius, CurrentRadius,SpeedX,SpeedY, yMinLimit,yMaxLimit,PitchLimit,ProbeChannel,ProbeSize
     });

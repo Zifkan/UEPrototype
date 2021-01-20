@@ -37,11 +37,17 @@ void AMainGameMode::BeginPlay()
     world->DefaultWorld->import<flecs::systems::civetweb>();
 
     world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); 
-	world->DefaultWorld->set_target_fps(60);
-
+	//world->DefaultWorld->set_target_fps(60);
+	ecs_set_target_fps( world->DefaultWorld->c_ptr(), 60);
     
     entityManager = world->EntityManager;
-    
+
+	entityManager->RegisterComponent<PlayerEntityType>("PlayerEntityType");
+	entityManager->RegisterComponent<InputEntityType>("InputEntityType");
+
+	
+	entityManager->RegisterComponent<PlayerTag>("PlayerTag");
+	
     entityManager->RegisterComponent<IdleState>("IdleState");
     entityManager->RegisterComponent<MoveState>("MoveState");
     entityManager->RegisterComponent<AnimComponent>("AnimComponent"); 
@@ -53,8 +59,7 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<BlockInputTag>("BlockInputTag");
     entityManager->RegisterComponent<AttackInputTag>("AttackInputTag");
     entityManager->RegisterComponent<SprintInputTag>("SprintInputTag");
-
-
+	
     entityManager->RegisterComponent<InheritsFrom>("InheritsFrom");
     entityManager->RegisterComponent<CamComponent>("CamComponent");
     entityManager->RegisterComponent<PlayerInputComponent>("PlayerInputComponent");
@@ -62,6 +67,7 @@ void AMainGameMode::BeginPlay()
     entityManager->RegisterComponent<MoveDirectionData>("MoveDirectionData");
     entityManager->RegisterComponent<MovementSpeed>("MovementSpeed"); 
     entityManager->RegisterComponent<WorldToLocal>("WorldToLocal");
+	entityManager->RegisterComponent<LocalToWorld>("LocalToWorld");
     entityManager->RegisterComponent<Translation>("Translation");
     entityManager->RegisterComponent<CopyTransformToActor>("CopyTransformToActor");
     entityManager->RegisterComponent<Scale>("Scale");

@@ -15,10 +15,12 @@
 
 
 
-void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
-{  
-
-	dstManager.RegisterComponent<InputEntityType>("InputEntityType");
+void UPlayerConverter::Convert(Entity s, FEntityManager dstManager)
+{ 
+	auto e = dstManager.defaultWorld->singleton<PlayerEntityType>();
+	
+	dstManager.AddComponentData<PlayerTag>(e);
+	
 	auto inputEntity =  dstManager.defaultWorld->singleton<InputEntityType>();
 	
     inputEntity.add_childof(e);
@@ -26,7 +28,7 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     const auto characterActor = Cast<ACharacterActor>(GetOwner());
     const auto characterAnimInstance = Cast<UCharacterAnimInstance>(characterActor->GetAnimInstance());
     
-    dstManager.AddComponentData<PlayerTag>(e);
+    dstManager.AddComponentData<CharacterTag>(e);
     dstManager.AddComponentData<MovementVelocity>(e);
     dstManager.SetComponentData<MovementSpeed>(e, { 0.f,1 });
     dstManager.AddComponentData<MoveDirectionData>(e);
@@ -42,7 +44,7 @@ void UPlayerConverter::Convert(Entity e, FEntityManager dstManager)
     UE_LOG(LogTemp, Warning, TEXT("Player Entity, %i"),e.id());
     UE_LOG(LogTemp, Warning, TEXT("Input Entity, %i"),inputEntity.id());
 
-    UE_LOG(LogTemp, Warning, TEXT("Has PlayerTag, %s"),UTF8_TO_TCHAR (inputEntity.get_parent<PlayerTag>().has<PlayerTag>()?"true" : "false"));
+    UE_LOG(LogTemp, Warning, TEXT("Has PlayerTag, %s"),UTF8_TO_TCHAR (inputEntity.get_parent<CharacterTag>().has<CharacterTag>()?"true" : "false"));
 
     auto Idle = dstManager.defaultWorld->entity().add<IdleState>();
     auto Move = dstManager.defaultWorld->entity().add<MoveState>();

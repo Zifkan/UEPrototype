@@ -28,8 +28,7 @@ void IdleStateSystem::OnCreate()
 
 
 void MovementStateSystem::OnCreate()
-{
-	name = "MovementStateSystem";
+{	
     SystemRun->signature("CASE | MoveState").each([this](flecs::entity e, AnimComponent& animComponent, MoveDirectionData& moveDirectionData,MovementSpeed& movementSpeed,FActorComponent actor)
     {
     	auto dir = moveDirectionData.Axises - actor.ptr->GetActorForwardVector();
