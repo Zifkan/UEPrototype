@@ -5,7 +5,6 @@
 #include "BoneData.h"
 #include "flecs.h"
 #include "GameFramework/Actor.h"
-#include "AnimMesh/Public/AnimVertexMeshComponent.h"
 #include "CharacterActor.generated.h"
 
 UCLASS(Blueprintable)

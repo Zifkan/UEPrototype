@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "AnimMesh/Public/AnimVertexMeshComponent.h"
 
-#include "AnimMesh/Shaders/AnimationVertexFactory.h"
+#include "AnimMesh/Shaders/AnimationInstanceVertexFactory.h"
+
 
 UAnimVertexMeshComponent::UAnimVertexMeshComponent()
 {
@@ -14,31 +14,41 @@ UAnimVertexMeshComponent::UAnimVertexMeshComponent()
   
 }
 
-FPrimitiveSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
+FAnimationInstanceVertexSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
 {
-    if (GetStaticMesh() == nullptr || GetStaticMesh()->RenderData == nullptr)
+    LLM_SCOPE(ELLMTag::InstancedMesh);
+    ProxySize = 0;
+
+    // Verify that the mesh is valid before using it.
+    const bool bMeshIsValid = 
+        // make sure we have instances
+        PerInstanceSMData.Num() > 0 &&
+        // make sure we have an actual staticmesh
+        GetStaticMesh() &&
+        GetStaticMesh()->HasValidRenderData() &&
+        // You really can't use hardware instancing on the consoles with multiple elements because they share the same index buffer. 
+        // @todo: Level error or something to let LDs know this
+        1;//GetStaticMesh()->LODModels(0).Elements.Num() == 1;
+
+    if(bMeshIsValid)
     {
-        return nullptr;
+        check(InstancingRandomSeed != 0);
+		
+        // if instance data was modified, update GPU copy
+        // generally happens only in editor 
+        if (InstanceUpdateCmdBuffer.NumTotalCommands() != 0)
+        {
+            FlushInstanceUpdateCommands();
+        }
+		
+        ProxySize = PerInstanceRenderData->ResourceSize;
+        
+        return ::new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel);
     }
-
-    const FStaticMeshLODResourcesArray& LODResources = GetStaticMesh()->RenderData->LODResources;
-    if (LODResources.Num() == 0    || LODResources[FMath::Clamp<int32>(GetStaticMesh()->MinLOD.Default, 0, LODResources.Num()-1)].VertexBuffers.StaticMeshVertexBuffer.GetNumVertices() == 0)
+    else
     {
-        return nullptr;
+        return NULL;
     }
-    LLM_SCOPE(ELLMTag::StaticMesh);
-    
-  //  Proxy = ::new FAnimationVertexSceneProxy(this,false);
-    Proxy = ::new FAnimationVertexSceneProxy(this,false);
-
-   // GetStaticMesh()->RenderData->LODVertexFactories[0].VertexFactory = Proxy->animMeshVertexFactory;
-
-#if STATICMESH_ENABLE_DEBUG_RENDERING
-    SendRenderDebugPhysics(Proxy);
-#endif
-
-    return Proxy;
-
     
 }
 
@@ -51,7 +61,7 @@ void UAnimVertexMeshComponent::SetRenderIndex(int index)
 
 void UAnimVertexMeshComponent::SetBuffer(TArray<FMatrix> buffer)
 {
-    auto* animMeshSceneProxy = (FAnimationVertexSceneProxy*)SceneProxy;
+  /*  auto* animMeshSceneProxy = (FAnimationVertexSceneProxy*)SceneProxy;
     animMeshSceneProxy->SetBuffer(buffer);
 
     if (SceneProxy)
@@ -61,6 +71,6 @@ void UAnimVertexMeshComponent::SetBuffer(TArray<FMatrix> buffer)
             {
          //       animMeshSceneProxy-> UpdateBoneMatrixBufferSB_RenderThread();
             });
-    }
+    }*/
 }
 
