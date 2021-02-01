@@ -1,6 +1,5 @@
 #include "AnimationInstanceVertexFactory.h"
-
-
+#include "RayTracingInstance.h"
 #include "ProfilingDebugging/LoadTimeTracker.h"
 
 const int32 InstancedStaticMeshMaxTexCoord = 8;
@@ -64,171 +63,8 @@ static TAutoConsoleVariable<int32> CVarRayTracingRenderInstancesCulling(
     TEXT("Enable culling for instances in ray tracing (default = 1 (Culling enabled))"));
 
 
-/**
- * Should we cache the material's shadertype on this platform with this vertex factory? 
- */
-bool FAnimMeshInstanceVertexFactory::ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters)
-{
-	return (Parameters.MaterialParameters.bIsUsedWithInstancedStaticMeshes || Parameters.MaterialParameters.bIsSpecialEngineMaterial)
-			&& FLocalVertexFactory::ShouldCompilePermutation(Parameters);
-}
 
-void FAnimMeshInstanceVertexFactory::ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
-{
-	const bool ContainsManualVertexFetch = OutEnvironment.GetDefinitions().Contains("MANUAL_VERTEX_FETCH");
-	if (!ContainsManualVertexFetch && RHISupportsManualVertexFetch(Parameters.Platform))
-	{
-		OutEnvironment.SetDefine(TEXT("MANUAL_VERTEX_FETCH"), TEXT("1"));
-	}
 
-	OutEnvironment.SetDefine(TEXT("USE_INSTANCING"), TEXT("1"));
-	if (IsFeatureLevelSupported(Parameters.Platform, ERHIFeatureLevel::SM5))
-	{
-		OutEnvironment.SetDefine(TEXT("USE_DITHERED_LOD_TRANSITION_FOR_INSTANCED"), ALLOW_DITHERED_LOD_FOR_INSTANCED_STATIC_MESHES);
-	}
-	else
-	{
-		// On mobile dithered LOD transition has to be explicitly enabled in material and project settings
-		OutEnvironment.SetDefine(TEXT("USE_DITHERED_LOD_TRANSITION_FOR_INSTANCED"), Parameters.MaterialParameters.bIsDitheredLODTransition && ALLOW_DITHERED_LOD_FOR_INSTANCED_STATIC_MESHES);
-	}
-
-	FLocalVertexFactory::ModifyCompilationEnvironment(Parameters, OutEnvironment);
-}
-
-void FAnimMeshInstanceVertexFactory::InitRHI()
-{
-	SCOPED_LOADTIMER(FInstancedStaticMeshVertexFactory_InitRHI);
-
-	check(HasValidFeatureLevel());
-
-#if !ALLOW_DITHERED_LOD_FOR_INSTANCED_STATIC_MESHES // position(and normal) only shaders cannot work with dithered LOD
-	// If the vertex buffer containing position is not the same vertex buffer containing the rest of the data,
-	// then initialize PositionStream and PositionDeclaration.
-	if(Data.PositionComponent.VertexBuffer != Data.TangentBasisComponents[0].VertexBuffer)
-	{
-		auto AddDeclaration = [&Data](EVertexInputStreamType InputStreamType, bool bInstanced, bool bAddNormal)
-		{
-			FVertexDeclarationElementList StreamElements;
-			StreamElements.Add(AccessPositionStreamComponent(Data.PositionComponent, 0));
-
-			bAddNormal = bAddNormal && Data.TangentBasisComponents[1].VertexBuffer != NULL;
-			if (bAddNormal)
-			{
-				StreamElements.Add(AccessStreamComponent(Data.TangentBasisComponents[1], 2, InputStreamType));
-			}
-
-			if (bInstanced)
-			{
-				// toss in the instanced location stream
-				StreamElements.Add(AccessPositionStreamComponent(Data.InstanceOriginComponent, 8));
-				StreamElements.Add(AccessPositionStreamComponent(Data.InstanceTransformComponent[0], 9));
-				StreamElements.Add(AccessPositionStreamComponent(Data.InstanceTransformComponent[1], 10));
-				StreamElements.Add(AccessPositionStreamComponent(Data.InstanceTransformComponent[2], 11));
-			}
-
-			InitDeclaration(StreamElements, InputStreamType);
-		};
-		AddDeclaration(EVertexInputStreamType::PositionOnly, bInstanced, false);
-		AddDeclaration(EVertexInputStreamType::PositionAndNormalOnly, bInstanced, true);
-	}
-#endif
-
-	FVertexDeclarationElementList Elements;
-	if(Data.PositionComponent.VertexBuffer != NULL)
-	{
-		Elements.Add(AccessStreamComponent(Data.PositionComponent,0));
-	}
-
-	// only tangent,normal are used by the stream. the binormal is derived in the shader
-	uint8 TangentBasisAttributes[2] = { 1, 2 };
-	for(int32 AxisIndex = 0;AxisIndex < 2;AxisIndex++)
-	{
-		if(Data.TangentBasisComponents[AxisIndex].VertexBuffer != NULL)
-		{
-			Elements.Add(AccessStreamComponent(Data.TangentBasisComponents[AxisIndex],TangentBasisAttributes[AxisIndex]));
-		}
-	}
-
-	if (Data.ColorComponentsSRV == nullptr)
-	{
-		Data.ColorComponentsSRV = GNullColorVertexBuffer.VertexBufferSRV;
-		Data.ColorIndexMask = 0;
-	}
-
-	if(Data.ColorComponent.VertexBuffer)
-	{
-		Elements.Add(AccessStreamComponent(Data.ColorComponent,3));
-	}
-	else
-	{
-		//If the mesh has no color component, set the null color buffer on a new stream with a stride of 0.
-		//This wastes 4 bytes of bandwidth per vertex, but prevents having to compile out twice the number of vertex factories.
-		FVertexStreamComponent NullColorComponent(&GNullColorVertexBuffer, 0, 0, VET_Color, EVertexStreamUsage::ManualFetch);
-		Elements.Add(AccessStreamComponent(NullColorComponent, 3));
-	}
-
-	if(Data.TextureCoordinates.Num())
-	{
-		const int32 BaseTexCoordAttribute = 4;
-		for(int32 CoordinateIndex = 0;CoordinateIndex < Data.TextureCoordinates.Num();CoordinateIndex++)
-		{
-			Elements.Add(AccessStreamComponent(
-				Data.TextureCoordinates[CoordinateIndex],
-				BaseTexCoordAttribute + CoordinateIndex
-				));
-		}
-
-		for(int32 CoordinateIndex = Data.TextureCoordinates.Num(); CoordinateIndex < (InstancedStaticMeshMaxTexCoord + 1) / 2; CoordinateIndex++)
-		{
-			Elements.Add(AccessStreamComponent(
-				Data.TextureCoordinates[Data.TextureCoordinates.Num() - 1],
-				BaseTexCoordAttribute + CoordinateIndex
-				));
-		}
-	}
-
-	if(Data.LightMapCoordinateComponent.VertexBuffer)
-	{
-		Elements.Add(AccessStreamComponent(Data.LightMapCoordinateComponent,15));
-	}
-	else if(Data.TextureCoordinates.Num())
-	{
-		Elements.Add(AccessStreamComponent(Data.TextureCoordinates[0],15));
-	}
-
-	// toss in the instanced location stream
-	check(Data.InstanceOriginComponent.VertexBuffer);
-	if (Data.InstanceOriginComponent.VertexBuffer)
-	{
-		Elements.Add(AccessStreamComponent(Data.InstanceOriginComponent, 8));
-	}
-
-	check(Data.InstanceTransformComponent[0].VertexBuffer);
-	if (Data.InstanceTransformComponent[0].VertexBuffer)
-	{
-		Elements.Add(AccessStreamComponent(Data.InstanceTransformComponent[0], 9));
-		Elements.Add(AccessStreamComponent(Data.InstanceTransformComponent[1], 10));
-		Elements.Add(AccessStreamComponent(Data.InstanceTransformComponent[2], 11));
-	}
-
-	if (Data.InstanceLightmapAndShadowMapUVBiasComponent.VertexBuffer)
-	{
-		Elements.Add(AccessStreamComponent(Data.InstanceLightmapAndShadowMapUVBiasComponent,12));
-	}
-
-	// we don't need per-vertex shadow or lightmap rendering
-	InitDeclaration(Elements);
-
-	{
-		FInstancedStaticMeshVertexFactoryUniformShaderParameters UniformParameters;
-		UniformParameters.VertexFetch_InstanceOriginBuffer = GetInstanceOriginSRV();
-		UniformParameters.VertexFetch_InstanceTransformBuffer = GetInstanceTransformSRV();
-		UniformParameters.VertexFetch_InstanceLightmapBuffer = GetInstanceLightmapSRV();
-		UniformParameters.InstanceCustomDataBuffer = GetInstanceCustomDataSRV();
-		UniformParameters.NumCustomDataFloats = Data.NumCustomDataFloats;
-		UniformBuffer = TUniformBufferRef<FInstancedStaticMeshVertexFactoryUniformShaderParameters>::CreateUniformBufferImmediate(UniformParameters, UniformBuffer_MultiFrame, EUniformBufferValidation::None);
-	}
-}
 
 void FAnimInstancedMeshVertexFactoryShaderParameters::GetElementShaderBindings(const FSceneInterface* Scene,
 	const FSceneView* View, const FMeshMaterialShader* Shader, const EVertexInputStreamType InputStreamType,
@@ -412,7 +248,7 @@ IMPLEMENT_TYPE_LAYOUT(FAnimInstancedMeshVertexFactoryShaderParameters);
 
 IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshInstanceVertexFactory, SF_Vertex, FAnimInstancedMeshVertexFactoryShaderParameters);
 
-IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/AnimVertexFactory.ush", true, true, true, true, true,true,true);
+IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/LocalVertexFactory.ush", true, true, true, true, true,true,true);
 
 /**######################################*/
 
@@ -677,26 +513,24 @@ HHitProxy* FAnimationInstanceVertexSceneProxy::CreateHitProxies(UPrimitiveCompon
 
 
 
-void FAnimationInstanceVertexSceneProxy::InitVertexFactories(UInstancedStaticMeshComponent* Component,FStaticMeshLODResourcesArray& LODModels,ERHIFeatureLevel::Type InFeatureLevel)
+void FAnimMeshInstancedStaticMeshRenderData::InitVertexFactories()
 {
 	// Allocate the vertex factories for each LOD
 	for (int32 LODIndex = 0; LODIndex < LODModels.Num(); LODIndex++)
 	{
-	//	auto vertexFactory = new FAnimMeshInstanceVertexFactory(InFeatureLevel);
-	 //	InstancedRenderData.VertexFactories.Add(vertexFactory);
+		VertexFactories.Add(new FAnimMeshInstanceVertexFactory(FeatureLevel));
 	}
 
 	const int32 LightMapCoordinateIndex = Component->GetStaticMesh()->LightMapCoordinateIndex;
-	ENQUEUE_RENDER_COMMAND(InstancedStaticMeshRenderData_InitVertexFactories)(
-        [this, LightMapCoordinateIndex, &LODModels](FRHICommandListImmediate& RHICmdList)
+	ENQUEUE_RENDER_COMMAND(InstancedStaticMeshRenderData_InitVertexFactories)([this, LightMapCoordinateIndex](FRHICommandListImmediate& RHICmdList)
     {
-        for (int32 LODIndex = 0; LODIndex < InstancedRenderData.VertexFactories.Num(); LODIndex++)
+        for (int32 LODIndex = 0; LODIndex < VertexFactories.Num(); LODIndex++)
         {
             const FStaticMeshLODResources* RenderData = &LODModels[LODIndex];
 
             FAnimMeshInstanceVertexFactory::FDataType Data;
             // Assign to the vertex factory for this LOD.
-            FAnimMeshInstanceVertexFactory& VertexFactory = static_cast<FAnimMeshInstanceVertexFactory&>(InstancedRenderData.VertexFactories[LODIndex]);
+            FAnimMeshInstanceVertexFactory& VertexFactory = VertexFactories[LODIndex];
 
             RenderData->VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(&VertexFactory, Data);
             RenderData->VertexBuffers.StaticMeshVertexBuffer.BindTangentVertexBuffer(&VertexFactory, Data);
@@ -707,8 +541,8 @@ void FAnimationInstanceVertexSceneProxy::InitVertexFactories(UInstancedStaticMes
             }
             RenderData->VertexBuffers.ColorVertexBuffer.BindColorVertexBuffer(&VertexFactory, Data);
 
-      //      check(InstancedRenderData.PerInstanceRenderData);
-       //    InstancedRenderData.PerInstanceRenderData->InstanceBuffer.BindInstanceVertexBuffer(&VertexFactory, Data);
+            check(PerInstanceRenderData);
+           PerInstanceRenderData->InstanceBuffer.BindInstanceVertexBuffer(&VertexFactory, Data);
 
             VertexFactory.SetData(Data);
             VertexFactory.InitResource();
@@ -717,12 +551,10 @@ void FAnimationInstanceVertexSceneProxy::InitVertexFactories(UInstancedStaticMes
 }
 
 
-
-
 #if RHI_RAYTRACING
 void FAnimationInstanceVertexSceneProxy::GetDynamicRayTracingInstances(struct FRayTracingMaterialGatheringContext& Context, TArray<FRayTracingInstance>& OutRayTracingInstances)
 {
-	/*
+	
 	if (!CVarRayTracingRenderInstances.GetValueOnRenderThread())
 	{
 		return;
@@ -832,7 +664,7 @@ void FAnimationInstanceVertexSceneProxy::GetDynamicRayTracingInstances(struct FR
 
 		OutRayTracingInstances.Add(RayTracingInstanceTemplate);
 	}
-	*/
+	
 }
 
 void FAnimationInstanceVertexSceneProxy::SetupRayTracingCullClusters()

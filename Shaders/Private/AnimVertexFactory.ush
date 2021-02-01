@@ -736,7 +736,7 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
 #if USE_INSTANCING
-	return TransformLocalToTranslatedWorld(mul(Position*10, InstanceTransform).xyz, PrimitiveId);
+	return TransformLocalToTranslatedWorld(mul(Position*10, InstanceTransform).xyz, PrimitiveId)*10;
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline

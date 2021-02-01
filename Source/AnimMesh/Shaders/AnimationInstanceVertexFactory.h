@@ -20,79 +20,7 @@ public:
 	{
 	}
 
-	struct FDataType : public FInstancedStaticMeshDataType, public FLocalVertexFactory::FDataType
-	{
-	};
 
-	/**
-	 * Should we cache the material's shadertype on this platform with this vertex factory? 
-	 */
-	static bool ShouldCompilePermutation(const FVertexFactoryShaderPermutationParameters& Parameters);
-
-	/**
-	 * Modify compile environment to enable instancing
-	 * @param OutEnvironment - shader compile environment to modify
-	 */
-	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment);
-
-	/**
-	 * An implementation of the interface used by TSynchronizedResource to update the resource with new data from the game thread.
-	 */
-	void SetData(const FDataType& InData)
-	{
-		FLocalVertexFactory::Data = InData;
-		Data = InData;
-		UpdateRHI();
-	}
-
-	/**
-	 * Copy the data from another vertex factory
-	 * @param Other - factory to copy from
-	 */
-	void Copy(const FInstancedStaticMeshVertexFactory& Other);
-
-	// FRenderResource interface.
-	virtual void InitRHI() override;
-
-	/** Make sure we account for changes in the signature of GetStaticBatchElementVisibility() */
-	static CONSTEXPR uint32 NumBitsForVisibilityMask()
-	{		
-		return 8 * sizeof(uint64);
-	}
-
-#if ALLOW_DITHERED_LOD_FOR_INSTANCED_STATIC_MESHES
-	virtual bool SupportsNullPixelShader() const override { return false; }
-#endif
-
-	inline FRHIShaderResourceView* GetInstanceOriginSRV() const
-	{
-		return Data.InstanceOriginSRV;
-	}
-
-	inline FRHIShaderResourceView* GetInstanceTransformSRV() const
-	{
-		return Data.InstanceTransformSRV;
-	}
-
-	inline FRHIShaderResourceView* GetInstanceLightmapSRV() const
-	{
-		return Data.InstanceLightmapSRV;
-	}
-
-	inline FRHIShaderResourceView* GetInstanceCustomDataSRV() const
-	{
-		return Data.InstanceCustomDataSRV;
-	}
-
-	FRHIUniformBuffer* GetUniformBuffer() const
-	{
-		return UniformBuffer.GetReference();
-	}
-
-private:
-	FDataType Data;
-
-	TUniformBufferRef<FInstancedStaticMeshVertexFactoryUniformShaderParameters> UniformBuffer;
 };
 
 class FAnimInstancedMeshVertexFactoryShaderParameters : public FLocalVertexFactoryShaderParametersBase
@@ -145,6 +73,75 @@ private:
 };
 
 
+class  FAnimMeshInstancedStaticMeshRenderData
+{
+public:	
+	FAnimMeshInstancedStaticMeshRenderData(UInstancedStaticMeshComponent* InComponent, ERHIFeatureLevel::Type InFeatureLevel)
+   : Component(InComponent)
+   , PerInstanceRenderData(InComponent->PerInstanceRenderData)
+   , LODModels(Component->GetStaticMesh()->RenderData->LODResources)
+   , FeatureLevel(InFeatureLevel)
+	{
+		check(PerInstanceRenderData.IsValid());
+		// Allocate the vertex factories for each LOD
+		InitVertexFactories();
+		RegisterSpeedTreeWind();
+	}
+
+	void ReleaseResources(FSceneInterface* Scene, const UStaticMesh* StaticMesh)
+	{
+		// unregister SpeedTree wind with the scene
+		if (Scene && StaticMesh && StaticMesh->SpeedTreeWind.IsValid())
+		{
+			for (int32 LODIndex = 0; LODIndex < VertexFactories.Num(); LODIndex++)
+			{
+				Scene->RemoveSpeedTreeWind_RenderThread(&VertexFactories[LODIndex], StaticMesh);
+			}
+		}
+
+		for (int32 LODIndex = 0; LODIndex < VertexFactories.Num(); LODIndex++)
+		{
+			VertexFactories[LODIndex].ReleaseResource();
+		}
+	}
+
+	/** Source component */
+	UInstancedStaticMeshComponent* Component;
+
+	/** Per instance render data, could be shared with component */
+	TSharedPtr<FPerInstanceRenderData, ESPMode::ThreadSafe> PerInstanceRenderData;
+
+	/** Vertex factory */
+	TIndirectArray<FAnimMeshInstanceVertexFactory> VertexFactories;
+
+	/** LOD render data from the static mesh. */
+	FStaticMeshLODResourcesArray& LODModels;
+
+	/** Feature level used when creating instance data */
+	ERHIFeatureLevel::Type FeatureLevel;
+
+private:
+	void InitVertexFactories();
+
+	void RegisterSpeedTreeWind()
+	{
+		// register SpeedTree wind with the scene
+		if (Component->GetStaticMesh()->SpeedTreeWind.IsValid())
+		{
+			for (int32 LODIndex = 0; LODIndex < LODModels.Num(); LODIndex++)
+			{
+				if (Component->GetScene())
+				{
+					Component->GetScene()->AddSpeedTreeWind(&VertexFactories[LODIndex], Component->GetStaticMesh());
+				}
+			}
+		}
+	}
+};
+
+
+
+
 
 class FAnimationInstanceVertexSceneProxy : public FStaticMeshSceneProxy
 {
@@ -159,13 +156,12 @@ public:
 	,	bHasSelectedInstances(InComponent->SelectedInstances.Num() > 0)
 #endif
 	{
-	 	InitVertexFactories(InComponent,InComponent->GetStaticMesh()->RenderData->LODResources,InFeatureLevel);
 		bVFRequiresPrimitiveUniformBuffer = true;
 		SetupProxy(InComponent);
 
 #if RHI_RAYTRACING
 		SetupRayTracingCullClusters();
-#endif
+#endif	
 	}
 
 	~FAnimationInstanceVertexSceneProxy()
@@ -234,15 +230,14 @@ public:
 	 * @return The hit proxy to use by default for elements drawn by DrawDynamicElements.
 	 */
 	virtual HHitProxy* CreateHitProxies(UPrimitiveComponent* Component,TArray<TRefCountPtr<HHitProxy> >& OutHitProxies) override;
-	void InitVertexFactories(UInstancedStaticMeshComponent* Component,FStaticMeshLODResourcesArray& LODModels,ERHIFeatureLevel::Type InFeatureLevel);
-
+	
 	virtual bool IsDetailMesh() const override
 	{
 		return true;
 	}
 
 	/** Per component render data */
-	FInstancedStaticMeshRenderData InstancedRenderData;
+	FAnimMeshInstancedStaticMeshRenderData InstancedRenderData;
 
 protected:
 	/** Cache of the StaticMesh asset, needed to release SpeedTree resources*/
