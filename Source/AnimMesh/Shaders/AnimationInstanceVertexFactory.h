@@ -19,8 +19,7 @@ public:
 		: FInstancedStaticMeshVertexFactory(InFeatureLevel)
 	{
 	}
-
-
+	
 };
 
 class FAnimInstancedMeshVertexFactoryShaderParameters : public FLocalVertexFactoryShaderParametersBase
@@ -85,7 +84,7 @@ public:
 		check(PerInstanceRenderData.IsValid());
 		// Allocate the vertex factories for each LOD
 		InitVertexFactories();
-		RegisterSpeedTreeWind();
+	//	RegisterSpeedTreeWind();
 	}
 
 	void ReleaseResources(FSceneInterface* Scene, const UStaticMesh* StaticMesh)

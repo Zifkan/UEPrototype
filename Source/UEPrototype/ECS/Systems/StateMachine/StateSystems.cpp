@@ -33,7 +33,7 @@ void MovementStateSystem::OnCreate()
     {
     	auto dir = moveDirectionData.Axises - actor.ptr->GetActorForwardVector();
         movementSpeed.Speed = 1000.0f;  
-
+    	animComponent.AnimInstancePtr->IsBlocking = false;
 
     	//TODO If camera focus lock on target for player or enemy just focusing on target should use Inputs direction to set anim move direction  
         animComponent.AnimInstancePtr->MoveDirection = FVector2D( 0,movementSpeed.SpeedModifier>1?1:0.5f);
@@ -64,14 +64,12 @@ void BlockingStateSystem::OnCreate()
         animComponent.AnimInstancePtr->IsBlocking = true;       
 		
 		auto dir = moveDirectionData.Axises - actor.ptr->GetActorForwardVector();
-        movementSpeed.Speed = 1000.0f;  
-		movementSpeed.SpeedModifier = 0.75f;  
+//        movementSpeed.Speed = 500.0f;  
+		movementSpeed.SpeedModifier = 0.5f;  
 
         //TODO If camera focus lock on target for player or enemy just focusing on target should use Inputs direction to set anim move direction  
-        animComponent.AnimInstancePtr->MoveDirection = FVector2D( 0,movementSpeed.Speed>1?1:0);
+   //     animComponent.AnimInstancePtr->MoveDirection = FVector2D( 0,movementSpeed.Speed>1?0.5f:0);
   
-        SetActionAvailable<MoveInputTag>(e,{ 0.0,0.0,0.0f});		
-		
-    
+        SetActionAvailable<MoveInputTag>(e,{ 0.0,0.0,0.0f});
     }).kind(0);
 }

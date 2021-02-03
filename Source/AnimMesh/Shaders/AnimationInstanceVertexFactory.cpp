@@ -2,7 +2,13 @@
 #include "RayTracingInstance.h"
 #include "ProfilingDebugging/LoadTimeTracker.h"
 
+IMPLEMENT_TYPE_LAYOUT(FAnimInstancedMeshVertexFactoryShaderParameters);
+
+
 const int32 InstancedStaticMeshMaxTexCoord = 8;
+
+
+
 
 TAutoConsoleVariable<int32> CVarMinLOD(
     TEXT("foliage.MinLOD"),
@@ -64,8 +70,6 @@ static TAutoConsoleVariable<int32> CVarRayTracingRenderInstancesCulling(
 
 
 
-
-
 void FAnimInstancedMeshVertexFactoryShaderParameters::GetElementShaderBindings(const FSceneInterface* Scene,
 	const FSceneView* View, const FMeshMaterialShader* Shader, const EVertexInputStreamType InputStreamType,
 	ERHIFeatureLevel::Type FeatureLevel, const FVertexFactory* VertexFactory, const FMeshBatchElement& BatchElement,
@@ -76,7 +80,7 @@ void FAnimInstancedMeshVertexFactoryShaderParameters::GetElementShaderBindings(c
 	FLocalVertexFactoryShaderParametersBase::GetElementShaderBindingsBase(Scene, View, Shader, InputStreamType, FeatureLevel, VertexFactory, BatchElement, VertexFactoryUniformBuffer, ShaderBindings, VertexStreams);
 
 	const FInstancingUserData* InstancingUserData = (const FInstancingUserData*)BatchElement.UserData;
-	const auto* InstancedVertexFactory = static_cast<const FInstancedStaticMeshVertexFactory*>(VertexFactory);
+	const auto* InstancedVertexFactory = static_cast<const FAnimMeshInstanceVertexFactory*>(VertexFactory);
 	const int32 InstanceOffsetValue = BatchElement.UserIndex;
 
 	ShaderBindings.Add(Shader->GetUniformBufferParameter<FInstancedStaticMeshVertexFactoryUniformShaderParameters>(), InstancedVertexFactory->GetUniformBuffer());
@@ -242,13 +246,14 @@ void FAnimInstancedMeshVertexFactoryShaderParameters::GetElementShaderBindings(c
 }
 
 
-IMPLEMENT_TYPE_LAYOUT(FAnimInstancedMeshVertexFactoryShaderParameters);
 
 ///////////////////////////////////////////////////////////////////////
 
 IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshInstanceVertexFactory, SF_Vertex, FAnimInstancedMeshVertexFactoryShaderParameters);
-
-IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/LocalVertexFactory.ush", true, true, true, true, true,true,true);
+#if RHI_RAYTRACING
+IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshInstanceVertexFactory, SF_RayHitGroup, FAnimInstancedMeshVertexFactoryShaderParameters);
+#endif
+IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/AnimVertexFactory.ush", true, true, true, true, true,true,false);
 
 /**######################################*/
 

@@ -181,7 +181,7 @@ struct FVertexFactoryInput
 #endif //USE_INSTANCING
 
 #if VF_USE_PRIMITIVE_SCENE_DATA
-	uint PrimitiveId : ATTRIBUTE13;
+	//uint PrimitiveId : ATTRIBUTE13;
 #endif
 
 #if NEEDS_LIGHTMAP_COORDINATE && !MANUAL_VERTEX_FETCH
@@ -736,7 +736,7 @@ float4 CalcWorldPosition(float4 Position, uint PrimitiveId)
 #endif	// USE_INSTANCING
 {
 #if USE_INSTANCING
-	return TransformLocalToTranslatedWorld(mul(Position*10, InstanceTransform).xyz, PrimitiveId)*10;
+	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
 #elif USE_SPLINEDEFORM
 /*
 	// Make transform for this point along spline

@@ -14,7 +14,7 @@ public class AnimMesh : ModuleRules
 
  
  		PrivateIncludePaths.Add(EngineDirectory + "/Shaders/Shared");
- 
+        PrivateIncludePaths.Add(EngineDirectory + "/Shaders/Private");
 		PublicDependencyModuleNames.AddRange(new string[] { });
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
