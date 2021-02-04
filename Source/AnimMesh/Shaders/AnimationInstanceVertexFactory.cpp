@@ -550,6 +550,13 @@ void FAnimationInstanceVertexSceneProxy::UpdateMatrixBufferSB_RenderThread()
 	}
 }
 
+void FAnimationInstanceVertexSceneProxy::UpdateBoneMatrixBuffer_RenderThread(TArray<FMatrix> Array)
+{
+	check(IsInRenderingThread());
+	bMatrixBufferDirty = true;
+	MatrixBuffer = Array;
+}
+
 
 void FAnimMeshInstancedStaticMeshRenderData::InitVertexFactories(FAnimationInstanceVertexSceneProxy* SceneProxy)
 {

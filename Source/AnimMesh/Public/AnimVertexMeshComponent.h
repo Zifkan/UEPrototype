@@ -21,7 +21,13 @@ public:
 
 	virtual FAnimationInstanceVertexSceneProxy* CreateSceneProxy() override;
 
+	
 
+	
 	void SetRenderIndex(int index);
 	void SetBuffer(TArray<FMatrix> buffer);
+	void SetBufferFinish();
+	
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType,FActorComponentTickFunction* ThisTickFunction) override;
+	float scale;
 };

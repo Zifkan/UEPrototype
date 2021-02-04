@@ -9,7 +9,7 @@ UAnimVertexMeshComponent::UAnimVertexMeshComponent()
 {
     // Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
     // off to improve performance if you don't need them.
-    PrimaryComponentTick.bCanEverTick = false;
+    PrimaryComponentTick.bCanEverTick = true ;
     
   
 }
@@ -61,16 +61,41 @@ void UAnimVertexMeshComponent::SetRenderIndex(int index)
 
 void UAnimVertexMeshComponent::SetBuffer(TArray<FMatrix> buffer)
 {
-  /*  auto* animMeshSceneProxy = (FAnimationVertexSceneProxy*)SceneProxy;
-    animMeshSceneProxy->SetBuffer(buffer);
+    auto* animMeshSceneProxy = (FAnimationInstanceVertexSceneProxy*)SceneProxy;    
 
     if (SceneProxy)
     {            
         ENQUEUE_RENDER_COMMAND(FDeformMeshAllTransformsSBUpdate)(
+            [animMeshSceneProxy, buffer](FRHICommandListImmediate& RHICmdList)
+            {
+                 animMeshSceneProxy-> UpdateBoneMatrixBuffer_RenderThread(buffer);
+            });
+    }
+}
+
+void UAnimVertexMeshComponent::SetBufferFinish()
+{
+    if (SceneProxy)
+    {
+        // Enqueue command to modify render thread info
+        auto* animMeshSceneProxy = (FAnimationInstanceVertexSceneProxy*)SceneProxy;    
+        ENQUEUE_RENDER_COMMAND(FDeformMeshAllTransformsSBUpdate)(
             [animMeshSceneProxy](FRHICommandListImmediate& RHICmdList)
             {
-         //       animMeshSceneProxy-> UpdateBoneMatrixBufferSB_RenderThread();
+                animMeshSceneProxy->UpdateMatrixBufferSB_RenderThread();
             });
-    }*/
+    }
+}
+
+void UAnimVertexMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,    FActorComponentTickFunction* ThisTickFunction)
+{
+   
+    scale+=DeltaTime;
+
+    scale = scale>5?1:scale;
+    
+    SetBuffer(TArray<FMatrix>({FMatrix(FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale)}));
+    SetBufferFinish();
+    
 }
 

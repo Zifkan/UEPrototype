@@ -252,6 +252,9 @@ public:
 	/** Per component render data */
 	FAnimMeshInstancedStaticMeshRenderData InstancedRenderData;
 
+
+	void UpdateBoneMatrixBuffer_RenderThread(TArray<FMatrix> Array);
+
 protected:
 	/** Cache of the StaticMesh asset, needed to release SpeedTree resources*/
 	UStaticMesh* StaticMesh;
