@@ -10,6 +10,7 @@
 #include "Engine/InstancedStaticMesh.h"
 
 
+class FAnimationInstanceVertexSceneProxy;
 
 struct FAnimMeshInstanceVertexFactory : FInstancedStaticMeshVertexFactory
 {
@@ -19,6 +20,10 @@ public:
 		: FInstancedStaticMeshVertexFactory(InFeatureLevel)
 	{
 	}
+
+	
+
+	FAnimationInstanceVertexSceneProxy* SceneProxy;
 	
 };
 
@@ -41,6 +46,8 @@ public:
 		VertexFetch_InstanceTransformBufferParameter.Bind(ParameterMap, TEXT("VertexFetch_InstanceTransformBuffer"));
 		VertexFetch_InstanceLightmapBufferParameter.Bind(ParameterMap, TEXT("VertexFetch_InstanceLightmapBuffer"));
 		InstanceOffset.Bind(ParameterMap, TEXT("InstanceOffset"));
+
+		Instancing_MatrixBufferSRVParameter.Bind(ParameterMap, TEXT("Instancing_MatrixBufferSRV"));
 	}
 
 	void GetElementShaderBindings(
@@ -69,13 +76,16 @@ private:
 	LAYOUT_FIELD(FShaderResourceParameter, VertexFetch_InstanceTransformBufferParameter)
 	LAYOUT_FIELD(FShaderResourceParameter, VertexFetch_InstanceLightmapBufferParameter)
 	LAYOUT_FIELD(FShaderParameter, InstanceOffset)
+
+	
+	LAYOUT_FIELD(FShaderResourceParameter, Instancing_MatrixBufferSRVParameter);
 };
 
 
 class  FAnimMeshInstancedStaticMeshRenderData
 {
 public:	
-	FAnimMeshInstancedStaticMeshRenderData(UInstancedStaticMeshComponent* InComponent, ERHIFeatureLevel::Type InFeatureLevel)
+	FAnimMeshInstancedStaticMeshRenderData(UInstancedStaticMeshComponent* InComponent, ERHIFeatureLevel::Type InFeatureLevel,FAnimationInstanceVertexSceneProxy * sceneProxy)
    : Component(InComponent)
    , PerInstanceRenderData(InComponent->PerInstanceRenderData)
    , LODModels(Component->GetStaticMesh()->RenderData->LODResources)
@@ -83,7 +93,7 @@ public:
 	{
 		check(PerInstanceRenderData.IsValid());
 		// Allocate the vertex factories for each LOD
-		InitVertexFactories();
+		InitVertexFactories(sceneProxy);
 	//	RegisterSpeedTreeWind();
 	}
 
@@ -120,7 +130,7 @@ public:
 	ERHIFeatureLevel::Type FeatureLevel;
 
 private:
-	void InitVertexFactories();
+	void InitVertexFactories(FAnimationInstanceVertexSceneProxy * sceneProxy);
 
 	void RegisterSpeedTreeWind()
 	{
@@ -150,7 +160,7 @@ public:
 	FAnimationInstanceVertexSceneProxy(UInstancedStaticMeshComponent* InComponent, ERHIFeatureLevel::Type InFeatureLevel)
 	:	FStaticMeshSceneProxy(InComponent, true)
 	,	StaticMesh(InComponent->GetStaticMesh())
-	,	InstancedRenderData(InComponent, InFeatureLevel)
+	,	InstancedRenderData(InComponent, InFeatureLevel,this)
 #if WITH_EDITOR
 	,	bHasSelectedInstances(InComponent->SelectedInstances.Num() > 0)
 #endif
@@ -165,6 +175,8 @@ public:
 
 	~FAnimationInstanceVertexSceneProxy()
 	{
+		MatrixBufferSB.SafeRelease();
+		MatrixBufferSRV.SafeRelease();
 	}
 
 	// FPrimitiveSceneProxy interface.
@@ -229,7 +241,9 @@ public:
 	 * @return The hit proxy to use by default for elements drawn by DrawDynamicElements.
 	 */
 	virtual HHitProxy* CreateHitProxies(UPrimitiveComponent* Component,TArray<TRefCountPtr<HHitProxy> >& OutHitProxies) override;
-	
+
+	void UpdateMatrixBufferSB_RenderThread();
+
 	virtual bool IsDetailMesh() const override
 	{
 		return true;
@@ -279,9 +293,20 @@ protected:
 	/** Common path for the Get*MeshElement functions */
 	void SetupInstancedMeshBatch(int32 LODIndex, int32 BatchIndex, FMeshBatch& OutMeshBatch) const;
 
+	TArray<FMatrix> MatrixBuffer;
+
+	//The structured buffer that will contain all the deform transoform and going to be used as a shader resource
+	FStructuredBufferRHIRef MatrixBufferSB;
+public:
+	//The shader resource view of the structured buffer, this is what we bind to the vertex factory shader
+	FShaderResourceViewRHIRef MatrixBufferSRV;
+
 private:
 
 	void SetupProxy(UInstancedStaticMeshComponent* InComponent);
+
+	
+	bool bMatrixBufferDirty;
 };
 
 

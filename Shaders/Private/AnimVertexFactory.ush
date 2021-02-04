@@ -44,8 +44,11 @@ float4 InstancingFadeOutParams;
 #define ANIM_MESH 0
 #endif
 
+
+StructuredBuffer<float4x4> Instancing_MatrixBufferSRV ;
+
 #if ANIM_MESH
-StructuredBuffer<float4x4> BoneMatrixBuffer : register(t0);
+
 int AMRendererIndex;
 
 
@@ -584,7 +587,7 @@ float4 AnimDeformMesh(/*FVertexFactoryInput Input*/)
 // USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
 {
-	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
+	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId)*Instancing_MatrixBufferSRV[0][0];
 }
 
 

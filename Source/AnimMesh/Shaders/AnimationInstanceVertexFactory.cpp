@@ -243,6 +243,8 @@ void FAnimInstancedMeshVertexFactoryShaderParameters::GetElementShaderBindings(c
 		ShaderBindings.Add(InstancingFadeOutParamsParameter, InstancingFadeOutParams);
 
 	}
+	check(InstancedVertexFactory);
+	ShaderBindings.Add(Instancing_MatrixBufferSRVParameter, InstancedVertexFactory->SceneProxy->MatrixBufferSRV);
 }
 
 
@@ -400,6 +402,24 @@ void FAnimationInstanceVertexSceneProxy::SetupProxy(UInstancedStaticMeshComponen
 	// unselected only
 	UserData_DeselectedInstances = UserData_AllInstances;
 	UserData_DeselectedInstances.bRenderSelected = false;
+
+	MatrixBuffer.AddZeroed(1);
+	MatrixBuffer[0] = FMatrix(FVector(1,1,1),FVector(1,1,1),FVector(1,1,1),FVector(1,1,1));
+	//We first create a resource array to use it in the create info for initializing the structured buffer on creation
+	TResourceArray<FMatrix>* ResourceArray = new TResourceArray<FMatrix>(true);
+	FRHIResourceCreateInfo CreateInfo;
+	ResourceArray->Append(MatrixBuffer);
+	CreateInfo.ResourceArray = ResourceArray;
+	//Set the debug name so we can find the resource when debugging in RenderDoc
+	CreateInfo.DebugName = TEXT("DeformMesh_TransformsSB");
+
+	MatrixBufferSB = RHICreateStructuredBuffer(sizeof(FMatrix), 1 * sizeof(FMatrix), BUF_ShaderResource, CreateInfo);
+	bMatrixBufferDirty = false;
+	///////////////////////////////////////////////////////////////
+	//// CREATING AN SRV FOR THE STRUCTUED BUFFER SO WA CAN USE IT AS A SHADER RESOURCE PARAMETER AND BIND IT TO THE VERTEX FACTORY
+	MatrixBufferSRV = RHICreateShaderResourceView(MatrixBufferSB);
+
+	///////////////////////////////////////////////////////////////
 }
 
 void FAnimationInstanceVertexSceneProxy::DestroyRenderThreadResources()
@@ -517,13 +537,29 @@ HHitProxy* FAnimationInstanceVertexSceneProxy::CreateHitProxies(UPrimitiveCompon
 }
 
 
+void FAnimationInstanceVertexSceneProxy::UpdateMatrixBufferSB_RenderThread()
+{
+	check(IsInRenderingThread());
+	//Update the structured buffer only if it needs update
+	if(bMatrixBufferDirty)
+	{
+		void* StructuredBufferData = RHILockStructuredBuffer(MatrixBufferSB, 0, MatrixBuffer.Num() * sizeof(FMatrix), RLM_WriteOnly);
+		FMemory::Memcpy(StructuredBufferData, MatrixBuffer.GetData(), MatrixBuffer.Num() * sizeof(FMatrix));
+		RHIUnlockStructuredBuffer(MatrixBufferSB);
+		bMatrixBufferDirty = false;
+	}
+}
 
-void FAnimMeshInstancedStaticMeshRenderData::InitVertexFactories()
+
+void FAnimMeshInstancedStaticMeshRenderData::InitVertexFactories(FAnimationInstanceVertexSceneProxy* SceneProxy)
 {
 	// Allocate the vertex factories for each LOD
 	for (int32 LODIndex = 0; LODIndex < LODModels.Num(); LODIndex++)
 	{
-		VertexFactories.Add(new FAnimMeshInstanceVertexFactory(FeatureLevel));
+		auto factory = new FAnimMeshInstanceVertexFactory(FeatureLevel);
+		
+		factory->SceneProxy = SceneProxy;
+		VertexFactories.Add(factory);
 	}
 
 	const int32 LightMapCoordinateIndex = Component->GetStaticMesh()->LightMapCoordinateIndex;
@@ -536,7 +572,9 @@ void FAnimMeshInstancedStaticMeshRenderData::InitVertexFactories()
             FAnimMeshInstanceVertexFactory::FDataType Data;
             // Assign to the vertex factory for this LOD.
             FAnimMeshInstanceVertexFactory& VertexFactory = VertexFactories[LODIndex];
-
+        	
+        
+        	
             RenderData->VertexBuffers.PositionVertexBuffer.BindPositionVertexBuffer(&VertexFactory, Data);
             RenderData->VertexBuffers.StaticMeshVertexBuffer.BindTangentVertexBuffer(&VertexFactory, Data);
             RenderData->VertexBuffers.StaticMeshVertexBuffer.BindPackedTexCoordVertexBuffer(&VertexFactory, Data);
