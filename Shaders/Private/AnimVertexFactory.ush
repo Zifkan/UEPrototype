@@ -40,32 +40,24 @@ float4 InstancingFadeOutParams;
 #endif	// USE_INSTANCING
 
 
-#ifndef ANIM_MESH
-#define ANIM_MESH 0
-#endif
-
-
-StructuredBuffer<float4x4> Instancing_MatrixBufferSRV ;
-
-#if ANIM_MESH
+StructuredBuffer<float4x4> Instancing_MatrixBufferSRV;
 
 int AMRendererIndex;
 
+struct CustomRenderData
+{
+	int boneIndex1;
+	int boneIndex2;
+	int boneIndex3;
+	int boneIndex4;
 
- struct CustomRenderData
- {
-     int boneIndex1;
-     int boneIndex2;
-     int boneIndex3;
-     int boneIndex4;
-
-     float boneWeight1;
-     float boneWeight2;
-     float boneWeight3;
-     float boneWeight4;
+	float boneWeight1;
+	float boneWeight2;
+	float boneWeight3;
+	float boneWeight4;
  	
-     int renderIndex;
- };
+	int renderIndex;
+};
 
 
 float4 DecodeFloatToFloat2( float v )
@@ -78,7 +70,7 @@ float4 DecodeFloatToFloat2( float v )
 	return enc;
 }
 
-#endif
+
 
 #ifndef MANUAL_VERTEX_FETCH
 #define MANUAL_VERTEX_FETCH 0
@@ -95,11 +87,7 @@ float4 DecodeFloatToFloat2( float v )
 	Buffer<float4> VertexFetch_InstanceTransformBuffer;
 	Buffer<float4> VertexFetch_InstanceLightmapBuffer;
 
-	#if USE_INSTANCING && USE_INSTANCING_BONEMAP
-		Buffer<float4> VertexFetch_InstancePrevTransformBuffer;
-		Buffer<uint> VertexFetch_InstanceBoneMapBuffer;
-	#endif
-
+	
 	uint InstanceOffset;
 
 #endif //! MANUAL_VERTEX_FETCH
@@ -111,7 +99,7 @@ struct FVertexFactoryInput
 {
 	float4	Position	: ATTRIBUTE0;
 
-#if !MANUAL_VERTEX_FETCH && !ANIM_MESH
+#if !MANUAL_VERTEX_FETCH
 	#if METAL_PROFILE
 		float3	TangentX	: ATTRIBUTE1;
 		// TangentZ.w contains sign of tangent basis determinant
@@ -312,16 +300,6 @@ float4x4 GetInstanceTransform(FVertexFactoryIntermediates Intermediates)
 		float4(Intermediates.InstanceOrigin.xyz, 1.0f));
 }
 
-#if USE_INSTANCING && USE_INSTANCING_BONEMAP
-float4x4 GetInstancePrevTransform(FVertexFactoryIntermediates Intermediates)
-{
-	return float4x4(
-		float4(Intermediates.InstancePrevTransform1.xyz, 0.0f),
-		float4(Intermediates.InstancePrevTransform2.xyz, 0.0f),
-		float4(Intermediates.InstancePrevTransform3.xyz, 0.0f),
-		float4(Intermediates.InstancePrevOrigin.xyz, 1.0f));
-}
-#endif
 
 float4x4 GetInstanceTransform(FPositionOnlyVertexFactoryInput Input)
 {
@@ -548,7 +526,6 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 }
 
 
-#if ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 1
 
 float4 AnimDeformMesh(/*FVertexFactoryInput Input*/)
 {
@@ -582,7 +559,7 @@ float4 AnimDeformMesh(/*FVertexFactoryInput Input*/)
 	 return float4(1000,1000,41,0);
 	// return mul(mat, Input.Position);
 }
-#endif
+
 
 // USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
@@ -595,8 +572,7 @@ half3x3 CalcTangentToLocal(FVertexFactoryInput Input, out float TangentSign)
 {
 	half3x3 Result;
 	
-#if !ANIM_MESH
-	
+
 #if MANUAL_VERTEX_FETCH
 	half3 TangentInputX = LocalVF.VertexFetch_PackedTangentsBuffer[2 * (LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) + 0].xyz;
 	half4 TangentInputZ = LocalVF.VertexFetch_PackedTangentsBuffer[2 * (LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) + 1].xyzw;
@@ -624,12 +600,8 @@ half3x3 CalcTangentToLocal(FVertexFactoryInput Input, out float TangentSign)
 	Result[0] = cross(TangentY, TangentZ.xyz) * TangentZ.w;
 	Result[1] = TangentY;
 	Result[2] = TangentZ.xyz;
-#else
-	Result[0] = half3(0.0,0.0,0.0);
-	Result[1] = half3(0.0,0.0,0.0);
-	Result[2] = half3(0.0,0.0,0.0);
-	TangentSign = 0.0;
-#endif
+
+
 	return Result;
 }
 
@@ -659,11 +631,9 @@ FVertexFactoryIntermediates GetVertexFactoryIntermediates(FVertexFactoryInput In
 	Intermediates.Color = LocalVF.VertexFetch_ColorComponentsBuffer[(LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) & LocalVF.VertexFetch_Parameters[VF_ColorIndexMask_Index]] FMANUALFETCH_COLOR_COMPONENT_SWIZZLE; // Swizzle vertex color.
 
 #else
-	#if ANIM_MESH
-	Intermediates.Color = half4(0.0, 0.0, 0.0, 0.0);
-	#else
+	
 	Intermediates.Color = Input.Color FCOLOR_COMPONENT_SWIZZLE; // Swizzle vertex color.
-	#endif
+	
 #endif
 
 #if USE_INSTANCING && MANUAL_VERTEX_FETCH && !USE_INSTANCING_BONEMAP
@@ -721,13 +691,10 @@ half3x3 VertexFactoryGetTangentToLocal( FVertexFactoryInput Input, FVertexFactor
 
 // @return translated world position
 float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIntermediates Intermediates)
-{
-#if USE_INSTANCING
-	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
-#elif ANIM_MESH && NUM_MATERIAL_TEXCOORDS_VERTEX == 1
-	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
+{ 
 
-#endif	// USE_INSTANCING
+	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
+
 }
 
 float4 VertexFactoryGetRasterizedWorldPosition(FVertexFactoryInput Input, FVertexFactoryIntermediates Intermediates, float4 InWorldPosition)
