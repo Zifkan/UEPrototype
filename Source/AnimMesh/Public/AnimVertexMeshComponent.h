@@ -17,10 +17,14 @@ class ANIMMESH_API UAnimVertexMeshComponent : public UInstancedStaticMeshCompone
 
 public:
 	// Sets default values for this component's properties
-	UAnimVertexMeshComponent();
+	UAnimVertexMeshComponent()
+	:UInstancedStaticMeshComponent()
+	{
+		
+	};
 
 	virtual FAnimationInstanceVertexSceneProxy* CreateSceneProxy() override;
-
+	
 	
 
 	

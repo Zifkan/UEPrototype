@@ -40,7 +40,7 @@ float4 InstancingFadeOutParams;
 #endif	// USE_INSTANCING
 
 
-StructuredBuffer<float4x4> Instancing_MatrixBufferSRV;
+StructuredBuffer<float4x4> Instancing_BoneMatrixBufferSRV;
 
 int AMRendererIndex;
 
@@ -527,13 +527,13 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 
 
 
-float4 AnimDeformMesh(/*FVertexFactoryInput Input*/)
+float4 AnimDeformMesh(FVertexFactoryInput Input)
 {
-/*
+
 	CustomRenderData renderData;
 
-	float4 indexes = DecodeFloatToFloat2(Input.PackedTexCoords2.x);
-	float4 weights = DecodeFloatToFloat2(Input.PackedTexCoords2.y);
+	float4 indexes = DecodeFloatToFloat2(/*Input.PackedTexCoords2.x*/0);
+	float4 weights = DecodeFloatToFloat2(/*Input.PackedTexCoords2.y*/0);
 
 	
 	int  boneIndex1 = indexes.x;
@@ -549,22 +549,22 @@ float4 AnimDeformMesh(/*FVertexFactoryInput Input*/)
 	int renderIndex = AMRendererIndex;   
 	int startIdx = renderIndex * 256;
 
-	float4x4 mat =  BoneMatrixBuffer[startIdx + boneIndex1] * boneWeight1 +
-					BoneMatrixBuffer[startIdx + boneIndex2] * boneWeight2 +
-					BoneMatrixBuffer[startIdx + boneIndex3] * boneWeight3 +
-					BoneMatrixBuffer[startIdx + boneIndex4] * boneWeight4;
+	float4x4 mat =  Instancing_BoneMatrixBufferSRV[startIdx + boneIndex1] * boneWeight1 +
+					Instancing_BoneMatrixBufferSRV[startIdx + boneIndex2] * boneWeight2 +
+					Instancing_BoneMatrixBufferSRV[startIdx + boneIndex3] * boneWeight3 +
+					Instancing_BoneMatrixBufferSRV[startIdx + boneIndex4] * boneWeight4;
 
-	*/
+	
 
-	 return float4(1000,1000,41,0);
-	// return mul(mat, Input.Position);
+	  return mul(mat, Input.Position);
 }
 
 
 // USE_INSTANCING
+//TODO Calc POs here
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
 {
-	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId)*Instancing_MatrixBufferSRV[0][0];
+	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
 }
 
 

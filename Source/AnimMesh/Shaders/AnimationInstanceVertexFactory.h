@@ -21,16 +21,16 @@ public:
 	{
 	}
 
-	
 
-	FAnimationInstanceVertexSceneProxy* SceneProxy;
-	
+	FAnimationInstanceVertexSceneProxy* SceneProxy;	
 };
 
 class FAnimInstancedMeshVertexFactoryShaderParameters : public FLocalVertexFactoryShaderParametersBase
 {
 	DECLARE_TYPE_LAYOUT(FAnimInstancedMeshVertexFactoryShaderParameters, NonVirtual);
 public:
+
+
 	void Bind(const FShaderParameterMap& ParameterMap) 
 	{
 		FLocalVertexFactoryShaderParametersBase::Bind(ParameterMap);
@@ -47,7 +47,8 @@ public:
 		VertexFetch_InstanceLightmapBufferParameter.Bind(ParameterMap, TEXT("VertexFetch_InstanceLightmapBuffer"));
 		InstanceOffset.Bind(ParameterMap, TEXT("InstanceOffset"));
 
-		Instancing_MatrixBufferSRVParameter.Bind(ParameterMap, TEXT("Instancing_MatrixBufferSRV"));
+		Instancing_MatrixBufferSRVParameter.Bind(ParameterMap, TEXT("Instancing_BoneMatrixBufferSRV"));
+		AMRendererIndexParameter.Bind(ParameterMap, TEXT("AMRendererIndex"));
 	}
 
 	void GetElementShaderBindings(
@@ -77,8 +78,10 @@ private:
 	LAYOUT_FIELD(FShaderResourceParameter, VertexFetch_InstanceLightmapBufferParameter)
 	LAYOUT_FIELD(FShaderParameter, InstanceOffset)
 
-	
+	LAYOUT_FIELD(FShaderParameter, AMRendererIndexParameter);
 	LAYOUT_FIELD(FShaderResourceParameter, Instancing_MatrixBufferSRVParameter);
+
+	
 };
 
 
