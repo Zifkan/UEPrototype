@@ -27,13 +27,12 @@ public:
     {
         PrimaryActorTick.bStartWithTickEnabled = true;
         PrimaryActorTick.bCanEverTick = true;
-
         DefaultPawnClass = AInputPawn::StaticClass();
         // use our own player controller class
         PlayerControllerClass = AMainPlayerController::StaticClass();
 
-    }       
-
+    }   
+    
 protected:
     void BeginPlay() override;
     void TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction) override;
@@ -43,8 +42,11 @@ private:
     void RegisterSystem();
     void RegisterTransformSystems();
 
-private:
+    void Init();
 
+    bool isInit;
+    
+    
     FEcsWorld* world;
     TUniquePtr<AnimationSystemLaunch> animationSystemLaunch;
     TUniquePtr<SystemLauncher> systemsLauncher;

@@ -26,69 +26,16 @@
 #include "UEPrototype/ECS/Components/MovementComponents.h"
 #include "UEPrototype/ECS/Components/InputComponent.h"
 
-
 void AMainGameMode::BeginPlay()
 {
-
-    posix_set_os_api();
-    world = FEcsWorld::instance();
-    
-    world->DefaultWorld->import<flecs::dash>();
-    world->DefaultWorld->import<flecs::systems::civetweb>();
-
-    world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); 
-	//world->DefaultWorld->set_target_fps(60);
-	ecs_set_target_fps( world->DefaultWorld->c_ptr(), 60);
-    
-    entityManager = world->EntityManager;
-
-	entityManager->RegisterComponent<PlayerEntityType>("PlayerEntityType");
-	entityManager->RegisterComponent<InputEntityType>("InputEntityType");
-
-	
-	entityManager->RegisterComponent<PlayerTag>("PlayerTag");
-	
-    entityManager->RegisterComponent<IdleState>("IdleState");
-    entityManager->RegisterComponent<MoveState>("MoveState");
-    entityManager->RegisterComponent<AnimComponent>("AnimComponent"); 
-    entityManager->RegisterComponent<CheckActionData>("CheckActionData");
-    entityManager->RegisterComponent<ActionAvailableTag>("ActionAvailableTag");
-
-    entityManager->RegisterComponent<MoveInputTag>("MoveInputTag");
-    entityManager->RegisterComponent<RollInputTag>("RollInputTag");
-    entityManager->RegisterComponent<BlockInputTag>("BlockInputTag");
-    entityManager->RegisterComponent<AttackInputTag>("AttackInputTag");
-    entityManager->RegisterComponent<SprintInputTag>("SprintInputTag");
-	
-    entityManager->RegisterComponent<InheritsFrom>("InheritsFrom");
-    entityManager->RegisterComponent<CamComponent>("CamComponent");
-    entityManager->RegisterComponent<PlayerInputComponent>("PlayerInputComponent");
-    entityManager->RegisterComponent<MovementVelocity>("MovementVelocity");
-    entityManager->RegisterComponent<MoveDirectionData>("MoveDirectionData");
-    entityManager->RegisterComponent<MovementSpeed>("MovementSpeed"); 
-    entityManager->RegisterComponent<WorldToLocal>("WorldToLocal");
-	entityManager->RegisterComponent<LocalToWorld>("LocalToWorld");
-    entityManager->RegisterComponent<Translation>("Translation");
-    entityManager->RegisterComponent<CopyTransformToActor>("CopyTransformToActor");
-    entityManager->RegisterComponent<Scale>("Scale");
-    entityManager->RegisterComponent<Rotation>("Rotation");
-    entityManager->RegisterComponent<FActorComponent>("FActorComponent");
-    entityManager->RegisterComponent<CustomBone>("CustomBone");
-    entityManager->RegisterComponent<RendererRoot>("RendererRoot");
-    entityManager->RegisterComponent<CharacterActorComponent>("CharacterActorComponent");
-    entityManager->RegisterComponent<CopyTransformFromActor>("CopyTransformFromActor");
-    entityManager->RegisterComponent<RemoveRenderer>("RemoveRenderer");
-    
-    
-    RegisterTransformSystems();
-    RegisterSystem();
-
-	
-	
+	Init();	
 }
 
 void AMainGameMode::TickActor(float DeltaTime, ELevelTick TickType, FActorTickFunction& ThisTickFunction)
 {
+	Init();
+	
+	Super::TickActor(DeltaTime, TickType, ThisTickFunction);
   //  PlayerInput->ProcessInputStack(InputComponent,DeltaTime,false);
 
     transformLauncher->Update(DeltaTime);    
@@ -135,15 +82,75 @@ void AMainGameMode::RegisterSystem()
     systemsLauncher->RegisterSystem(new  MovementVelocitySystem());
     systemsLauncher->RegisterSystem(new  PlayerViewDirectionSystem());
 
-	systemsLauncher->RegisterSystem(new  MovementCharacterSystem());	
-
-	
-	
-    
+	systemsLauncher->RegisterSystem(new  MovementCharacterSystem());	  
     
 }
 
 void AMainGameMode::RegisterTransformSystems()
 {
     transformLauncher = MakeUnique<TransformSystemLaunch>(world);
+}
+
+void AMainGameMode::Init()
+{
+	if (isInit) return;
+
+	isInit = true;
+	
+	posix_set_os_api();
+    world = FEcsWorld::instance();
+    
+    world->DefaultWorld->import<flecs::dash>();
+    world->DefaultWorld->import<flecs::systems::civetweb>();
+
+    world->DefaultWorld->entity().set<flecs::dash::Server>({9090}); 
+	//world->DefaultWorld->set_target_fps(60);
+	ecs_set_target_fps( world->DefaultWorld->c_ptr(), 60);
+    
+    entityManager = world->EntityManager;
+
+	entityManager->RegisterComponent<PlayerEntityType>("PlayerEntityType");
+	entityManager->RegisterComponent<InputEntityType>("InputEntityType");
+
+	
+	entityManager->RegisterComponent<PlayerTag>("PlayerTag");
+	
+	entityManager->RegisterComponent<IdleState>("IdleState");
+	entityManager->RegisterComponent<MoveState>("MoveState");
+	entityManager->RegisterComponent<MoveBlockState>("MoveBlockState");
+	entityManager->RegisterComponent<AttackState>("AttackState");
+    entityManager->RegisterComponent<AnimComponent>("AnimComponent"); 
+    entityManager->RegisterComponent<CheckActionData>("CheckActionData");
+    entityManager->RegisterComponent<ActionAvailableTag>("ActionAvailableTag");
+
+    entityManager->RegisterComponent<MoveInputTag>("MoveInputTag");
+    entityManager->RegisterComponent<RollInputTag>("RollInputTag");
+    entityManager->RegisterComponent<BlockInputTag>("BlockInputTag");
+    entityManager->RegisterComponent<AttackInputTag>("AttackInputTag");
+    entityManager->RegisterComponent<SprintInputTag>("SprintInputTag");
+	
+    entityManager->RegisterComponent<InheritsFrom>("InheritsFrom");
+    entityManager->RegisterComponent<CamComponent>("CamComponent");
+    entityManager->RegisterComponent<PlayerInputComponent>("PlayerInputComponent");
+    entityManager->RegisterComponent<MovementVelocity>("MovementVelocity");
+    entityManager->RegisterComponent<MoveDirectionData>("MoveDirectionData");
+    entityManager->RegisterComponent<MovementSpeed>("MovementSpeed"); 
+    entityManager->RegisterComponent<WorldToLocal>("WorldToLocal");
+	entityManager->RegisterComponent<LocalToWorld>("LocalToWorld");
+    entityManager->RegisterComponent<Translation>("Translation");
+    entityManager->RegisterComponent<CopyTransformToActor>("CopyTransformToActor");
+    entityManager->RegisterComponent<Scale>("Scale");
+    entityManager->RegisterComponent<Rotation>("Rotation");
+    entityManager->RegisterComponent<FActorComponent>("FActorComponent");
+    entityManager->RegisterComponent<CustomBone>("CustomBone");
+    entityManager->RegisterComponent<RendererRoot>("RendererRoot");
+    entityManager->RegisterComponent<CharacterActorComponent>("CharacterActorComponent");
+    entityManager->RegisterComponent<CopyTransformFromActor>("CopyTransformFromActor");
+    entityManager->RegisterComponent<RemoveRenderer>("RemoveRenderer");
+    
+    
+    RegisterTransformSystems();
+    RegisterSystem();
+
+	
 }

@@ -427,27 +427,54 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 					StaticMesh->AddUVChannel(0);
 				}
 
+	
+				
 				auto renderData = &PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0];
 				auto currentBonesInfluence = renderData->GetVertexBufferMaxBoneInfluences();
-				auto vertexCount = renderData->GetSkinWeightVertexBuffer()->GetNumVertices();
+				auto vertexCount =     renderData->StaticVertexBuffers.StaticMeshVertexBuffer.GetNumVertices();
 				auto weightOffset= renderData->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetConstantInfluencesBoneWeightsOffset();
 				TMap<FVertexInstanceID, FVector2D> uv;
+		
+				
 				for (uint32 i = 0; i < vertexCount; ++i)
 				{            	
+				FVector4 weights;
+				FVector4 indices;
+					
+				for (uint32 j = 0; j < currentBonesInfluence; ++j)
+				{			
+				weights[j] =  static_cast<double>(static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j))	/255.0);
+				indices[j] = static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j));
+				}  
+            	
+				//	uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
+				StaticMesh->RenderData->LODResources[0].VertexBuffers.StaticMeshVertexBuffer.SetVertexUV (i,7,FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
+						UE_LOG(LogTemp, Warning, TEXT("indices = %s; weights = %s"),*indices.ToString(), *weights.ToString());
+			
+				}
+				
+			/*	TArray<FSkinWeightInfo> verts;
+				PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer()->GetSkinWeights(verts);
+				for (uint32 i = 0; i < vertexCount; ++i)
+				{
+					auto vert = verts[i];
 					FVector4 weights;
 					FVector4 indices;
 					
-					for (uint32 j = 0; j < currentBonesInfluence; ++j)
-					{			
-						weights[j] =  static_cast<double>(static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j))/255.0);
-						indices[j] = static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j));
-					}  
-            	
-					uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
-            
-				}
-    		
-				StaticMesh->SetUVChannel(0,7,uv);
+					indices.X = static_cast<int>(vert.InfluenceBones[0]);
+					indices.Y = static_cast<int>(vert.InfluenceBones[1]);
+					indices.Z = static_cast<int>(vert.InfluenceBones[2]);
+					indices.W = static_cast<int>(vert.InfluenceBones[3]);
+    			
+					weights.X = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
+					weights.Y = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
+					weights.Z = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
+					weights.W = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
+
+					StaticMesh->RenderData->LODResources[0].VertexBuffers.StaticMeshVertexBuffer.SetVertexUV (i,7,FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
+					UE_LOG(LogTemp, Warning, TEXT("indices = %s; weights = %s"),*indices.ToString(), *weights.ToString());
+				}*/
+				
 
 				auto boneTree = PreviewComponent->SkeletalMesh->RefSkeleton.GetRefBoneInfo();			
 				for (auto BoneTree : boneTree)
@@ -458,23 +485,8 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 					BoneInfoArray.Add(FBoneDataInfo({boneTransform,boneMatrix}));
 					UE_LOG(LogTemp, Warning, TEXT("%s = %i"),*BoneTree.Name.ToString(), bone_index);
 				}
-			
-				/*	TArray<FSkinWeightInfo> verts;
-				PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer()->GetSkinWeights(verts);
-    		
-				for (auto vert : verts)
-				{
-				int index0 = static_cast<int>(vert.InfluenceBones[0]);
-				int index1 = static_cast<int>(vert.InfluenceBones[1]);
-				int index2 = static_cast<int>(vert.InfluenceBones[2]);
-				int index3 = static_cast<int>(vert.InfluenceBones[3]);
-    			
-				double weight0 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
-				double weight1 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
-				double weight2 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
-				double weight3 = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
-				*/
 			}
+			
     	
 
 			

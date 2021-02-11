@@ -23,10 +23,19 @@ public:
 		
 	};
 
-	virtual FAnimationInstanceVertexSceneProxy* CreateSceneProxy() override;
+virtual bool ShouldTickIfViewportsOnly();
 	
 	
 
+
+UPROPERTY(EditAnywhere)
+	bool IsEditorUpdate;
+	
+	virtual FAnimationInstanceVertexSceneProxy* CreateSceneProxy() override;
+
+	void UpdateBoneArray();
+	
+	TArray<FMatrix> BoneArray;
 	
 	void SetRenderIndex(int index);
 	void SetBuffer(TArray<FMatrix> buffer);

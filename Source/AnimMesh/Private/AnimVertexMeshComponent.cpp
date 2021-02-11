@@ -5,13 +5,23 @@
 #include "AnimMesh/Shaders/AnimationInstanceVertexFactory.h"
 
 
+bool UAnimVertexMeshComponent::ShouldTickIfViewportsOnly()
+{
+    return true;
+}
 
 FAnimationInstanceVertexSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
 {
+
+    scale=1;
+    BoneArray.Init(FMatrix(FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale),256*16);
+    
+    
     LLM_SCOPE(ELLMTag::InstancedMesh);
     ProxySize = 0;
 
     // Verify that the mesh is valid before using it.
+    
     const bool bMeshIsValid = 
         // make sure we have instances
         PerInstanceSMData.Num() > 0 &&
@@ -34,14 +44,32 @@ FAnimationInstanceVertexSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
         }
 		
         ProxySize = PerInstanceRenderData->ResourceSize;
+
+auto s= new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel);
         
-        return ::new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel);
+        SetBuffer(BoneArray);
+        SetBufferFinish();
+        
+        return s;
     }
     else
     {
         return NULL;
     }
     
+}
+
+void UAnimVertexMeshComponent::UpdateBoneArray()
+{
+    if (!IsEditorUpdate) return;
+    
+    for (int i = 0; i < BoneArray.Num(); i++)
+    {
+        auto bone = BoneArray[i];
+
+   
+    }
+
 }
 
 
@@ -80,13 +108,8 @@ void UAnimVertexMeshComponent::SetBufferFinish()
 }
 
 void UAnimVertexMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,    FActorComponentTickFunction* ThisTickFunction)
-{
-   
-    scale+=DeltaTime;
-
-    scale = scale>5?1:scale;
-    
-    SetBuffer(TArray<FMatrix>({FMatrix(FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale)}));
+{  
+    SetBuffer(BoneArray);
     SetBufferFinish();
     
 }

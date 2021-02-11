@@ -117,13 +117,13 @@ struct FVertexFactoryInput
 
 #if NUM_MATERIAL_TEXCOORDS_VERTEX
 	#if !MANUAL_VERTEX_FETCH
-		#if GPUSKIN_PASS_THROUGH
+	/*	#if GPUSKIN_PASS_THROUGH
 			// These must match GPUSkinVertexFactory.usf
 			float2	TexCoords[NUM_MATERIAL_TEXCOORDS_VERTEX] : ATTRIBUTE4;
 			#if NUM_MATERIAL_TEXCOORDS_VERTEX > 4
 				#error Too many texture coordinate sets defined on GPUSkin vertex input. Max: 4.
 			#endif
-		#else
+		#else*/
 			#if NUM_MATERIAL_TEXCOORDS_VERTEX > 1
 				float4	PackedTexCoords4[NUM_MATERIAL_TEXCOORDS_VERTEX/2] : ATTRIBUTE4;
 			#endif
@@ -133,15 +133,18 @@ struct FVertexFactoryInput
 				float2	PackedTexCoords2 : ATTRIBUTE5;
 			#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 5
 				float2	PackedTexCoords2 : ATTRIBUTE6;
-			#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 7
-				float2	PackedTexCoords2 : ATTRIBUTE7;
+		//	#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 7
 			#endif
+				
+			
 		#endif
-	#endif
+	//#endif
 #elif USE_PARTICLE_SUBUVS && !MANUAL_VERTEX_FETCH
 	float2	TexCoords[1] : ATTRIBUTE4;
 #endif
 
+	float2	ReservedPackedTexCoords2 : ATTRIBUTE7;
+	
 #if USE_INSTANCING && !MANUAL_VERTEX_FETCH
 	float4 InstanceOrigin : ATTRIBUTE8;  // per-instance random in w 
 	half4 InstanceTransform1 : ATTRIBUTE9;  // hitproxy.r + 256 * selected in .w
@@ -527,13 +530,13 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 
 
 
-float4 AnimDeformMesh(FVertexFactoryInput Input)
+float4 AnimDeformMesh(FVertexFactoryInput Input,uint PrimitiveId)
 {
 
 	CustomRenderData renderData;
 
-	float4 indexes = DecodeFloatToFloat2(/*Input.PackedTexCoords2.x*/0);
-	float4 weights = DecodeFloatToFloat2(/*Input.PackedTexCoords2.y*/0);
+	float4 indexes = DecodeFloatToFloat2(Input.ReservedPackedTexCoords2.x);
+	float4 weights = DecodeFloatToFloat2(Input.ReservedPackedTexCoords2.y);
 
 	
 	int  boneIndex1 = indexes.x;
@@ -546,7 +549,14 @@ float4 AnimDeformMesh(FVertexFactoryInput Input)
 	float  boneWeight3 = weights.z;
 	float  boneWeight4 = weights.w;
 
-	int renderIndex = AMRendererIndex;   
+	int renderIndex = 0;
+
+#if USE_INSTANCING
+	renderIndex = Input.InstanceId;
+#endif
+
+	
+	
 	int startIdx = renderIndex * 256;
 
 	float4x4 mat =  Instancing_BoneMatrixBufferSRV[startIdx + boneIndex1] * boneWeight1 +
@@ -556,12 +566,21 @@ float4 AnimDeformMesh(FVertexFactoryInput Input)
 
 	
 
-	  return mul(mat, Input.Position);
+	  return TransformLocalToTranslatedWorld(mul(mat, Input.Position), PrimitiveId);
 }
 
 
 // USE_INSTANCING
 //TODO Calc POs here
+float4 CalcWorldPositionAnim(FVertexFactoryInput Input, float4x4 InstanceTransform, uint PrimitiveId)
+{
+//	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform* Input.ReservedPackedTexCoords2.x).xyz, PrimitiveId); //Instancing_BoneMatrixBufferSRV[0][index];
+
+	return AnimDeformMesh(Input,PrimitiveId);
+}
+
+
+
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
 {
 	return TransformLocalToTranslatedWorld(mul(Position, InstanceTransform).xyz, PrimitiveId);
@@ -693,7 +712,7 @@ half3x3 VertexFactoryGetTangentToLocal( FVertexFactoryInput Input, FVertexFactor
 float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIntermediates Intermediates)
 { 
 
-	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
+	return CalcWorldPositionAnim(Input, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
 
 }
 
