@@ -39,6 +39,10 @@ float4 InstancingOffset;
 float4 InstancingFadeOutParams;
 #endif	// USE_INSTANCING
 
+StructuredBuffer<float4x4> Instancing_BoneMatrixBufferSRV;
+
+int AMRendererIndex;
+
 #if USE_SPLINEDEFORM
 float4 SplineParams[10];
 #define SplineStartPos			SplineParams[0].xyz

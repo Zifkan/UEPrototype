@@ -1,5 +1,6 @@
 #pragma once
 
+#include "AnimVertexStaticMesh.h"
 #include "RenderingThread.h"
 #include "VertexFactory.h"
 #include "MaterialShared.h"
@@ -21,6 +22,13 @@ public:
 	{
 	}
 
+	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
+	{
+		//OutEnvironment.SetDefine(TEXT("NUM_MATERIAL_TEXCOORDS_VERTEX"), TEXT("3"));
+		FInstancedStaticMeshVertexFactory::ModifyCompilationEnvironment(Parameters, OutEnvironment);
+
+		
+	}
 
 	FAnimationInstanceVertexSceneProxy* SceneProxy;	
 };
@@ -49,6 +57,10 @@ public:
 
 		Instancing_MatrixBufferSRVParameter.Bind(ParameterMap, TEXT("Instancing_BoneMatrixBufferSRV"));
 		AMRendererIndexParameter.Bind(ParameterMap, TEXT("AMRendererIndex"));
+
+	
+		InputWeightIndexSize.Bind(ParameterMap, TEXT("InputWeightIndexSize"));
+		InputWeightStream.Bind(ParameterMap, TEXT("InputWeightStream"));
 	}
 
 	void GetElementShaderBindings(
@@ -81,7 +93,10 @@ private:
 	LAYOUT_FIELD(FShaderParameter, AMRendererIndexParameter);
 	LAYOUT_FIELD(FShaderResourceParameter, Instancing_MatrixBufferSRVParameter);
 
-	
+
+
+	LAYOUT_FIELD(FShaderParameter, InputWeightIndexSize);
+	LAYOUT_FIELD(FShaderResourceParameter, InputWeightStream);
 };
 
 
@@ -306,6 +321,12 @@ protected:
 public:
 	//The shader resource view of the structured buffer, this is what we bind to the vertex factory shader
 	FShaderResourceViewRHIRef MatrixBufferSRV;
+
+	uint32 BoneIndicesSRV;
+	FRHIShaderResourceView* BoneWeightsSRV;
+
+	
+	TGPUSkinVertexFactory<DefaultBoneInfluence>::FDataType  Data;
 
 private:
 

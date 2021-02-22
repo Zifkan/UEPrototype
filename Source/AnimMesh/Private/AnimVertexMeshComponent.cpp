@@ -2,21 +2,27 @@
 
 #include "AnimMesh/Public/AnimVertexMeshComponent.h"
 
+
+#include "SkeletalRenderPublic.h"
 #include "AnimMesh/Shaders/AnimationInstanceVertexFactory.h"
+#include "Rendering/SkeletalMeshModel.h"
+#include "Rendering/SkeletalMeshRenderData.h"
 
-
-bool UAnimVertexMeshComponent::ShouldTickIfViewportsOnly()
-{
-    return true;
-}
 
 FAnimationInstanceVertexSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
 {
 
-    scale=1;
+    auto scale=1;
     BoneArray.Init(FMatrix(FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale),256*16);
-    
-    
+  
+    for (uint32 i=0; i<256*16;++i)
+    {
+        temp.Add(FMatrix(FVector::OneVector * (i*0.1f) ,FVector::OneVector,FVector::OneVector,FVector::OneVector));
+    }
+
+   // temp.Init(FMatrix(FVector::OneVector,FVector::OneVector,FVector::OneVector,FVector::OneVector),256*16);
+   
+ //   FMemory::Memcpy(BoneArray.GetData(), SrcInts, 4*sizeof(int32));
     LLM_SCOPE(ELLMTag::InstancedMesh);
     ProxySize = 0;
 
@@ -45,11 +51,11 @@ FAnimationInstanceVertexSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
 		
         ProxySize = PerInstanceRenderData->ResourceSize;
 
-auto s= new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel);
+        auto s= new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel);
         
-        SetBuffer(BoneArray);
-        SetBufferFinish();
-        
+        UpdateBoneArray(BoneArray);
+
+       
         return s;
     }
     else
@@ -59,17 +65,10 @@ auto s= new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel);
     
 }
 
-void UAnimVertexMeshComponent::UpdateBoneArray()
+void UAnimVertexMeshComponent::UpdateBoneArray(TArray<FMatrix> buffer)
 {
-    if (!IsEditorUpdate) return;
-    
-    for (int i = 0; i < BoneArray.Num(); i++)
-    {
-        auto bone = BoneArray[i];
-
-   
-    }
-
+    SetBuffer(buffer);
+    SetBufferFinish();
 }
 
 
@@ -108,9 +107,13 @@ void UAnimVertexMeshComponent::SetBufferFinish()
 }
 
 void UAnimVertexMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,    FActorComponentTickFunction* ThisTickFunction)
-{  
-    SetBuffer(BoneArray);
-    SetBufferFinish();
+{
+    if (BoneArray.Num()<=0)return;
+
+
+  
+    
+    UpdateBoneArray(temp);
     
 }
 

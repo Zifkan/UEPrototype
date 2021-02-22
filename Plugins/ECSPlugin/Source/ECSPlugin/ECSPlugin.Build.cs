@@ -12,7 +12,8 @@ public class ECSPlugin : ModuleRules
 		
 		PublicIncludePaths.AddRange(
 			new string[] {
-                "UEPrototype"
+                "UEPrototype",
+                
 				// ... add public include paths required here ...
 			}
 			);
@@ -30,7 +31,8 @@ public class ECSPlugin : ModuleRules
 			new string[]
 			{
 				"Core",
-                "UEPrototype"
+                "UEPrototype",
+                "AnimMesh"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

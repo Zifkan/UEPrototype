@@ -20,12 +20,9 @@ public:
 	UAnimVertexMeshComponent()
 	:UInstancedStaticMeshComponent()
 	{
-		
+		PrimaryComponentTick.bCanEverTick = true;
+		PrimaryComponentTick.bStartWithTickEnabled = true;
 	};
-
-virtual bool ShouldTickIfViewportsOnly();
-	
-	
 
 
 UPROPERTY(EditAnywhere)
@@ -33,14 +30,18 @@ UPROPERTY(EditAnywhere)
 	
 	virtual FAnimationInstanceVertexSceneProxy* CreateSceneProxy() override;
 
-	void UpdateBoneArray();
+	void UpdateBoneArray(TArray<FMatrix> buffer);
 	
-	TArray<FMatrix> BoneArray;
+	
 	
 	void SetRenderIndex(int index);
-	void SetBuffer(TArray<FMatrix> buffer);
-	void SetBufferFinish();
+	
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,FActorComponentTickFunction* ThisTickFunction) override;
-	float scale;
+	
+private:
+	TArray<FMatrix> BoneArray;
+	TArray<FMatrix> temp;
+	void SetBuffer(TArray<FMatrix> buffer);
+	void SetBufferFinish();
 };

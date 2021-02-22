@@ -8,9 +8,9 @@ struct FBoneDataInfo
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly,EditAnywhere)
     FTransform BoneTransform;
 
-    UPROPERTY(BlueprintReadOnly)
+    UPROPERTY(BlueprintReadOnly,EditAnywhere)
     FMatrix BindMatrix;
 };

@@ -16,7 +16,10 @@
 		{
 			"Name": "AnimMesh",
 			"Type": "Runtime",
-			"LoadingPhase": "PostConfigInit"
+			"LoadingPhase": "PostConfigInit",
+			"AdditionalDependencies": [
+				"Engine"
+			]
 		},
 		{
 			"Name": "FlecsModule",
@@ -29,6 +32,10 @@
 			"Name": "VertexAnimToolset",
 			"Enabled": false,
 			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/d998b22372a44975b312e85cf663bbab"
+		},
+		{
+			"Name": "RenderDocPlugin",
+			"Enabled": true
 		}
 	]
 }

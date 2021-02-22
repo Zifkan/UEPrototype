@@ -2,6 +2,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+
+#include "AnimVertexMeshComponent.h"
 #include "BoneData.h"
 #include "flecs.h"
 #include "GameFramework/Actor.h"
@@ -18,6 +20,9 @@ public:
 
     UPROPERTY()
     USceneComponent* Root;
+
+	UPROPERTY(EditAnywhere,Category=ECS)
+	TSoftObjectPtr<AActor> DestinationActor;
 	
 	UPROPERTY(EditAnywhere,Category=ECS)
 	TArray<FBoneDataInfo>  BoneInfoArray;
@@ -45,11 +50,16 @@ public:
 	void StateTest();
 
 	UAnimInstance* GetAnimInstance() const; 
+
+	virtual void Tick(float DeltaSeconds) override;
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
-	virtual void Tick(float DeltaSeconds) override;
+
+	
+
+private:
+	UAnimVertexMeshComponent* AnimVertexMeshComponent;
 };

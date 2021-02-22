@@ -45,6 +45,9 @@ public class UEPrototype : ModuleRules
         
      //   RuntimeDependencies.Add(new RuntimeDependency(Path.Combine(ThirdPartyPath, "pthreadVC2.dll")));
 		
+     PrivateIncludePaths.Add(EngineDirectory + "/Shaders/Shared");
+     PrivateIncludePaths.Add(EngineDirectory + "/Shaders/Private");
+     
         PublicDelayLoadDLLs.Add(Path.Combine(ThirdPartyPath,"pthreadVC2.dll"));
         PublicAdditionalLibraries.Add(Path.Combine(ThirdPartyPath,"pthreadVC2.lib"));
     }

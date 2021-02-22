@@ -5,6 +5,7 @@
 
 
 
+#include "AnimVertexStaticMesh.h"
 #include "AssetRegistryModule.h"
 #include "AssetToolsModule.h"
 #include "IPersonaToolkit.h"
@@ -279,7 +280,7 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 {
 	
 	
-    auto* NewNameSuggestion = TEXT("StaticMesh");
+    auto* NewNameSuggestion = TEXT("AnimStaticMesh");
     FString PackageName = FString(TEXT("/Game/Meshes/")) + NewNameSuggestion;
   
     TSharedPtr<SDlgPickAssetPath> PickAssetPathWidget =
@@ -289,7 +290,7 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 
     if (EAppReturnType::Ok == PickAssetPathWidget->ShowModal())
     {
-    	UStaticMesh* StaticMesh = nullptr;
+    	UAnimVertexStaticMesh* AnimVertexStaticMesh = nullptr;
     	
     	PreviewComponent->GlobalAnimRateScale = 0.f;
         int32 OverallMaxLODs = 0;
@@ -355,10 +356,10 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 			check(Package);
 
 			// Create StaticMesh object
-			StaticMesh = NewObject<UStaticMesh>(Package, *MeshName, RF_Public | RF_Standalone);
-			StaticMesh->InitResources();
+			AnimVertexStaticMesh = NewObject<UAnimVertexStaticMesh>(Package, *MeshName, RF_Public | RF_Standalone);
+			AnimVertexStaticMesh->InitResources();
 
-			StaticMesh->LightingGuid = FGuid::NewGuid();
+			AnimVertexStaticMesh->LightingGuid = FGuid::NewGuid();
 
 			// Determine which texture coordinate map should be used for storing/generating the lightmap UVs
 			const uint32 LightMapIndex = FMath::Min(MaxInUseTextureCoordinate + 1, (uint32)MAX_MESH_TEXTURE_COORDS - 1);
@@ -368,7 +369,7 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 			{
 				if (RawMesh.IsValidOrFixable())
 				{
-					FStaticMeshSourceModel& SrcModel = StaticMesh->AddSourceModel();
+					FStaticMeshSourceModel& SrcModel = AnimVertexStaticMesh->AddSourceModel();
 					SrcModel.BuildSettings.bRecomputeNormals = false;
 					SrcModel.BuildSettings.bRecomputeTangents = false;
 					SrcModel.BuildSettings.bRemoveDegenerates = true;
@@ -384,14 +385,14 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 			// Copy materials to new mesh 
 			for(UMaterialInterface* Material : Materials)
 			{
-				StaticMesh->StaticMaterials.Add(FStaticMaterial(Material));
+				AnimVertexStaticMesh->StaticMaterials.Add(FStaticMaterial(Material));
 			}
 			
 			//Set the Imported version before calling the build
-			StaticMesh->ImportVersion = EImportStaticMeshVersion::LastVersion;
+			AnimVertexStaticMesh->ImportVersion = EImportStaticMeshVersion::LastVersion;
 
 			// Set light map coordinate index to match DstLightmapIndex
-			StaticMesh->LightMapCoordinateIndex = LightMapIndex;
+			AnimVertexStaticMesh->LightMapCoordinateIndex = LightMapIndex;
 
 			// setup section info map
 			for (int32 RawMeshLODIndex = 0; RawMeshLODIndex < RawMeshes.Num(); RawMeshLODIndex++)
@@ -406,54 +407,67 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 				int32 SectionIndex = 0;
 				for (int32 UniqueMaterialIndex : UniqueMaterialIndices)
 				{
-					StaticMesh->GetSectionInfoMap().Set(RawMeshLODIndex, SectionIndex, FMeshSectionInfo(UniqueMaterialIndex));
+					AnimVertexStaticMesh->GetSectionInfoMap().Set(RawMeshLODIndex, SectionIndex, FMeshSectionInfo(UniqueMaterialIndex));
 					SectionIndex++;
 				}
 			}
-			StaticMesh->GetOriginalSectionInfoMap().CopyFrom(StaticMesh->GetSectionInfoMap());
+			AnimVertexStaticMesh->GetOriginalSectionInfoMap().CopyFrom(AnimVertexStaticMesh->GetSectionInfoMap());
 
 
 		
 			
 			// Build mesh from source
-			StaticMesh->Build(false);
-			StaticMesh->PostEditChange();
+			AnimVertexStaticMesh->Build(false);
+			AnimVertexStaticMesh->PostEditChange();
 
-			if (StaticMesh!=nullptr)
+			if (AnimVertexStaticMesh!=nullptr)
 			{
-				auto UVnum = StaticMesh->GetNumUVChannels(0);
+				auto UVnum = AnimVertexStaticMesh->GetNumUVChannels(0);
 				for (int i = UVnum; i < 8; ++i)
 				{
-					StaticMesh->AddUVChannel(0);
+					AnimVertexStaticMesh->AddUVChannel(0);
 				}
 
 	
 				
 				auto renderData = &PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0];
 				auto currentBonesInfluence = renderData->GetVertexBufferMaxBoneInfluences();
-				auto vertexCount =     renderData->StaticVertexBuffers.StaticMeshVertexBuffer.GetNumVertices();
+				uint32 vertexCount = 123456;//renderData->GetNumVertices();//123456;
 				auto weightOffset= renderData->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetConstantInfluencesBoneWeightsOffset();
-				TMap<FVertexInstanceID, FVector2D> uv;
-		
-				
-				for (uint32 i = 0; i < vertexCount; ++i)
-				{            	
-				FVector4 weights;
-				FVector4 indices;
-					
-				for (uint32 j = 0; j < currentBonesInfluence; ++j)
-				{			
-				weights[j] =  static_cast<double>(static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j))	/255.0);
-				indices[j] = static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j));
-				}  
-            	
-				//	uv.Add(FVertexInstanceID(i),FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
-				StaticMesh->RenderData->LODResources[0].VertexBuffers.StaticMeshVertexBuffer.SetVertexUV (i,7,FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
-						UE_LOG(LogTemp, Warning, TEXT("indices = %s; weights = %s"),*indices.ToString(), *weights.ToString());
+
+				auto skinWeightVertexBuffer = renderData->SkinWeightVertexBuffer;
+
+				auto WeightDataSRV = skinWeightVertexBuffer.GetDataVertexBuffer()->GetSRV();
+				AnimVertexStaticMesh->Modify();
+				AnimVertexStaticMesh->BoneIndices = skinWeightVertexBuffer.GetBoneIndexByteSize();
+				AnimVertexStaticMesh->BoneWeightSRV = WeightDataSRV;
+				AnimVertexStaticMesh->SkinWeightVertexBuffer = skinWeightVertexBuffer;
 			
+				AnimVertexStaticMesh->TestValue = 654321;
+				TMap<FVertexInstanceID, FVector2D> UVs;
+		
+				AnimVertexStaticMesh->Modify();
+				for (uint32 i = 0; i < vertexCount; ++i)
+				{
+					FVector4 weights;
+					FVector4 indices;
+					
+					for (uint32 j = 0; j < currentBonesInfluence; ++j)
+					{			
+						weights[j] =  static_cast<double>(static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j))	/255.0);
+						indices[j] = static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j));
+					}  
+
+					//auto uv = FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights));
+					auto uv = FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights));
+					UVs.Add(FVertexInstanceID(i),uv);
+			
+					UE_LOG(LogTemp, Warning, TEXT("indices = %f; weights = %f"),uv.X, uv.Y);
 				}
-				
-			/*	TArray<FSkinWeightInfo> verts;
+				AnimVertexStaticMesh->SetUVChannel(0,3,UVs);
+			
+				/*
+			    TArray<FSkinWeightInfo> verts;
 				PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer()->GetSkinWeights(verts);
 				for (uint32 i = 0; i < vertexCount; ++i)
 				{
@@ -471,11 +485,12 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 					weights.Z = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
 					weights.W = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
 
-					StaticMesh->RenderData->LODResources[0].VertexBuffers.StaticMeshVertexBuffer.SetVertexUV (i,7,FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
+					AnimVertexStaticMesh->RenderData->LODResources[0].VertexBuffers.StaticMeshVertexBuffer.SetVertexUV (i,7,FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
 					UE_LOG(LogTemp, Warning, TEXT("indices = %s; weights = %s"),*indices.ToString(), *weights.ToString());
-				}*/
+				}
+				*/
 				
-
+		
 				auto boneTree = PreviewComponent->SkeletalMesh->RefSkeleton.GetRefBoneInfo();			
 				for (auto BoneTree : boneTree)
 				{
@@ -490,18 +505,18 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
     	
 
 			
-			StaticMesh->MarkPackageDirty();
+			AnimVertexStaticMesh->MarkPackageDirty();
 			// Notify asset registry of new asset
-			FAssetRegistryModule::AssetCreated(StaticMesh);
+			FAssetRegistryModule::AssetCreated(AnimVertexStaticMesh);
 
 			// Display notification so users can quickly access the mesh
 			if (GIsEditor)
 			{
-				FNotificationInfo Info(FText::Format(LOCTEXT("SkeletalMeshConverted", "Successfully Converted Mesh"), FText::FromString(StaticMesh->GetName())));
+				FNotificationInfo Info(FText::Format(LOCTEXT("SkeletalMeshConverted", "Successfully Converted Mesh"), FText::FromString(AnimVertexStaticMesh->GetName())));
 				Info.ExpireDuration = 8.0f;
 				Info.bUseLargeFont = false;
-				Info.Hyperlink = FSimpleDelegate::CreateLambda([=]() { GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAssets(TArray<UObject*>({ StaticMesh })); });
-				Info.HyperlinkText = FText::Format(LOCTEXT("OpenNewAnimationHyperlink", "Open {0}"), FText::FromString(StaticMesh->GetName()));
+				Info.Hyperlink = FSimpleDelegate::CreateLambda([=]() { GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAssets(TArray<UObject*>({ AnimVertexStaticMesh })); });
+				Info.HyperlinkText = FText::Format(LOCTEXT("OpenNewAnimationHyperlink", "Open {0}"), FText::FromString(AnimVertexStaticMesh->GetName()));
 				TSharedPtr<SNotificationItem> Notification = FSlateNotificationManager::Get().AddNotification(Info);
 				if ( Notification.IsValid() )
 				{

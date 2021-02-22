@@ -1,4 +1,6 @@
 #include "AnimationInstanceVertexFactory.h"
+
+#include "AnimVertexStaticMesh.h"
 #include "RayTracingInstance.h"
 #include "ProfilingDebugging/LoadTimeTracker.h"
 
@@ -245,6 +247,13 @@ void FAnimInstancedMeshVertexFactoryShaderParameters::GetElementShaderBindings(c
 	}
 	check(InstancedVertexFactory);
 	ShaderBindings.Add(Instancing_MatrixBufferSRVParameter, InstancedVertexFactory->SceneProxy->MatrixBufferSRV);
+
+	ShaderBindings.Add(InputWeightIndexSize, InstancedVertexFactory->SceneProxy->BoneIndicesSRV);
+
+	if (InstancedVertexFactory->SceneProxy->BoneWeightsSRV!=nullptr)
+	{
+		ShaderBindings.Add(InputWeightStream, InstancedVertexFactory->SceneProxy->BoneWeightsSRV);
+	}
 }
 
 
@@ -255,7 +264,7 @@ IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshInstanceVertexFactory, SF_Verte
 #if RHI_RAYTRACING
 IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshInstanceVertexFactory, SF_RayHitGroup, FAnimInstancedMeshVertexFactoryShaderParameters);
 #endif
-IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/AnimVertexFactory.ush", true, true, true, true, true,true,false);
+IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/AnimVertexFactory.ush", true, true, true, true, false,true,false);
 
 /**######################################*/
 
@@ -403,8 +412,8 @@ void FAnimationInstanceVertexSceneProxy::SetupProxy(UInstancedStaticMeshComponen
 	UserData_DeselectedInstances = UserData_AllInstances;
 	UserData_DeselectedInstances.bRenderSelected = false;
 
-	MatrixBuffer.AddZeroed(1);
-	MatrixBuffer[0] = FMatrix(FVector(1,1,1),FVector(1,1,1),FVector(1,1,1),FVector(1,1,1));
+//	MatrixBuffer.AddZeroed(1);
+	MatrixBuffer.Init(FMatrix(FVector(1,1,1),FVector(1,1,1),FVector(1,1,1),FVector(1,1,1)),256*16);
 	//We first create a resource array to use it in the create info for initializing the structured buffer on creation
 	TResourceArray<FMatrix>* ResourceArray = new TResourceArray<FMatrix>(true);
 	FRHIResourceCreateInfo CreateInfo;
@@ -413,13 +422,23 @@ void FAnimationInstanceVertexSceneProxy::SetupProxy(UInstancedStaticMeshComponen
 	//Set the debug name so we can find the resource when debugging in RenderDoc
 	CreateInfo.DebugName = TEXT("DeformMesh_TransformsSB");
 
-	MatrixBufferSB = RHICreateStructuredBuffer(sizeof(FMatrix), 1 * sizeof(FMatrix), BUF_ShaderResource, CreateInfo);
+	MatrixBufferSB = RHICreateStructuredBuffer(sizeof(FMatrix), 256*16 * sizeof(FMatrix), BUF_ShaderResource, CreateInfo);
 	bMatrixBufferDirty = false;
 	///////////////////////////////////////////////////////////////
 	//// CREATING AN SRV FOR THE STRUCTUED BUFFER SO WA CAN USE IT AS A SHADER RESOURCE PARAMETER AND BIND IT TO THE VERTEX FACTORY
 	MatrixBufferSRV = RHICreateShaderResourceView(MatrixBufferSB);
 
 	///////////////////////////////////////////////////////////////
+
+	auto animVertexStaticMesh = static_cast<UAnimVertexStaticMesh*>(InComponent->GetStaticMesh());
+
+	UE_LOG(LogTemp, Warning, TEXT("GetNumBones: %i"),animVertexStaticMesh->TestValue);
+
+	
+	
+	BoneIndicesSRV = animVertexStaticMesh->BoneIndices;
+	BoneWeightsSRV = animVertexStaticMesh->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetSRV();
+	
 }
 
 void FAnimationInstanceVertexSceneProxy::DestroyRenderThreadResources()
