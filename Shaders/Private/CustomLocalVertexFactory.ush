@@ -39,9 +39,24 @@ float4 InstancingOffset;
 float4 InstancingFadeOutParams;
 #endif	// USE_INSTANCING
 
+//uint InputWeightIndexSize; // bone index size: 1 - 8bit or 2 - 16bit
+Buffer<uint> BonesIndexesStream;
+Buffer<float> InputWeightStream;
+
 StructuredBuffer<float4x4> Instancing_BoneMatrixBufferSRV;
 
-int AMRendererIndex;
+float2 AMRendererIndex;
+
+
+float4 DecodeFloatToFloat2( float v )
+{
+	float4 kEncodeMul = float4(1.0, 255.0, 65025.0, 160581375.0);
+	float kEncodeBit = 1.0/255.0;
+	float4 enc = kEncodeMul * v;
+	enc = frac (enc);
+	enc -= enc.yzww * kEncodeBit;
+	return enc;
+}
 
 #if USE_SPLINEDEFORM
 float4 SplineParams[10];
@@ -94,7 +109,7 @@ float4 SplineParams[10];
 struct FVertexFactoryInput
 {
 	float4	Position	: ATTRIBUTE0;
-
+/*
 #if !MANUAL_VERTEX_FETCH
 	#if METAL_PROFILE
 		float3	TangentX	: ATTRIBUTE1;
@@ -145,7 +160,9 @@ struct FVertexFactoryInput
 	half4 InstanceTransform3 : ATTRIBUTE11; // hitproxy.b in .w
 	float4 InstanceLightmapAndShadowMapUVBias : ATTRIBUTE12; 
 #endif //USE_INSTANCING
+*/
 
+	
 #if VF_USE_PRIMITIVE_SCENE_DATA
 	uint PrimitiveId : ATTRIBUTE13;
 #endif
@@ -314,6 +331,11 @@ struct FVertexFactoryIntermediates
 
 	float3 PreSkinPosition;
 };
+
+
+FVertexFactoryInterpolantsVSToPS VertexFactoryGetInterpolantsVSToPS(FVertexFactoryInput Input, FVertexFactoryIntermediates Intermediates, FMaterialVertexParameters VertexParameters);
+
+
 
 #if USE_INSTANCING
 float4x4 GetInstanceTransform(FVertexFactoryIntermediates Intermediates)
@@ -560,103 +582,99 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 	return Result;
 }
 
-#if USE_SPLINEDEFORM
-	float3 SplineEvalPos(float3 StartPos, float3 StartTangent, float3 EndPos, float3 EndTangent, float A)
-	{
-		float A2 = A  * A;
-		float A3 = A2 * A;
 
-		return (((2*A3)-(3*A2)+1) * StartPos) + ((A3-(2*A2)+A) * StartTangent) + ((A3-A2) * EndTangent) + (((-2*A3)+(3*A2)) * EndPos);
-	}
+float4 AnimDeformMesh(FVertexFactoryInput Input,uint PrimitiveId,float4x4 InstanceTransform,float2 textcoords)
+{	
+//	FVertexFactoryIntermediates VFIntermediates = GetVertexFactoryIntermediates(Input);
 
-	float3 SplineEvalDir(float3 StartPos, float3 StartTangent, float3 EndPos, float3 EndTangent, float A)
-	{
-		float3 C = (6*StartPos) + (3*StartTangent) + (3*EndTangent) - (6*EndPos);
-		float3 D = (-6*StartPos) - (4*StartTangent) - (2*EndTangent) + (6*EndPos);
-		float3 E = StartTangent;
-
-		float A2 = A  * A;
-
-		return normalize((C * A2) + (D * A) + E);
-	}
-
-	/** Calculate full transform that defines frame along spline, given the Z of a vertex. */
-	float4x3 CalcSliceTransform(float ZPos)
-	{
-		// Find how far 'along' mesh we are
-		float Alpha = ZPos * SplineMeshScaleZ - SplineMeshMinZ;
-
-		// Apply hermite interp to Alpha if desired
-		float HermiteAlpha = SmoothInterpRollScale ? smoothstep(0.0, 1.0, Alpha) : Alpha;
-
-		// Then find the point and direction of the spline at this point along
-		float3 SplinePos = SplineEvalPos( SplineStartPos, SplineStartTangent, SplineEndPos, SplineEndTangent, Alpha );
-		float3 SplineDir = SplineEvalDir( SplineStartPos, SplineStartTangent, SplineEndPos, SplineEndTangent, Alpha );
+//	FMaterialPixelParameters MaterialParameters = GetMaterialPixelParameters(Input.FactoryInterpolants, Input.Position);
+//	CalcMaterialParameters(MaterialParameters,true, Input.Position);
 	
-		// Find base frenet frame
-		float3 BaseXVec = normalize( cross(SplineUpDir, SplineDir) );
-		float3 BaseYVec = normalize( cross(SplineDir, BaseXVec) );
+
+	float4 indexes = DecodeFloatToFloat2(textcoords.x);
+	float4 weights = DecodeFloatToFloat2(textcoords.y);
 	
-		// Offset from the spline, using the frenet frame
-		float2 SliceOffset = lerp(SplineStartOffset, SplineEndOffset, HermiteAlpha);
-		SplinePos += SliceOffset.x * BaseXVec;
-		SplinePos += SliceOffset.y * BaseYVec;
+	//float4 indexes = DecodeFloatToFloat2(Input.ReservedPackedTexCoords2.x);
+	//float4 weights = DecodeFloatToFloat2(Input.ReservedPackedTexCoords2.y);
+
+/*	int NumBoneInfluences = 4 & 0xff;
+	int StreamOffset = 4 >> 8;
+	int WeightsOffset = StreamOffset + (InputWeightIndexSize * NumBoneInfluences);
+
+	int BoneIndexOffset1 = StreamOffset + (InputWeightIndexSize * 0);
+	int BoneIndexOffset2 = StreamOffset + (InputWeightIndexSize * 1);
+	int BoneIndexOffset3 = StreamOffset + (InputWeightIndexSize * 2);
+	int BoneIndexOffset4 = StreamOffset + (InputWeightIndexSize * 3);
+	int boneIndex1  = InputWeightStream[BoneIndexOffset1];
+	int boneIndex2  = InputWeightStream[BoneIndexOffset2];
+	int boneIndex3  = InputWeightStream[BoneIndexOffset3];
+	int boneIndex4  = InputWeightStream[BoneIndexOffset4];
 	
-		// Apply roll to frame around spline
-		float UseRoll = lerp(SplineStartRoll, SplineEndRoll, HermiteAlpha);
-		float SinAng, CosAng;
-		sincos(UseRoll, SinAng, CosAng);
-		float3 XVec = (CosAng * BaseXVec) - (SinAng * BaseYVec);
-		float3 YVec = (CosAng * BaseYVec) + (SinAng * BaseXVec);
 
-		// Find scale at this point along spline
-		float2 UseScale = lerp(SplineStartScale, SplineEndScale, HermiteAlpha);
+	float boneWeight1 = float(InputWeightStream[WeightsOffset + 0]) / 255.0f;
+	float boneWeight2 = float(InputWeightStream[WeightsOffset + 1]) / 255.0f;
+	float boneWeight3 = float(InputWeightStream[WeightsOffset + 2]) / 255.0f;
+	float boneWeight4 = float(InputWeightStream[WeightsOffset + 3]) / 255.0f;*/
+	
+	int  boneIndex1 = indexes.x;
+	int  boneIndex2 = indexes.y;
+	int  boneIndex3 = indexes.z;
+	int  boneIndex4 = indexes.w;
 
-		XVec *= UseScale.x;
-		YVec *= UseScale.y;
+	float  boneWeight1 = weights.x;
+	float  boneWeight2 = weights.y;
+	float  boneWeight3 = weights.z;
+	float  boneWeight4 = weights.w;
 
-		// Build overall transform
-		float3x3 SliceTransform3 = mul(transpose(float3x3(SplineMeshDir, SplineMeshX, SplineMeshY)), float3x3(float3(0,0,0), XVec, YVec));
-		float4x3 SliceTransform = float4x3(SliceTransform3[0], SliceTransform3[1], SliceTransform3[2], SplinePos);
+	int renderIndex = 0;
 
-		return SliceTransform;
-	}
+#if USE_INSTANCING
+	renderIndex = Input.InstanceId;
+#endif
 
-	/** Calculate rotation matrix that defines frame along spline, given the Z of a vertex. */
-	half3x3 CalcSliceRot(float ZPos)
-	{
-		// Find how far 'along' mesh we are
-		half Alpha = ZPos * SplineMeshScaleZ - SplineMeshMinZ;
+	
+	
+	int startIdx = renderIndex * 256;
 
-		// Apply hermite interp to Alpha if desired
-		half HermiteAlpha = SmoothInterpRollScale ? smoothstep(0.0, 1.0, Alpha) : Alpha;
+	float4x4 mat =  Instancing_BoneMatrixBufferSRV[startIdx + boneIndex1] * boneWeight1 +
+					Instancing_BoneMatrixBufferSRV[startIdx + boneIndex2] * boneWeight2 +
+					Instancing_BoneMatrixBufferSRV[startIdx + boneIndex3] * boneWeight3 +
+					Instancing_BoneMatrixBufferSRV[startIdx + boneIndex4] * boneWeight4;
 
-		// Then find the point and direction of the spline at this point along
-		half3 SplineDir = SplineEvalDir( SplineStartPos, SplineStartTangent, SplineEndPos, SplineEndTangent, Alpha );
 
-		// Find base frenet frame
-		half3 BaseXVec = normalize( cross(SplineUpDir, (half3)SplineDir) );
-		half3 BaseYVec = normalize( cross((half3)SplineDir, BaseXVec) );
+	//FMaterialVertexParameters params = GetMaterialVertexParameters(Input,Intermediates);
 
-		// Apply roll to frame around spline
-		half UseRoll = lerp((half)SplineStartRoll, (half)SplineEndRoll, HermiteAlpha);
-		half SinAng, CosAng;
-		sincos(UseRoll, SinAng, CosAng);
-		half3 XVec = (CosAng * BaseXVec) - (SinAng * BaseYVec);
-		half3 YVec = (CosAng * BaseYVec) + (SinAng * BaseXVec);
+//	  return TransformLocalToTranslatedWorld(mul(Input.Position,mat), PrimitiveId);
+//	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform).xyz* Instancing_BoneMatrixBufferSRV[renderIndex][0], PrimitiveId);
+	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform).xyz*textcoords.x, PrimitiveId);
+}
 
-		// Find scale at this point along spline
-		half2 UseScale = lerp(SplineStartScale, SplineEndScale, HermiteAlpha);
 
-		XVec *= sign(UseScale.x);
-		YVec *= sign(UseScale.y);
+// USE_INSTANCING
+//TODO Calc POs here
+float4 CalcWorldPositionAnim(FVertexFactoryInput Input, float4x4 InstanceTransform, uint PrimitiveId, FVertexFactoryIntermediates Intermediates)
+{
+	
+//	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform* Input.ReservedPackedTexCoords2.x).xyz, PrimitiveId); //Instancing_BoneMatrixBufferSRV[0][index];
+	
+	FMaterialVertexParameters matParams =  GetMaterialVertexParameters(Input,Intermediates,Input.Position,Intermediates.TangentToLocal);
+	FVertexFactoryInterpolantsVSToPS params = VertexFactoryGetInterpolantsVSToPS(Input,Intermediates,matParams);
 
-		// Build rotation transform
-		half3x3 SliceTransform = mul(transpose(half3x3(SplineMeshDir, SplineMeshX, SplineMeshY)), half3x3(SplineDir, XVec, YVec));
+	FMaterialPixelParameters finaParams = GetMaterialPixelParameters(params,Input.Position);
 
-		return SliceTransform;
-	}
-#endif	// USE_SPLINEDEFORM
+	float2 textcoords = float2(1,1);
+//#if NUM_TEX_COORD_INTERPOLATORS 
+	//textcoords =GetUV(params,0);
+//#endif
+
+
+	
+	
+	return AnimDeformMesh(Input,PrimitiveId,InstanceTransform,textcoords);
+}
+
+
+
 
 #if USE_INSTANCING
 float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint PrimitiveId)
@@ -845,7 +863,7 @@ half3x3 VertexFactoryGetTangentToLocal( FVertexFactoryInput Input, FVertexFactor
 float4 VertexFactoryGetWorldPosition(FVertexFactoryInput Input, FVertexFactoryIntermediates Intermediates)
 {
 #if USE_INSTANCING
-	return CalcWorldPosition(Input.Position, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId) * Intermediates.PerInstanceParams.z;
+	return CalcWorldPositionAnim(Input, GetInstanceTransform(Intermediates), Intermediates.PrimitiveId,Intermediates) * Intermediates.PerInstanceParams.z;
 #else
 	return CalcWorldPosition(Input.Position, Intermediates.PrimitiveId);
 #endif	// USE_INSTANCING

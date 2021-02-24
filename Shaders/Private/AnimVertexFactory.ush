@@ -44,22 +44,7 @@ Buffer<uint> InputWeightStream;
 
 StructuredBuffer<float4x4> Instancing_BoneMatrixBufferSRV;
 
-float2 AMRendererIndex : TEXCOORD7;
-
-struct CustomRenderData
-{
-	int boneIndex1;
-	int boneIndex2;
-	int boneIndex3;
-	int boneIndex4;
-
-	float boneWeight1;
-	float boneWeight2;
-	float boneWeight3;
-	float boneWeight4;
- 	
-	int renderIndex;
-};
+float2 AMRendererIndex;
 
 
 float4 DecodeFloatToFloat2( float v )
@@ -101,73 +86,16 @@ struct FVertexFactoryInput
 {
 	float4	Position	: ATTRIBUTE0;
 
-#if !MANUAL_VERTEX_FETCH
-	#if METAL_PROFILE
-		float3	TangentX	: ATTRIBUTE1;
-		// TangentZ.w contains sign of tangent basis determinant
-		float4	TangentZ	: ATTRIBUTE2;
-
-		float4	Color		: ATTRIBUTE3;
-	#else
-		half3	TangentX	: ATTRIBUTE1;
-		// TangentZ.w contains sign of tangent basis determinant
-		half4	TangentZ	: ATTRIBUTE2;
-
-		half4	Color		: ATTRIBUTE3;
-	#endif
-#endif
-
-#if NUM_MATERIAL_TEXCOORDS_VERTEX
-	#if !MANUAL_VERTEX_FETCH
-		#if GPUSKIN_PASS_THROUGH
-			// These must match GPUSkinVertexFactory.usf
-			float2	TexCoords[NUM_MATERIAL_TEXCOORDS_VERTEX] : ATTRIBUTE4;
-			#if NUM_MATERIAL_TEXCOORDS_VERTEX > 4
-				#error Too many texture coordinate sets defined on GPUSkin vertex input. Max: 4.
-			#endif
-		#endif
-
-	
-			#if NUM_MATERIAL_TEXCOORDS_VERTEX > 1
-				float4	PackedTexCoords4[NUM_MATERIAL_TEXCOORDS_VERTEX/2] : ATTRIBUTE4;
-			#endif
-			#if NUM_MATERIAL_TEXCOORDS_VERTEX == 1
-				float2	PackedTexCoords2 : ATTRIBUTE4;
-			#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 3
-				float2	PackedTexCoords2 : ATTRIBUTE5;
-			#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 5
-				float2	PackedTexCoords2 : ATTRIBUTE6;
-		//	#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 7
-			#endif
-				
-			
-		#endif
-	//#endif
-#elif USE_PARTICLE_SUBUVS && !MANUAL_VERTEX_FETCH
-	float2	TexCoords[1] : ATTRIBUTE4;
-#endif
-
-	float2	ReservedPackedTexCoords2 : ATTRIBUTE7;
-	
-#if USE_INSTANCING && !MANUAL_VERTEX_FETCH
-	float4 InstanceOrigin : ATTRIBUTE8;  // per-instance random in w 
-	half4 InstanceTransform1 : ATTRIBUTE9;  // hitproxy.r + 256 * selected in .w
-	half4 InstanceTransform2 : ATTRIBUTE10; // hitproxy.g in .w
-	half4 InstanceTransform3 : ATTRIBUTE11; // hitproxy.b in .w
-	float4 InstanceLightmapAndShadowMapUVBias : ATTRIBUTE12; 
-#endif //USE_INSTANCING
 
 #if VF_USE_PRIMITIVE_SCENE_DATA
-	//uint PrimitiveId : ATTRIBUTE13;
+	uint PrimitiveId : ATTRIBUTE13;
 #endif
 
 #if NEEDS_LIGHTMAP_COORDINATE && !MANUAL_VERTEX_FETCH
 	float2	LightMapCoordinate : ATTRIBUTE15;
 #endif
 
-#if USE_INSTANCING
 	uint InstanceId	: SV_InstanceID;
-#endif
 
 #if GPUSKIN_PASS_THROUGH || MANUAL_VERTEX_FETCH
 	uint VertexId : SV_VertexID;
@@ -274,24 +202,16 @@ struct FVertexFactoryIntermediates
 	half TangentToWorldSign;
 
 	half4 Color;
-#if USE_INSTANCING
-		float4 InstanceOrigin;
-		float4 InstanceTransform1;
-		float4 InstanceTransform2;
-		float4 InstanceTransform3;
 
-		#if USE_INSTANCING_BONEMAP
-			float4 InstancePrevOrigin;
-			float4 InstancePrevTransform1;
-			float4 InstancePrevTransform2;
-			float4 InstancePrevTransform3;
-		#endif
-
-		float4 InstanceLightmapAndShadowMapUVBias;
-
+	// USE_INSTANCING
+	float4 InstanceOrigin;
+	float4 InstanceTransform1;
+	float4 InstanceTransform2;
+	float4 InstanceTransform3;
+	float4 InstanceLightmapAndShadowMapUVBias;
 	// x = per-instance random, y = per-instance fade out amount, z = hide/show flag, w dither fade cutoff
 	float4 PerInstanceParams;
-#endif	// USE_INSTANCING
+	
 	uint PrimitiveId;
 
 	float3 PreSkinPosition;
@@ -312,53 +232,23 @@ float4x4 GetInstanceTransform(FVertexFactoryIntermediates Intermediates)
 
 
 float4x4 GetInstanceTransform(FPositionOnlyVertexFactoryInput Input)
-{
-	#if MANUAL_VERTEX_FETCH && !USE_INSTANCING_BONEMAP
+{	
 	uint InstanceId = GetInstanceId(Input.InstanceId);
 	return float4x4(
 			float4(InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 0].xyz, 0.0f),
 			float4(InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 1].xyz, 0.0f),
 			float4(InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 2].xyz, 0.0f),
 			float4(InstanceVF.VertexFetch_InstanceOriginBuffer[(InstanceId + InstanceOffset)].xyz, 1.0f));
-	#elif MANUAL_VERTEX_FETCH && USE_INSTANCING_BONEMAP
-	uint InstanceIndex = VertexFetch_InstanceBoneMapBuffer[LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId];
-	return float4x4(
-		float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 0].xyz, 0.0f),
-		float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 1].xyz, 0.0f),
-		float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 2].xyz, 0.0f),
-		float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 3].xyz, 1.0f));
-	#else 
-	return float4x4(
-		float4(Input.InstanceTransform1.xyz, 0.0f),
-		float4(Input.InstanceTransform2.xyz, 0.0f),
-		float4(Input.InstanceTransform3.xyz, 0.0f),
-		float4(Input.InstanceOrigin.xyz, 1.0f));
-	#endif
 }
 
 float4x4 GetInstanceTransform(FPositionAndNormalOnlyVertexFactoryInput Input)
-{
-	#if MANUAL_VERTEX_FETCH && !USE_INSTANCING_BONEMAP
+{	
 	uint InstanceId = GetInstanceId(Input.InstanceId);
 	return float4x4(
 			float4(InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 0].xyz, 0.0f),
 			float4(InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 1].xyz, 0.0f),
 			float4(InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 2].xyz, 0.0f),
 			float4(InstanceVF.VertexFetch_InstanceOriginBuffer[(InstanceId + InstanceOffset)].xyz, 1.0f));
-	#elif MANUAL_VERTEX_FETCH && USE_INSTANCING_BONEMAP
-		uint InstanceIndex = VertexFetch_InstanceBoneMapBuffer[LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId];
-		return float4x4(
-			float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 0].xyz, 0.0f),
-			float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 1].xyz, 0.0f),
-			float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 2].xyz, 0.0f),
-			float4(VertexFetch_InstanceTransformBuffer[4 * InstanceIndex + 3].xyz, 1.0f));
-	#else 
-	return float4x4(
-		float4(Input.InstanceTransform1.xyz, 0.0f),
-		float4(Input.InstanceTransform2.xyz, 0.0f),
-		float4(Input.InstanceTransform3.xyz, 0.0f),
-		float4(Input.InstanceOrigin.xyz, 1.0f));
-	#endif
 }
 
 half3x3 GetInstanceToLocal3x3(FVertexFactoryIntermediates Intermediates)
@@ -481,55 +371,15 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 	Result.PerInstanceParams = Intermediates.PerInstanceParams;
 
 	Result.InstanceId = GetInstanceId(Input.InstanceId); 
-	
-	#if USE_INSTANCING_BONEMAP
-		// when using geometry collections, we can correctly compute velocities because we pass along previous transforms
-		Result.PrevFrameLocalToWorld = mul(GetInstancePrevTransform(Intermediates), GetPrimitiveData(Intermediates.PrimitiveId).PreviousLocalToWorld);
-	#else
 		// Assumes instance transform never change, which means per-instance
 		// motion will cause TAA and motion blur artifacts
-		Result.PrevFrameLocalToWorld = mul(GetInstanceTransform(Intermediates), GetPrimitiveData(Intermediates.PrimitiveId).PreviousLocalToWorld);
-	#endif // USE_INSTANCING_BONEMAP
-#else
-	Result.PrevFrameLocalToWorld = GetPrimitiveData(Intermediates.PrimitiveId).PreviousLocalToWorld;
+	Result.PrevFrameLocalToWorld = mul(GetInstanceTransform(Intermediates), GetPrimitiveData(Intermediates.PrimitiveId).PreviousLocalToWorld);
+
 #endif	// USE_INSTANCING
 
 	Result.PreSkinnedPosition = Intermediates.PreSkinPosition.xyz;
 	Result.PreSkinnedNormal = TangentToLocal[2]; //TangentBias(Input.TangentZ.xyz);
 
-#if MANUAL_VERTEX_FETCH && NUM_MATERIAL_TEXCOORDS_VERTEX
-		const uint NumFetchTexCoords = LocalVF.VertexFetch_Parameters[VF_NumTexcoords_Index];
-		UNROLL
-		for (uint CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS_VERTEX; CoordinateIndex++)
-		{
-			// Clamp coordinates to mesh's maximum as materials can request more than are available
-			uint ClampedCoordinateIndex = min(CoordinateIndex, NumFetchTexCoords-1);
-			Result.TexCoords[CoordinateIndex] = LocalVF.VertexFetch_TexCoordBuffer[NumFetchTexCoords * (LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) + ClampedCoordinateIndex];
-		}
-#elif NUM_MATERIAL_TEXCOORDS_VERTEX
-		#if GPUSKIN_PASS_THROUGH
-			UNROLL
-			for (int CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS_VERTEX; CoordinateIndex++)
-			{
-				Result.TexCoords[CoordinateIndex] = Input.TexCoords[CoordinateIndex].xy;
-			}
-		#else
-			#if NUM_MATERIAL_TEXCOORDS_VERTEX > 1
-				UNROLL
-				for(int CoordinateIndex = 0; CoordinateIndex < NUM_MATERIAL_TEXCOORDS_VERTEX-1; CoordinateIndex+=2)
-				{
-					Result.TexCoords[CoordinateIndex] = Input.PackedTexCoords4[CoordinateIndex/2].xy;
-					if( CoordinateIndex+1 < NUM_MATERIAL_TEXCOORDS_VERTEX )
-					{
-						Result.TexCoords[CoordinateIndex+1] = Input.PackedTexCoords4[CoordinateIndex/2].zw;
-					}
-				}
-			#endif	// NUM_MATERIAL_TEXCOORDS_VERTEX > 1
-			#if NUM_MATERIAL_TEXCOORDS_VERTEX % 2 == 1
-				Result.TexCoords[NUM_MATERIAL_TEXCOORDS_VERTEX-1] = Input.PackedTexCoords2;
-			#endif	// NUM_MATERIAL_TEXCOORDS_VERTEX % 2 == 1
-		#endif
-#endif  //MANUAL_VERTEX_FETCH && NUM_MATERIAL_TEXCOORDS_VERTEX
 
 	Result.PrimitiveId = Intermediates.PrimitiveId;
 	return Result;
@@ -544,7 +394,6 @@ float4 AnimDeformMesh(FVertexFactoryInput Input,uint PrimitiveId,float4x4 Instan
 //	FMaterialPixelParameters MaterialParameters = GetMaterialPixelParameters(Input.FactoryInterpolants, Input.Position);
 //	CalcMaterialParameters(MaterialParameters,true, Input.Position);
 	
-	CustomRenderData renderData;
 
 	float4 indexes = DecodeFloatToFloat2(textcoords.x);
 	float4 weights = DecodeFloatToFloat2(textcoords.y);
@@ -599,9 +448,6 @@ float4 AnimDeformMesh(FVertexFactoryInput Input,uint PrimitiveId,float4x4 Instan
 
 	//FMaterialVertexParameters params = GetMaterialVertexParameters(Input,Intermediates);
 
-#if NUM_MATERIAL_TEXCOORDS_VERTEX > 1
-	scale = 1;
-#endif
 //	  return TransformLocalToTranslatedWorld(mul(Input.Position,mat), PrimitiveId);
 //	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform).xyz* Instancing_BoneMatrixBufferSRV[renderIndex][0], PrimitiveId);
 	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform).xyz*textcoords.x, PrimitiveId);
@@ -621,8 +467,8 @@ float4 CalcWorldPositionAnim(FVertexFactoryInput Input, float4x4 InstanceTransfo
 	FMaterialPixelParameters finaParams = GetMaterialPixelParameters(params,Input.Position);
 
 	float2 textcoords = float2(1,1);
-#if NUM_TEX_COORD_INTERPOLATORS >1
-	textcoords =params.TexCoords[3];
+#if NUM_TEX_COORD_INTERPOLATORS 
+//	textcoords =params.TexCoords[NUM_TEX_COORD_INTERPOLATORS];
 #endif
 
 
@@ -642,23 +488,13 @@ float4 CalcWorldPosition(float4 Position, float4x4 InstanceTransform, uint Primi
 half3x3 CalcTangentToLocal(FVertexFactoryInput Input, out float TangentSign)
 {
 	half3x3 Result;
-	
 
-#if MANUAL_VERTEX_FETCH
 	half3 TangentInputX = LocalVF.VertexFetch_PackedTangentsBuffer[2 * (LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) + 0].xyz;
 	half4 TangentInputZ = LocalVF.VertexFetch_PackedTangentsBuffer[2 * (LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) + 1].xyzw;
-#else
-	half3 TangentInputX = Input.TangentX;
-	half4 TangentInputZ = Input.TangentZ;
-#endif
 
-#ifdef GPUSKIN_PASS_THROUGH
-	half3 TangentX = TangentInputX;
-	half4 TangentZ = TangentInputZ;
-#else
 	half3 TangentX = TangentBias(TangentInputX);
 	half4 TangentZ = TangentBias(TangentInputZ);
-#endif
+
 
 	TangentSign = TangentZ.w;
 
@@ -698,30 +534,23 @@ FVertexFactoryIntermediates GetVertexFactoryIntermediates(FVertexFactoryInput In
 	Intermediates.PrimitiveId = 0;
 #endif
 
-#if MANUAL_VERTEX_FETCH
 	Intermediates.Color = LocalVF.VertexFetch_ColorComponentsBuffer[(LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId) & LocalVF.VertexFetch_Parameters[VF_ColorIndexMask_Index]] FMANUALFETCH_COLOR_COMPONENT_SWIZZLE; // Swizzle vertex color.
 
-#else
-	
-	Intermediates.Color = Input.Color FCOLOR_COMPONENT_SWIZZLE; // Swizzle vertex color.
-	
-#endif
 
-#if USE_INSTANCING && MANUAL_VERTEX_FETCH && !USE_INSTANCING_BONEMAP
 	uint InstanceId = GetInstanceId(Input.InstanceId);
 	Intermediates.InstanceTransform1 = InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 0];
 	Intermediates.InstanceTransform2 = InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 1];
 	Intermediates.InstanceTransform3 = InstanceVF.VertexFetch_InstanceTransformBuffer[3 * (InstanceId + InstanceOffset) + 2];
 	Intermediates.InstanceOrigin = InstanceVF.VertexFetch_InstanceOriginBuffer[(InstanceId + InstanceOffset)];
 	Intermediates.InstanceLightmapAndShadowMapUVBias = InstanceVF.VertexFetch_InstanceLightmapBuffer[(InstanceId + InstanceOffset)];
-#endif
+
 
 	float TangentSign;
 	Intermediates.TangentToLocal = CalcTangentToLocal(Input, TangentSign);
 	Intermediates.TangentToWorld = CalcTangentToWorld(Intermediates,Intermediates.TangentToLocal);
 	Intermediates.TangentToWorldSign = TangentSign * GetPrimitiveData(Intermediates.PrimitiveId).InvNonUniformScaleAndDeterminantSign.w;
 
-#if USE_INSTANCING && !USE_INSTANCING_BONEMAP
+
 	// x = per-instance random, y = per-instance fade out factor, z = zero or one depending of if it is shown at all, w is dither cutoff 
 
 	// PerInstanceParams.z stores a hide/show flag for this instance
@@ -743,7 +572,7 @@ FVertexFactoryIntermediates GetVertexFactoryIntermediates(FVertexFactoryInput In
 		Intermediates.PerInstanceParams.w = 0;
 	#endif
 
-#endif	// USE_INSTANCING
+
 
 	return Intermediates;
 }
@@ -786,7 +615,6 @@ FVertexFactoryInterpolantsVSToPS VertexFactoryGetInterpolantsVSToPS(FVertexFacto
 	// Initialize the whole struct to 0
 	// Really only the last two components of the packed UVs have the opportunity to be uninitialized
 	Interpolants = (FVertexFactoryInterpolantsVSToPS)0;
-
 #if NUM_TEX_COORD_INTERPOLATORS
 	float2 CustomizedUVs[NUM_TEX_COORD_INTERPOLATORS];
 	GetMaterialCustomizedUVs(VertexParameters, CustomizedUVs);
@@ -797,13 +625,7 @@ FVertexFactoryInterpolantsVSToPS VertexFactoryGetInterpolantsVSToPS(FVertexFacto
 	{
 		SetUV(Interpolants, CoordinateIndex, CustomizedUVs[CoordinateIndex]);
 	}
-
-#elif NUM_MATERIAL_TEXCOORDS_VERTEX == 0 && USE_PARTICLE_SUBUVS
-	#if MANUAL_VERTEX_FETCH
-		SetUV(Interpolants, 0, LocalVF.VertexFetch_TexCoordBuffer[LocalVF.VertexFetch_Parameters[VF_NumTexcoords_Index] * (LocalVF.VertexFetch_Parameters[VF_VertexOffset] + Input.VertexId)]);
-	#else
-		SetUV(Interpolants, 0, Input.TexCoords[0]);
-	#endif
+	
 #endif
 
 #if NEEDS_LIGHTMAP_COORDINATE
