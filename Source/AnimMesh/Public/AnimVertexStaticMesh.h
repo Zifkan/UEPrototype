@@ -23,6 +23,7 @@ public:
 	
 	FRHIShaderResourceView* BoneWeightSRV;
 
-
 	FSkinWeightVertexBuffer SkinWeightVertexBuffer;
+/*	UPROPERTY()	
+	TArray< FSkinWeightInfo > MergedSkinWeightBuffer;*/
 };

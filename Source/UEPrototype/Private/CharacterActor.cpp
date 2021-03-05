@@ -79,7 +79,7 @@ void ACharacterActor::SetIndex(int index)
 void ACharacterActor::SetSetBuffer(TArray<FMatrix> buffer)
 {
 	if(AnimVertexMeshComponent==nullptr)return;
- 	//AnimVertexMeshComponent->UpdateBoneArray(buffer);
+ 	AnimVertexMeshComponent->UpdateBoneArray(buffer);
 }
 
 

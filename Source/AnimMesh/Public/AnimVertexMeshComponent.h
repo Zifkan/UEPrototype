@@ -38,10 +38,13 @@ UPROPERTY(EditAnywhere)
 	
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,FActorComponentTickFunction* ThisTickFunction) override;
+
+	UPROPERTY(EditAnywhere)
+	USkeletalMesh* skeletalMesh;
 	
 private:
-	TArray<FMatrix> BoneArray;
-	TArray<FMatrix> temp;
 	void SetBuffer(TArray<FMatrix> buffer);
+	//TArray<FMatrix3x4> BoneArray;
+	//TArray<FMatrix> temp;
 	void SetBufferFinish();
 };

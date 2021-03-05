@@ -422,90 +422,57 @@ ACharacterActor* CharacterConverterTool::ConvertToMesh(UDebugSkelMeshComponent* 
 
 			if (AnimVertexStaticMesh!=nullptr)
 			{
-				auto UVnum = AnimVertexStaticMesh->GetNumUVChannels(0);
+				/*auto UVnum = AnimVertexStaticMesh->GetNumUVChannels(0);
 				for (int i = UVnum; i < 8; ++i)
 				{
 					AnimVertexStaticMesh->AddUVChannel(0);
-				}
+				}*/
 
 	
 				
 				auto renderData = &PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0];
 				auto currentBonesInfluence = renderData->GetVertexBufferMaxBoneInfluences();
-				uint32 vertexCount = 123456;//renderData->GetNumVertices();//123456;
+				uint32 vertexCount = renderData->GetNumVertices();//123456;
 				auto weightOffset= renderData->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetConstantInfluencesBoneWeightsOffset();
 
-				auto skinWeightVertexBuffer = renderData->SkinWeightVertexBuffer;
-
-				auto WeightDataSRV = skinWeightVertexBuffer.GetDataVertexBuffer()->GetSRV();
-				AnimVertexStaticMesh->Modify();
-				AnimVertexStaticMesh->BoneIndices = skinWeightVertexBuffer.GetBoneIndexByteSize();
-				AnimVertexStaticMesh->BoneWeightSRV = WeightDataSRV;
-				AnimVertexStaticMesh->SkinWeightVertexBuffer = skinWeightVertexBuffer;
-			
-				AnimVertexStaticMesh->TestValue = 654321;
-				TMap<FVertexInstanceID, FVector2D> UVs;
 		
+				AnimVertexStaticMesh->MarkPackageDirty();
 				AnimVertexStaticMesh->Modify();
+
+				
+				TArray<FVector4> indicesArray;
 				for (uint32 i = 0; i < vertexCount; ++i)
 				{
-					FVector4 weights;
+					//FVector4 weights;
 					FVector4 indices;
 					
 					for (uint32 j = 0; j < currentBonesInfluence; ++j)
 					{			
-						weights[j] =  static_cast<double>(static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j))	/255.0);
+					//	weights[j] =  static_cast<double>(static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneWeight(i,j))	/255.0);
 						indices[j] = static_cast<int>(renderData->SkinWeightVertexBuffer.GetBoneIndex(i,j));
 					}  
-
-					//auto uv = FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights));
-					auto uv = FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights));
-					UVs.Add(FVertexInstanceID(i),uv);
-			
-					UE_LOG(LogTemp, Warning, TEXT("indices = %f; weights = %f"),uv.X, uv.Y);
+					UE_LOG(LogTemp, Warning, TEXT("indices = %s;"),*indices.ToString());
+					indicesArray.Add(indices);
 				}
-				AnimVertexStaticMesh->SetUVChannel(0,3,UVs);
-			
-				/*
-			    TArray<FSkinWeightInfo> verts;
-				PreviewComponent->GetSkeletalMeshRenderData()->LODRenderData[0].GetSkinWeightVertexBuffer()->GetSkinWeights(verts);
-				for (uint32 i = 0; i < vertexCount; ++i)
-				{
-					auto vert = verts[i];
-					FVector4 weights;
-					FVector4 indices;
-					
-					indices.X = static_cast<int>(vert.InfluenceBones[0]);
-					indices.Y = static_cast<int>(vert.InfluenceBones[1]);
-					indices.Z = static_cast<int>(vert.InfluenceBones[2]);
-					indices.W = static_cast<int>(vert.InfluenceBones[3]);
-    			
-					weights.X = static_cast<double>(static_cast<int>(vert.InfluenceWeights[0])/255.0);
-					weights.Y = static_cast<double>(static_cast<int>(vert.InfluenceWeights[1])/255.0);
-					weights.Z = static_cast<double>(static_cast<int>(vert.InfluenceWeights[2])/255.0);
-					weights.W = static_cast<double>(static_cast<int>(vert.InfluenceWeights[3])/255.0);
-
-					AnimVertexStaticMesh->RenderData->LODResources[0].VertexBuffers.StaticMeshVertexBuffer.SetVertexUV (i,7,FVector2D(EncodeFloat4toFloat(indices),EncodeFloat4toFloat(weights)));
-					UE_LOG(LogTemp, Warning, TEXT("indices = %s; weights = %s"),*indices.ToString(), *weights.ToString());
-				}
-				*/
-				
 		
-				auto boneTree = PreviewComponent->SkeletalMesh->RefSkeleton.GetRefBoneInfo();			
-				for (auto BoneTree : boneTree)
+				auto boneMatrix = PreviewComponent->SkeletalMesh->RefBasesInvMatrix;
+			
+				for (int i = 0; i < indicesArray.Num(); ++i)
 				{
-					int bone_index = PreviewComponent->GetBoneIndex( BoneTree.Name );				
-					auto boneMatrix = PreviewComponent->GetBoneMatrix( bone_index );
-					auto boneTransform = PreviewComponent->GetBoneTransform( bone_index );
-					BoneInfoArray.Add(FBoneDataInfo({boneTransform,boneMatrix}));
-					UE_LOG(LogTemp, Warning, TEXT("%s = %i"),*BoneTree.Name.ToString(), bone_index);
+					
+				//	auto BoneTree = boneTree[i];
+				//	int bone_index = PreviewComponent->GetBoneIndex( BoneTree.Name );				
+					
+					auto boneTransform = PreviewComponent->GetBoneTransform( i );
+					BoneInfoArray.Add(FBoneDataInfo({boneTransform,boneMatrix[i]}));
+				//	UE_LOG(LogTemp, Warning, TEXT("%s = %i"),*BoneTree.Name.ToString(), bone_index);
 				}
 			}
 			
     	
 
 			
-			AnimVertexStaticMesh->MarkPackageDirty();
+			
 			// Notify asset registry of new asset
 			FAssetRegistryModule::AssetCreated(AnimVertexStaticMesh);
 

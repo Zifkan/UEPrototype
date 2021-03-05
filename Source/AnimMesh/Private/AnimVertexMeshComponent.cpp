@@ -13,12 +13,12 @@ FAnimationInstanceVertexSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
 {
 
     auto scale=1;
-    BoneArray.Init(FMatrix(FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale),256*16);
-  
-    for (uint32 i=0; i<256*16;++i)
+   // BoneArray.Init(FMatrix(FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale,FVector::OneVector*scale),256*16);
+ //   BoneArray.AddZeroed(1);
+ /*   for (uint32 i=0; i<256*16;++i)
     {
         temp.Add(FMatrix(FVector::OneVector * (i*0.1f) ,FVector::OneVector,FVector::OneVector,FVector::OneVector));
-    }
+    }*/
 
    // temp.Init(FMatrix(FVector::OneVector,FVector::OneVector,FVector::OneVector,FVector::OneVector),256*16);
    
@@ -51,9 +51,9 @@ FAnimationInstanceVertexSceneProxy* UAnimVertexMeshComponent::CreateSceneProxy()
 		
         ProxySize = PerInstanceRenderData->ResourceSize;
 
-        auto s= new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel);
+        auto s= new FAnimationInstanceVertexSceneProxy(this, GetWorld()->FeatureLevel,skeletalMesh);
         
-        UpdateBoneArray(BoneArray);
+      //  UpdateBoneArray(BoneArray);
 
        
         return s;
@@ -108,12 +108,6 @@ void UAnimVertexMeshComponent::SetBufferFinish()
 
 void UAnimVertexMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,    FActorComponentTickFunction* ThisTickFunction)
 {
-    if (BoneArray.Num()<=0)return;
-
-
-  
-    
-    UpdateBoneArray(temp);
-    
+   //if (BoneArray.Num()<=0)return;
 }
 

@@ -43,7 +43,7 @@ float4 InstancingFadeOutParams;
 Buffer<uint> BonesIndexesStream;
 Buffer<float> InputWeightStream;
 
-StructuredBuffer<float4x4> Instancing_BoneMatrixBufferSRV;
+STRONG_TYPE Buffer<float4> Instancing_BoneMatrixBufferSRV;
 
 float2 AMRendererIndex;
 
@@ -593,9 +593,14 @@ FMaterialVertexParameters GetMaterialVertexParameters(FVertexFactoryInput Input,
 
 FBoneMatrix GetBoneMatrix(int Index)
 {	
-	return float3x4(float4(Instancing_BoneMatrixBufferSRV[Index][0].x, Instancing_BoneMatrixBufferSRV[Index][1].x, Instancing_BoneMatrixBufferSRV[Index][2].x,0),
+/*	return float3x4(float4(Instancing_BoneMatrixBufferSRV[Index][0].x, Instancing_BoneMatrixBufferSRV[Index][1].x, Instancing_BoneMatrixBufferSRV[Index][2].x,0),
 					float4(Instancing_BoneMatrixBufferSRV[Index][0].y, Instancing_BoneMatrixBufferSRV[Index][1].y, Instancing_BoneMatrixBufferSRV[Index][2].y,0),
-					float4(Instancing_BoneMatrixBufferSRV[Index][0].z, Instancing_BoneMatrixBufferSRV[Index][1].z, Instancing_BoneMatrixBufferSRV[Index][2].z,0));
+					float4(Instancing_BoneMatrixBufferSRV[Index][0].z, Instancing_BoneMatrixBufferSRV[Index][1].z, Instancing_BoneMatrixBufferSRV[Index][2].z,0));*/
+	//return Instancing_BoneMatrixBufferSRV[Index];
+	float4 A = Instancing_BoneMatrixBufferSRV[Index * 4];
+	float4 B = Instancing_BoneMatrixBufferSRV[Index * 4 + 1];
+	float4 C = Instancing_BoneMatrixBufferSRV[Index * 4 + 2];
+	return FBoneMatrix(A,B,C);
 }
 
 

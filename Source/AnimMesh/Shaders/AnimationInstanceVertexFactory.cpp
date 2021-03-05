@@ -9,7 +9,7 @@ IMPLEMENT_TYPE_LAYOUT(FAnimInstancedMeshVertexFactoryShaderParameters);
 
 const int32 InstancedStaticMeshMaxTexCoord = 8;
 
-
+//IMPLEMENT_GLOBAL_SHADER_PARAMETER_STRUCT(FInstancedStaticMeshVertexFactoryUniformShaderParameters, "InstanceVF");
 
 
 TAutoConsoleVariable<int32> CVarMinLOD(
@@ -69,6 +69,235 @@ static TAutoConsoleVariable<int32> CVarRayTracingRenderInstancesCulling(
     TEXT("r.RayTracing.Geometry.InstancedStaticMeshes.Culling"),
     1,
     TEXT("Enable culling for instances in ray tracing (default = 1 (Culling enabled))"));
+
+
+
+
+void FAnimMeshInstanceVertexFactory::InitRHI()
+{
+	SCOPED_LOADTIMER(FInstancedStaticMeshVertexFactory_InitRHI);
+
+	check(HasValidFeatureLevel());
+
+
+
+	FVertexDeclarationElementList Elements;
+	if(Data.PositionComponent.VertexBuffer != NULL)
+	{
+		Elements.Add(AccessStreamComponent(Data.PositionComponent,0));
+	}
+
+	// only tangent,normal are used by the stream. the binormal is derived in the shader
+	uint8 TangentBasisAttributes[2] = { 1, 2 };
+	for(int32 AxisIndex = 0;AxisIndex < 2;AxisIndex++)
+	{
+		if(Data.TangentBasisComponents[AxisIndex].VertexBuffer != NULL)
+		{
+			Elements.Add(AccessStreamComponent(Data.TangentBasisComponents[AxisIndex],TangentBasisAttributes[AxisIndex]));
+		}
+	}
+
+	if (Data.ColorComponentsSRV == nullptr)
+	{
+		Data.ColorComponentsSRV = GNullColorVertexBuffer.VertexBufferSRV;
+		Data.ColorIndexMask = 0;
+	}
+
+	if(Data.ColorComponent.VertexBuffer)
+	{
+		Elements.Add(AccessStreamComponent(Data.ColorComponent,3));
+	}
+	else
+	{
+		//If the mesh has no color component, set the null color buffer on a new stream with a stride of 0.
+		//This wastes 4 bytes of bandwidth per vertex, but prevents having to compile out twice the number of vertex factories.
+		FVertexStreamComponent NullColorComponent(&GNullColorVertexBuffer, 0, 0, VET_Color, EVertexStreamUsage::ManualFetch);
+		Elements.Add(AccessStreamComponent(NullColorComponent, 3));
+	}
+
+	if(Data.TextureCoordinates.Num())
+	{
+		const int32 BaseTexCoordAttribute = 4;
+		for(int32 CoordinateIndex = 0;CoordinateIndex < Data.TextureCoordinates.Num();CoordinateIndex++)
+		{
+			Elements.Add(AccessStreamComponent(
+				Data.TextureCoordinates[CoordinateIndex],
+				BaseTexCoordAttribute + CoordinateIndex
+				));
+		}
+
+		for(int32 CoordinateIndex = Data.TextureCoordinates.Num(); CoordinateIndex < (InstancedStaticMeshMaxTexCoord + 1) / 2; CoordinateIndex++)
+		{
+			Elements.Add(AccessStreamComponent(
+				Data.TextureCoordinates[Data.TextureCoordinates.Num() - 1],
+				BaseTexCoordAttribute + CoordinateIndex
+				));
+		}
+	}
+
+	if(Data.LightMapCoordinateComponent.VertexBuffer)
+	{
+		Elements.Add(AccessStreamComponent(Data.LightMapCoordinateComponent,15));
+	}
+	else if(Data.TextureCoordinates.Num())
+	{
+		Elements.Add(AccessStreamComponent(Data.TextureCoordinates[0],15));
+	}
+
+	// toss in the instanced location stream
+	check(Data.InstanceOriginComponent.VertexBuffer);
+	if (Data.InstanceOriginComponent.VertexBuffer)
+	{
+		Elements.Add(AccessStreamComponent(Data.InstanceOriginComponent, 8));
+	}
+
+	check(Data.InstanceTransformComponent[0].VertexBuffer);
+	if (Data.InstanceTransformComponent[0].VertexBuffer)
+	{
+		Elements.Add(AccessStreamComponent(Data.InstanceTransformComponent[0], 9));
+		Elements.Add(AccessStreamComponent(Data.InstanceTransformComponent[1], 10));
+		Elements.Add(AccessStreamComponent(Data.InstanceTransformComponent[2], 11));
+	}
+
+	if (Data.InstanceLightmapAndShadowMapUVBiasComponent.VertexBuffer)
+	{
+		Elements.Add(AccessStreamComponent(Data.InstanceLightmapAndShadowMapUVBiasComponent,12));
+	}
+
+	/*uint32 val = 1;
+	TArray<uint32>TestBuffer;
+	TestBuffer.Init(val,1);
+	//We first create a resource array to use it in the create info for initializing the structured buffer on creation
+	TResourceArray<uint32>* ResourceArray = new TResourceArray<uint32>(false);
+	FRHIResourceCreateInfo CreateInfo;
+	ResourceArray->Append(TestBuffer);
+	CreateInfo.ResourceArray = ResourceArray;
+	//Set the debug name so we can find the resource when debugging in RenderDoc
+	CreateInfo.DebugName = TEXT("DeformMesh_TransformsSB");
+
+	FVertexBuffer TestVertexBuffer;
+	auto AccessFlags = BUF_Static;
+	TestVertexBuffer.VertexBufferRHI = RHICreateVertexBuffer(1,AccessFlags | BUF_ShaderResource, CreateInfo);
+	///////////////////////////////////////////////////////////////
+	//// CREATING AN SRV FOR THE STRUCTUED BUFFER SO WA CAN USE IT AS A SHADER RESOURCE PARAMETER AND BIND IT TO THE VERTEX FACTORY
+	FShaderResourceViewRHIRef testScaleBuffer = RHICreateShaderResourceView(TestVertexBuffer.VertexBufferRHI,32,PF_R32_UINT);
+
+
+	
+	FVertexStreamComponent testScale = FVertexStreamComponent(
+            &TestVertexBuffer,
+            0,
+            8,
+            VET_Short4N,
+            EVertexStreamUsage::ManualFetch | EVertexStreamUsage::Instancing
+        );
+	Elements.Add(AccessStreamComponent(testScale,4));
+	*/
+
+	
+
+	
+	//Elements.Add(AccessStreamComponent(BoneIndices,3));
+
+	// bone weights decls
+	//Elements.Add(AccessStreamComponent(BoneWeights,4));
+
+	// Extra bone indices & weights decls
+	/*if (GetNumBoneInfluences() > MAX_INFLUENCES_PER_STREAM)
+	{
+		Elements.Add(AccessStreamComponent(ExtraBoneIndices, 14));
+		Elements.Add(AccessStreamComponent(ExtraBoneWeights, 15));
+	}
+	else
+	{
+		Elements.Add(AccessStreamComponent(BoneIndices, 14));
+		Elements.Add(AccessStreamComponent(BoneWeights, 15));
+	}*/
+
+
+	if (SceneProxy->SkinWeightVertexBuffer != NULL && SceneProxy->SkinWeightVertexBuffer->GetNumVertices()>0)
+	{
+		const FSkinWeightDataVertexBuffer* WeightDataVertexBuffer = SceneProxy->SkinWeightVertexBuffer->GetDataVertexBuffer();
+		const uint32 Stride = SceneProxy->SkinWeightVertexBuffer->GetConstantInfluencesVertexStride();
+		const uint32 WeightsOffset = SceneProxy->SkinWeightVertexBuffer->GetConstantInfluencesBoneWeightsOffset();
+		auto BoneIndices = FVertexStreamComponent(WeightDataVertexBuffer, 0, Stride, /*SceneProxy->SkinWeightVertexBuffer->Use16BitBoneIndex() ? VET_UShort4 : */VET_UByte4);
+		auto BoneWeights = FVertexStreamComponent(WeightDataVertexBuffer, WeightsOffset, Stride, VET_UByte4N);
+
+	
+
+	/*	auto currentBonesInfluence = SceneProxy->SkinWeightVertexBuffer->GetMaxBoneInfluences();
+		uint32 vertexCount = SceneProxy->SkinWeightVertexBuffer->GetNumVertices();//123456;
+
+		TArray<FVector4> weightsArray;
+		TArray<FVector4> indicesArray;
+		for (uint32 i = 0; i < vertexCount; ++i)
+		{
+			FVector4 weights;
+			FVector4 indices;
+			for (uint32 j = 0; j < currentBonesInfluence; ++j)
+			{			
+				weights[j] =  static_cast<double>(static_cast<int>(SceneProxy->SkinWeightVertexBuffer->GetBoneWeight(i,j))/255.0);
+				indices[j] = static_cast<int>(SceneProxy->SkinWeightVertexBuffer->GetBoneIndex(i,j));
+			}
+
+			weightsArray.Add(weights);
+			indicesArray.Add(indices);
+		}
+	
+		TResourceArray<FVector4>* indicesResourceArray = new TResourceArray<FVector4>(true);
+		FRHIResourceCreateInfo indicesCreateInfo;
+		indicesResourceArray->Append(weightsArray);
+		indicesCreateInfo.ResourceArray = indicesResourceArray;
+		indicesCreateInfo.DebugName = TEXT("indicesResourceArray");
+		auto indicesBuffer =  RHICreateVertexBuffer( sizeof(FVector4)*vertexCount, (BUF_Dynamic | BUF_ShaderResource), indicesCreateInfo ); 	
+		FVertexBuffer indicesVertBuffer;
+		//indicesVertBuffer.InitResource();
+	
+
+
+		indicesVertBuffer.ReleaseRHI();
+		indicesVertBuffer.ReleaseDynamicRHI();
+		indicesVertBuffer.InitDynamicRHI();
+		indicesVertBuffer.InitRHI();
+		indicesVertBuffer.VertexBufferRHI = indicesBuffer;
+		
+	//	auto BoneIndices = FVertexStreamComponent(&indicesVertBuffer, 0, currentBonesInfluence,SceneProxy->SkinWeightVertexBuffer->Use16BitBoneIndex() ? VET_UShort4 : VET_UByte4);
+
+
+		TResourceArray<FVector4>* weightsResourceArray = new TResourceArray<FVector4>(true);
+		FRHIResourceCreateInfo weightsCreateInfo;
+		weightsResourceArray->Append(weightsArray);
+		weightsCreateInfo.ResourceArray = weightsResourceArray;
+		weightsCreateInfo.DebugName = TEXT("WeightsResourceArray");
+		auto boneWeightsBuffer =  RHICreateVertexBuffer( sizeof(FVector4)*vertexCount, (BUF_Dynamic | BUF_ShaderResource), weightsCreateInfo );
+		FVertexBuffer boneWeightsVertBuffer;
+		//boneWeightsVertBuffer.InitResource();
+	
+
+		boneWeightsVertBuffer.ReleaseRHI();
+		boneWeightsVertBuffer.ReleaseDynamicRHI();
+		boneWeightsVertBuffer.InitDynamicRHI();
+		boneWeightsVertBuffer.InitRHI();
+		boneWeightsVertBuffer.VertexBufferRHI = boneWeightsBuffer;
+	//	auto BoneWeights = FVertexStreamComponent(&boneWeightsVertBuffer, 0, currentBonesInfluence, VET_Float4);
+		*/
+		Elements.Add(AccessStreamComponent(BoneIndices, 13));
+		Elements.Add(AccessStreamComponent(BoneWeights, 14));
+	}	
+	
+	// we don't need per-vertex shadow or lightmap rendering
+	InitDeclaration(Elements);
+
+	{
+		FInstancedStaticMeshVertexFactoryUniformShaderParameters UniformParameters;
+		UniformParameters.VertexFetch_InstanceOriginBuffer = GetInstanceOriginSRV();
+		UniformParameters.VertexFetch_InstanceTransformBuffer = GetInstanceTransformSRV();
+		UniformParameters.VertexFetch_InstanceLightmapBuffer = GetInstanceLightmapSRV();
+		UniformParameters.InstanceCustomDataBuffer = GetInstanceCustomDataSRV();
+		UniformParameters.NumCustomDataFloats = Data.NumCustomDataFloats;
+		UniformBuffer = TUniformBufferRef<FInstancedStaticMeshVertexFactoryUniformShaderParameters>::CreateUniformBufferImmediate(UniformParameters, UniformBuffer_MultiFrame, EUniformBufferValidation::None);
+	}
+}
 
 
 
@@ -264,7 +493,7 @@ IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshInstanceVertexFactory, SF_Verte
 #if RHI_RAYTRACING
 IMPLEMENT_VERTEX_FACTORY_PARAMETER_TYPE(FAnimMeshInstanceVertexFactory, SF_RayHitGroup, FAnimInstancedMeshVertexFactoryShaderParameters);
 #endif
-IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/AnimVertexFactory.ush", true, true, true, true, false,true,false);
+IMPLEMENT_VERTEX_FACTORY_TYPE_EX(FAnimMeshInstanceVertexFactory, "/CustomShaders/CustomLocalVertexFactory.ush", true, true, true, true, false,true,false);
 
 /**######################################*/
 
@@ -433,7 +662,7 @@ void FAnimationInstanceVertexSceneProxy::SetupProxy(UInstancedStaticMeshComponen
 	auto animVertexStaticMesh = static_cast<UAnimVertexStaticMesh*>(InComponent->GetStaticMesh());
 
 	UE_LOG(LogTemp, Warning, TEXT("GetNumBones: %i"),animVertexStaticMesh->TestValue);
-
+	UE_LOG(LogTemp, Warning, TEXT("GetNumVertices: %i"),animVertexStaticMesh->SkinWeightVertexBuffer.GetNumVertices());
 	
 	
 	BoneIndicesSRV = animVertexStaticMesh->BoneIndices;
@@ -617,6 +846,16 @@ void FAnimMeshInstancedStaticMeshRenderData::InitVertexFactories(FAnimationInsta
             VertexFactory.InitResource();
         }
     });
+
+
+/*	const FSkinWeightDataVertexBuffer* WeightDataVertexBuffer = VertexBuffers.SkinWeightVertexBuffer->GetDataVertexBuffer();
+	const uint32 Stride = VertexBuffers.SkinWeightVertexBuffer->GetConstantInfluencesVertexStride();
+	const uint32 WeightsOffset = VertexBuffers.SkinWeightVertexBuffer->GetConstantInfluencesBoneWeightsOffset();
+	VertexFactoryData->BoneIndices = FVertexStreamComponent(WeightDataVertexBuffer, 0, Stride, bUse16BitBoneIndex ? VET_UShort4 : VET_UByte4);
+	VertexFactoryData->BoneWeights = FVertexStreamComponent(WeightDataVertexBuffer, WeightsOffset, Stride, VET_UByte4N);
+*/
+
+	
 }
 
 

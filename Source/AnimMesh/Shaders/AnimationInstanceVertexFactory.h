@@ -9,6 +9,7 @@
 #include "MeshMaterialShader.h"
 #include "TessellationRendering.h"
 #include "Engine/InstancedStaticMesh.h"
+#include "Rendering/SkeletalMeshRenderData.h"
 
 
 class FAnimationInstanceVertexSceneProxy;
@@ -22,15 +23,25 @@ public:
 	{
 	}
 
-	static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
+	/*static void ModifyCompilationEnvironment(const FVertexFactoryShaderPermutationParameters& Parameters, FShaderCompilerEnvironment& OutEnvironment)
 	{
-		//OutEnvironment.SetDefine(TEXT("NUM_MATERIAL_TEXCOORDS_VERTEX"), TEXT("3"));
+		auto id = OutEnvironment.GetDefinitions().FindKey("NUM_MATERIAL_TEXCOORDS_VERTEX");
+		UE_LOG(LogTemp, Warning, TEXT("Some warning message %s"),id );
+
+		if (id==nullptr)
+		{
+			OutEnvironment.SetDefine(TEXT("NUM_MATERIAL_TEXCOORDS_VERTEX"),3);
+		}
 		FInstancedStaticMeshVertexFactory::ModifyCompilationEnvironment(Parameters, OutEnvironment);
 
 		
-	}
+	}*/
 
-	FAnimationInstanceVertexSceneProxy* SceneProxy;	
+	virtual void InitRHI() override;
+	
+	FAnimationInstanceVertexSceneProxy* SceneProxy;
+
+	
 };
 
 class FAnimInstancedMeshVertexFactoryShaderParameters : public FLocalVertexFactoryShaderParametersBase
@@ -175,7 +186,7 @@ class FAnimationInstanceVertexSceneProxy : public FStaticMeshSceneProxy
 public:
 	SIZE_T GetTypeHash() const override;
 
-	FAnimationInstanceVertexSceneProxy(UInstancedStaticMeshComponent* InComponent, ERHIFeatureLevel::Type InFeatureLevel)
+	FAnimationInstanceVertexSceneProxy(UInstancedStaticMeshComponent* InComponent, ERHIFeatureLevel::Type InFeatureLevel,USkeletalMesh* skeletalMesh)
 	:	FStaticMeshSceneProxy(InComponent, true)
 	,	StaticMesh(InComponent->GetStaticMesh())
 	,	InstancedRenderData(InComponent, InFeatureLevel,this)
@@ -183,6 +194,10 @@ public:
 	,	bHasSelectedInstances(InComponent->SelectedInstances.Num() > 0)
 #endif
 	{
+		if (skeletalMesh!=nullptr)
+		{
+			SkinWeightVertexBuffer = skeletalMesh->GetResourceForRendering()->LODRenderData[0].GetSkinWeightVertexBuffer();
+		}
 		bVFRequiresPrimitiveUniformBuffer = true;
 		SetupProxy(InComponent);
 
@@ -269,6 +284,7 @@ public:
 
 	/** Per component render data */
 	FAnimMeshInstancedStaticMeshRenderData InstancedRenderData;
+	FSkinWeightVertexBuffer* SkinWeightVertexBuffer = NULL;
 
 
 	void UpdateBoneMatrixBuffer_RenderThread(TArray<FMatrix> Array);
