@@ -30,21 +30,15 @@ UPROPERTY(EditAnywhere)
 	
 	virtual FAnimationInstanceVertexSceneProxy* CreateSceneProxy() override;
 
-	void UpdateBoneArray(TArray<FMatrix> buffer);
-	
+	void UpdateBoneArray(TArray<FMatrix> buffer);	
 	
 	
 	void SetRenderIndex(int index);
-	
-	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,FActorComponentTickFunction* ThisTickFunction) override;
 
 	UPROPERTY(EditAnywhere)
 	USkeletalMesh* skeletalMesh;
 	
 private:
 	void SetBuffer(TArray<FMatrix> buffer);
-	//TArray<FMatrix3x4> BoneArray;
-	//TArray<FMatrix> temp;
 	void SetBufferFinish();
 };

@@ -45,18 +45,6 @@ Buffer<float> InputWeightStream;
 
 STRONG_TYPE Buffer<float4> Instancing_BoneMatrixBufferSRV;
 
-float2 AMRendererIndex;
-
-
-float4 DecodeFloatToFloat2( float v )
-{
-	float4 kEncodeMul = float4(1.0, 255.0, 65025.0, 160581375.0);
-	float kEncodeBit = 1.0/255.0;
-	float4 enc = kEncodeMul * v;
-	enc = frac (enc);
-	enc -= enc.yzww * kEncodeBit;
-	return enc;
-}
 
 #if USE_SPLINEDEFORM
 float4 SplineParams[10];
@@ -604,69 +592,16 @@ FBoneMatrix GetBoneMatrix(int Index)
 }
 
 
-float4 AnimDeformMesh(FVertexFactoryInput Input,uint PrimitiveId,float4x4 InstanceTransform,float2 textcoords)
-{	
-//	FVertexFactoryIntermediates VFIntermediates = GetVertexFactoryIntermediates(Input);
-
-//	FMaterialPixelParameters MaterialParameters = GetMaterialPixelParameters(Input.FactoryInterpolants, Input.Position);
-//	CalcMaterialParameters(MaterialParameters,true, Input.Position);
-	
-
-	float4 indexes = DecodeFloatToFloat2(textcoords.x);
-	float4 weights = DecodeFloatToFloat2(textcoords.y);
-	
-	//float4 indexes = DecodeFloatToFloat2(Input.ReservedPackedTexCoords2.x);
-	//float4 weights = DecodeFloatToFloat2(Input.ReservedPackedTexCoords2.y);
-
-/*	int NumBoneInfluences = 4 & 0xff;
-	int StreamOffset = 4 >> 8;
-	int WeightsOffset = StreamOffset + (InputWeightIndexSize * NumBoneInfluences);
-
-	int BoneIndexOffset1 = StreamOffset + (InputWeightIndexSize * 0);
-	int BoneIndexOffset2 = StreamOffset + (InputWeightIndexSize * 1);
-	int BoneIndexOffset3 = StreamOffset + (InputWeightIndexSize * 2);
-	int BoneIndexOffset4 = StreamOffset + (InputWeightIndexSize * 3);
-	int boneIndex1  = InputWeightStream[BoneIndexOffset1];
-	int boneIndex2  = InputWeightStream[BoneIndexOffset2];
-	int boneIndex3  = InputWeightStream[BoneIndexOffset3];
-	int boneIndex4  = InputWeightStream[BoneIndexOffset4];
-	
-
-	float boneWeight1 = float(InputWeightStream[WeightsOffset + 0]) / 255.0f;
-	float boneWeight2 = float(InputWeightStream[WeightsOffset + 1]) / 255.0f;
-	float boneWeight3 = float(InputWeightStream[WeightsOffset + 2]) / 255.0f;
-	float boneWeight4 = float(InputWeightStream[WeightsOffset + 3]) / 255.0f;*/
-	
-	int  boneIndex1 = indexes.x;
-	int  boneIndex2 = indexes.y;
-	int  boneIndex3 = indexes.z;
-	int  boneIndex4 = indexes.w;
-
-	float  boneWeight1 = weights.x;
-	float  boneWeight2 = weights.y;
-	float  boneWeight3 = weights.z;
-	float  boneWeight4 = weights.w;
-
+float4 AnimDeformMesh(FVertexFactoryInput Input,uint PrimitiveId,float4x4 InstanceTransform)
+{
 	int renderIndex = 0;
 
 #if USE_INSTANCING
 	//renderIndex = Input.InstanceId;
 #endif
-
-	
-	
+		
 	int startIdx = renderIndex * 256;
 
-	/*float4x4 mat =  Instancing_BoneMatrixBufferSRV[startIdx + Input.BlendIndices.x] * Input.BlendWeights.x +
-					Instancing_BoneMatrixBufferSRV[startIdx + Input.BlendIndices.y] * Input.BlendWeights.y +
-					Instancing_BoneMatrixBufferSRV[startIdx + Input.BlendIndices.z] * Input.BlendWeights.z +
-					Instancing_BoneMatrixBufferSRV[startIdx + Input.BlendIndices.w] * Input.BlendWeights.w;*/
-
-
-	//FMaterialVertexParameters params = GetMaterialVertexParameters(Input,Intermediates);
-
-//	  return TransformLocalToTranslatedWorld(mul(Input.Position,mat), PrimitiveId);
-//	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform).xyz* Instancing_BoneMatrixBufferSRV[renderIndex][0], PrimitiveId);
 
 	FBoneMatrix BoneMatrix  = Input.BlendWeights.x * GetBoneMatrix(startIdx + Input.BlendIndices.x);
 				BoneMatrix += Input.BlendWeights.y * GetBoneMatrix(startIdx + Input.BlendIndices.y);
@@ -674,34 +609,15 @@ float4 AnimDeformMesh(FVertexFactoryInput Input,uint PrimitiveId,float4x4 Instan
 				BoneMatrix += Input.BlendWeights.w * GetBoneMatrix(startIdx + Input.BlendIndices.w);
 	
 	return TransformLocalToTranslatedWorld(mul(BoneMatrix,Input.Position), PrimitiveId);
-	//return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform).xyz*textcoords.x, PrimitiveId);
 }
 
 
 // USE_INSTANCING
 //TODO Calc POs here
 float4 CalcWorldPositionAnim(FVertexFactoryInput Input, float4x4 InstanceTransform, uint PrimitiveId, FVertexFactoryIntermediates Intermediates)
-{
-	
-//	return TransformLocalToTranslatedWorld(mul(Input.Position, InstanceTransform* Input.ReservedPackedTexCoords2.x).xyz, PrimitiveId); //Instancing_BoneMatrixBufferSRV[0][index];
-	
-	FMaterialVertexParameters matParams =  GetMaterialVertexParameters(Input,Intermediates,Input.Position,Intermediates.TangentToLocal);
-	FVertexFactoryInterpolantsVSToPS params = VertexFactoryGetInterpolantsVSToPS(Input,Intermediates,matParams);
-
-	FMaterialPixelParameters finaParams = GetMaterialPixelParameters(params,Input.Position);
-
-	uint4 textcoords = Input.BlendIndices;
-//#if NUM_TEX_COORD_INTERPOLATORS 
-	//textcoords =GetUV(params,0);
-//#endif
-
-
-	
-	
-	return AnimDeformMesh(Input,PrimitiveId,InstanceTransform,textcoords);
+{	
+	return AnimDeformMesh(Input,PrimitiveId,InstanceTransform);
 }
-
-
 
 
 #if USE_INSTANCING

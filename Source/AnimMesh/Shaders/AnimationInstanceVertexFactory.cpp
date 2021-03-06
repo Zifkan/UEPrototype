@@ -162,125 +162,17 @@ void FAnimMeshInstanceVertexFactory::InitRHI()
 	if (Data.InstanceLightmapAndShadowMapUVBiasComponent.VertexBuffer)
 	{
 		Elements.Add(AccessStreamComponent(Data.InstanceLightmapAndShadowMapUVBiasComponent,12));
-	}
-
-	/*uint32 val = 1;
-	TArray<uint32>TestBuffer;
-	TestBuffer.Init(val,1);
-	//We first create a resource array to use it in the create info for initializing the structured buffer on creation
-	TResourceArray<uint32>* ResourceArray = new TResourceArray<uint32>(false);
-	FRHIResourceCreateInfo CreateInfo;
-	ResourceArray->Append(TestBuffer);
-	CreateInfo.ResourceArray = ResourceArray;
-	//Set the debug name so we can find the resource when debugging in RenderDoc
-	CreateInfo.DebugName = TEXT("DeformMesh_TransformsSB");
-
-	FVertexBuffer TestVertexBuffer;
-	auto AccessFlags = BUF_Static;
-	TestVertexBuffer.VertexBufferRHI = RHICreateVertexBuffer(1,AccessFlags | BUF_ShaderResource, CreateInfo);
-	///////////////////////////////////////////////////////////////
-	//// CREATING AN SRV FOR THE STRUCTUED BUFFER SO WA CAN USE IT AS A SHADER RESOURCE PARAMETER AND BIND IT TO THE VERTEX FACTORY
-	FShaderResourceViewRHIRef testScaleBuffer = RHICreateShaderResourceView(TestVertexBuffer.VertexBufferRHI,32,PF_R32_UINT);
-
-
-	
-	FVertexStreamComponent testScale = FVertexStreamComponent(
-            &TestVertexBuffer,
-            0,
-            8,
-            VET_Short4N,
-            EVertexStreamUsage::ManualFetch | EVertexStreamUsage::Instancing
-        );
-	Elements.Add(AccessStreamComponent(testScale,4));
-	*/
-
-	
-
-	
-	//Elements.Add(AccessStreamComponent(BoneIndices,3));
-
-	// bone weights decls
-	//Elements.Add(AccessStreamComponent(BoneWeights,4));
-
-	// Extra bone indices & weights decls
-	/*if (GetNumBoneInfluences() > MAX_INFLUENCES_PER_STREAM)
-	{
-		Elements.Add(AccessStreamComponent(ExtraBoneIndices, 14));
-		Elements.Add(AccessStreamComponent(ExtraBoneWeights, 15));
-	}
-	else
-	{
-		Elements.Add(AccessStreamComponent(BoneIndices, 14));
-		Elements.Add(AccessStreamComponent(BoneWeights, 15));
-	}*/
-
+	}	
 
 	if (SceneProxy->SkinWeightVertexBuffer != NULL && SceneProxy->SkinWeightVertexBuffer->GetNumVertices()>0)
 	{
 		const FSkinWeightDataVertexBuffer* WeightDataVertexBuffer = SceneProxy->SkinWeightVertexBuffer->GetDataVertexBuffer();
 		const uint32 Stride = SceneProxy->SkinWeightVertexBuffer->GetConstantInfluencesVertexStride();
 		const uint32 WeightsOffset = SceneProxy->SkinWeightVertexBuffer->GetConstantInfluencesBoneWeightsOffset();
-		auto BoneIndices = FVertexStreamComponent(WeightDataVertexBuffer, 0, Stride, /*SceneProxy->SkinWeightVertexBuffer->Use16BitBoneIndex() ? VET_UShort4 : */VET_UByte4);
-		auto BoneWeights = FVertexStreamComponent(WeightDataVertexBuffer, WeightsOffset, Stride, VET_UByte4N);
+		const auto BoneIndices = FVertexStreamComponent(WeightDataVertexBuffer, 0, Stride, /*SceneProxy->SkinWeightVertexBuffer->Use16BitBoneIndex() ? VET_UShort4 : */VET_UByte4);
+		const auto BoneWeights = FVertexStreamComponent(WeightDataVertexBuffer, WeightsOffset, Stride, VET_UByte4N);
 
 	
-
-	/*	auto currentBonesInfluence = SceneProxy->SkinWeightVertexBuffer->GetMaxBoneInfluences();
-		uint32 vertexCount = SceneProxy->SkinWeightVertexBuffer->GetNumVertices();//123456;
-
-		TArray<FVector4> weightsArray;
-		TArray<FVector4> indicesArray;
-		for (uint32 i = 0; i < vertexCount; ++i)
-		{
-			FVector4 weights;
-			FVector4 indices;
-			for (uint32 j = 0; j < currentBonesInfluence; ++j)
-			{			
-				weights[j] =  static_cast<double>(static_cast<int>(SceneProxy->SkinWeightVertexBuffer->GetBoneWeight(i,j))/255.0);
-				indices[j] = static_cast<int>(SceneProxy->SkinWeightVertexBuffer->GetBoneIndex(i,j));
-			}
-
-			weightsArray.Add(weights);
-			indicesArray.Add(indices);
-		}
-	
-		TResourceArray<FVector4>* indicesResourceArray = new TResourceArray<FVector4>(true);
-		FRHIResourceCreateInfo indicesCreateInfo;
-		indicesResourceArray->Append(weightsArray);
-		indicesCreateInfo.ResourceArray = indicesResourceArray;
-		indicesCreateInfo.DebugName = TEXT("indicesResourceArray");
-		auto indicesBuffer =  RHICreateVertexBuffer( sizeof(FVector4)*vertexCount, (BUF_Dynamic | BUF_ShaderResource), indicesCreateInfo ); 	
-		FVertexBuffer indicesVertBuffer;
-		//indicesVertBuffer.InitResource();
-	
-
-
-		indicesVertBuffer.ReleaseRHI();
-		indicesVertBuffer.ReleaseDynamicRHI();
-		indicesVertBuffer.InitDynamicRHI();
-		indicesVertBuffer.InitRHI();
-		indicesVertBuffer.VertexBufferRHI = indicesBuffer;
-		
-	//	auto BoneIndices = FVertexStreamComponent(&indicesVertBuffer, 0, currentBonesInfluence,SceneProxy->SkinWeightVertexBuffer->Use16BitBoneIndex() ? VET_UShort4 : VET_UByte4);
-
-
-		TResourceArray<FVector4>* weightsResourceArray = new TResourceArray<FVector4>(true);
-		FRHIResourceCreateInfo weightsCreateInfo;
-		weightsResourceArray->Append(weightsArray);
-		weightsCreateInfo.ResourceArray = weightsResourceArray;
-		weightsCreateInfo.DebugName = TEXT("WeightsResourceArray");
-		auto boneWeightsBuffer =  RHICreateVertexBuffer( sizeof(FVector4)*vertexCount, (BUF_Dynamic | BUF_ShaderResource), weightsCreateInfo );
-		FVertexBuffer boneWeightsVertBuffer;
-		//boneWeightsVertBuffer.InitResource();
-	
-
-		boneWeightsVertBuffer.ReleaseRHI();
-		boneWeightsVertBuffer.ReleaseDynamicRHI();
-		boneWeightsVertBuffer.InitDynamicRHI();
-		boneWeightsVertBuffer.InitRHI();
-		boneWeightsVertBuffer.VertexBufferRHI = boneWeightsBuffer;
-	//	auto BoneWeights = FVertexStreamComponent(&boneWeightsVertBuffer, 0, currentBonesInfluence, VET_Float4);
-		*/
 		Elements.Add(AccessStreamComponent(BoneIndices, 13));
 		Elements.Add(AccessStreamComponent(BoneWeights, 14));
 	}	
@@ -840,22 +732,12 @@ void FAnimMeshInstancedStaticMeshRenderData::InitVertexFactories(FAnimationInsta
             RenderData->VertexBuffers.ColorVertexBuffer.BindColorVertexBuffer(&VertexFactory, Data);
 
             check(PerInstanceRenderData);
-           PerInstanceRenderData->InstanceBuffer.BindInstanceVertexBuffer(&VertexFactory, Data);
+            PerInstanceRenderData->InstanceBuffer.BindInstanceVertexBuffer(&VertexFactory, Data);
 
             VertexFactory.SetData(Data);
             VertexFactory.InitResource();
         }
-    });
-
-
-/*	const FSkinWeightDataVertexBuffer* WeightDataVertexBuffer = VertexBuffers.SkinWeightVertexBuffer->GetDataVertexBuffer();
-	const uint32 Stride = VertexBuffers.SkinWeightVertexBuffer->GetConstantInfluencesVertexStride();
-	const uint32 WeightsOffset = VertexBuffers.SkinWeightVertexBuffer->GetConstantInfluencesBoneWeightsOffset();
-	VertexFactoryData->BoneIndices = FVertexStreamComponent(WeightDataVertexBuffer, 0, Stride, bUse16BitBoneIndex ? VET_UShort4 : VET_UByte4);
-	VertexFactoryData->BoneWeights = FVertexStreamComponent(WeightDataVertexBuffer, WeightsOffset, Stride, VET_UByte4N);
-*/
-
-	
+    });	
 }
 
 
