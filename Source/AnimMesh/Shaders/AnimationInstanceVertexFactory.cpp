@@ -551,14 +551,7 @@ void FAnimationInstanceVertexSceneProxy::SetupProxy(UInstancedStaticMeshComponen
 
 	///////////////////////////////////////////////////////////////
 
-	auto animVertexStaticMesh = static_cast<UAnimVertexStaticMesh*>(InComponent->GetStaticMesh());
-
-	UE_LOG(LogTemp, Warning, TEXT("GetNumBones: %i"),animVertexStaticMesh->TestValue);
-	UE_LOG(LogTemp, Warning, TEXT("GetNumVertices: %i"),animVertexStaticMesh->SkinWeightVertexBuffer.GetNumVertices());
 	
-	
-	BoneIndicesSRV = animVertexStaticMesh->BoneIndices;
-	BoneWeightsSRV = animVertexStaticMesh->SkinWeightVertexBuffer.GetDataVertexBuffer()->GetSRV();
 	
 }
 

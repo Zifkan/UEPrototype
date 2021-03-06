@@ -195,10 +195,14 @@ void BoneMatrixCalculationSystem::UpdateRefToLocalMatricesInner(CharacterActorCo
                                                                  FPlane(BoneMat.M[2][0],BoneMat.M[2][1],BoneMat.M[2][2],BoneMat.M[2][3]),
                                                                  FPlane(0,0,0,1));*/
 
-			/*rendererGroup->Buffer[0 * 256 + boneIndex] = FMatrix(FPlane(1,0,0,0),
+
+		//	rendererGroup->Buffer[0 * 256 + boneIndex] = ReferenceToLocal[RefToLocalIdx];
+			
+
+			rendererGroup->Buffer[0 * 256 + boneIndex] = FMatrix(FPlane(1,0,0,0),
                                                                  FPlane(0,1,0,0),
                                                                  FPlane(0,0,1,0),
-                                                                 FPlane(0,0,0,1));*/
+                                                                 FPlane(0,0,0,1));
 		}
 	}
 
@@ -242,7 +246,7 @@ void BoneMatrixCalculationSystem::UpdateRefToLocalMatricesInner(CharacterActorCo
 	}
 	*/
 
-	UE_LOG(LogTemp, Warning, TEXT("Bones Matrix: %s"),*ReferenceToLocal[1].ToString());
+	UE_LOG(LogTemp, Warning, TEXT("Bones Matrix: %s"),*ReferenceToLocal[10].ToString());
 
 	//UE_LOG(LogTemp, Warning, TEXT("Bones Matrix RefBasesInvMatrix: %s"),*(*RefBasesInvMatrix)[1].ToString());
 
